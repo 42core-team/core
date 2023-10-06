@@ -1,21 +1,30 @@
 # core
 
-- sandbox
-    - game
-    - visualizer
-    ./star_lord
-    ./run
-    README.md
+- sandbox (open source) (via submodules) 
+    - /core (submodule)
+    - /martin (submodule)
+    - Readme.md
 
-- martin
-    - connection
-    Makefile
-    c. (socket)
-    ./player
+- /core (open source)
+  - /game
+  - /visualizer
+  - star_lord (binary)
+  - run (binary)
+  - Readme.md
+
+- /martin (open source) (test bot)
+  - /connection library
+  - Makefile
+  - c. (socket)
+  - ./player
     Readme.md
 
+- /core-dev
 
+- /startlord (closed source)
 
-    Rules:
-        - compiler includes erlaubt
+- /docs (closed source)
+
+  Rules:
+      - compiler includes erlaubt
         
