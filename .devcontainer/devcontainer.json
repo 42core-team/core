@@ -1,29 +1,35 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Ubuntu",
+	"name": "CORE-Codespace",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:jammy",
-	"features": {
-		"ghcr.io/devcontainers/features/git:1": {
-			"ppa": true,
-			"version": "latest"
-		},
-		"ghcr.io/devcontainers/features/rust:1": {
-			"version": "1.70",
-			"profile": "minimal"
-		}
-	},
+	"image": "jonasgoetz01/codespaces-core:latest",
+
+	"mounts": [
+		"source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
+	],
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"ms-vscode.cpptools-themes",
+				"ms-vscode-remote.remote-containers",
 				"GitHub.github-vscode-theme",
+				"keyhr.42-c-format",
+				"DoKca.42-ft-count-line",
+				"kube.42header",
+				"MariusvanWijk-JoppeKoers.codam-norminette-3",
+				"mitaki28.vscode-clang",
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-extension-pack",
+				"franneck94.c-cpp-runner",
 				"twxs.cmake",
 				"ms-vscode.cmake-tools",
-				"ms-vscode.makefile-tools"
+				"vadimcn.vscode-lldb",
+				"ms-vscode.makefile-tools",
+				"rust-lang.rust-analyzer",
+				"dustypomerleau.rust-syntax",
+				"JScearcy.rust-doc-viewer",
+				"hdevalke.rust-test-lens"
 			]
 		}
 	}
