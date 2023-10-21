@@ -13,7 +13,7 @@ use tokio::runtime::Runtime;
  * 		C -> Core
  */
 
-
+// @TODO put all structs in one big struct for easier json conversion
 
 struct Ressource {
 	x: u128,
