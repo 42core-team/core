@@ -1,4 +1,6 @@
 use std::{string, vec};
+use tokio::time::Duration;
+use tokio::runtime::Runtime;
 
 /**
  * Debug visualizer
@@ -35,6 +37,7 @@ impl Core {
 	}
 }
 
+#[derive(Debug, PartialEq)]
 enum UType {
 	Worker,
 	Warrior
@@ -90,7 +93,44 @@ impl Map {
 	}
 }
 
+trait PrintAble {
+
+}
+
+enum Object {
+	Ressource,
+	Core,
+	Worker,
+	Warrior,
+	Dirt
+}
+
+fn get_object_from_position(x: u128, y: u128, map: &Map) -> Object {
+	for ressource in &map.entities.ressources {
+		if ressource.x / 1000 == x && ressource.y / 1000 == y{
+			return Object::Ressource;
+		}
+	}
+	for core in &map.entities.cores {
+		if core.x / 1000 == x && core.y / 1000 == y{
+			return Object::Core;
+		}
+	}
+	for unit in &map.entities.units {
+		if unit.x / 1000 == x && unit.y / 1000 == y{
+			if unit.utype == UType::Warrior{
+				return Object::Warrior
+			}
+			if unit.utype == UType::Worker{
+				return Object::Worker
+			}
+		}
+	}
+	Object::Dirt
+}
+
 fn main() {
+	let mut rt = Runtime::new().unwrap();
 	let _resolution: u32 = 1000;
 	let ressources: Vec<Ressource> = vec![Ressource::new(40000, 20000), Ressource::new(20000, 40000), Ressource::new(10000, 30000)];
 	let cores: Vec<Core> = vec![Core::new(10000, 10000), Core::new(90000, 90000)];
@@ -106,11 +146,23 @@ fn main() {
 	let entities: Entities = Entities::new(ressources, cores, units);
 	let map = Map::new(100000, 100000, teams, entities);
 	loop {
-		for row in 0..map.height {
-			for col in 0..map.width {
-
+		for row in 0..map.height / 1000 {
+			for col in 0..map.width / 1000 {
+				let object = get_object_from_position(col, row, &map);
+				match object {
+					Object::Ressource => print!("R"),
+					Object::Core => print!("C"),
+					Object::Worker => print!("W"),
+					Object::Warrior => print!("A"),
+					Object::Dirt => print!("."),
+    			}
 			}
+			println!("");
 		}
 		print!("{}[2J", 27 as char);
+		rt.block_on(async {
+			// Pause for 1 second
+			tokio::time::sleep(Duration::from_secs(1)).await;
+		});
 	}
 }
