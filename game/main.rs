@@ -1,3 +1,5 @@
 fn main() {
-	println!("HELLO game");
+	loop {
+		println!("HELLO game");
+	}
 }

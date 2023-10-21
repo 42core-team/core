@@ -6,7 +6,14 @@ HEADER_FILES = $(wildcard $(SRC_DIR)/*.h)
 OBJECTS = $(SRC_FILES:.c=.o)
 EXECUTABLE = player
 
+run: all
+	cargo run --bin game | ./player | cargo run --bin visualizer
+
 all: $(EXECUTABLE)
+	cargo build --bin visualizer
+	cargo build --bin game
+	cp target/debug/game game
+	cp target/debug/visualizer visualizer
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
