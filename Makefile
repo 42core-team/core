@@ -7,7 +7,7 @@ OBJECTS = $(SRC_FILES:.c=.o)
 EXECUTABLE = player
 
 run: all
-	cargo run --bin game | ./player | cargo run --bin visualizer
+	RUST_BACKTRACE=1 cargo run --bin game | ./player | cargo run --bin visualizer
 
 all: $(EXECUTABLE)
 	cargo build --bin visualizer

@@ -25,10 +25,16 @@
 				"rust-lang.rust-analyzer",
 				"dustypomerleau.rust-syntax",
 				"JScearcy.rust-doc-viewer",
-				"hdevalke.rust-test-lens"
+				"hdevalke.rust-test-lens",
+				"streetsidesoftware.code-spell-checker"
 			]
 		}
-	}
+	},
+	"dockerOptions": {
+        "user": "vscode",
+        "memory": "16GB",
+        "cpus": "12"
+    }
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
