@@ -1,17 +1,20 @@
-name: Rust Tests
+name: Run Cargo tests on release
 
-on: [push, pull_request]
+on:
+  release:
+    types: [published]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    container:
-      image: jonasgoetz01/codespaces-core:latest
-
     steps:
-    - name: Check out code
+    - name: Checkout code
       uses: actions/checkout@v2
-      
-    - name: Run tests with Cargo in custom Docker container
-      run: cargo test
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    - name: Build and test
+      run: |
+          cargo test
