@@ -1,5 +1,7 @@
 .DS_Store
 
+.vscode/
+
 target/
 src/game/game
 src/visualizer/visualizer
