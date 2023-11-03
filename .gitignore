@@ -1,10 +1,5 @@
 .DS_Store
 
-*.a
-*.o
-*.out
-player
-
 target/
-visualizer/visualizer
-game/game
+src/game/game
+src/visualizer/visualizer
