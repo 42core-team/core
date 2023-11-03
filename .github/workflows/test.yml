@@ -1,0 +1,17 @@
+name: Rust Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: jonasgoetz01/codespaces-core:latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      
+    - name: Run tests with Cargo in custom Docker container
+      run: cargo test
