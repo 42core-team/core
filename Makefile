@@ -20,3 +20,6 @@ fclean: clean
 	rm -f src/visualizer/visualizer
 
 re: fclean all
+
+test:
+	cargo test
