@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Game {
-	pub Map: Map
+	pub map: Map
 }
 
 #[derive(Debug, Deserialize)]

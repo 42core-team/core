@@ -1,5 +1,3 @@
-use serde::Deserialize;
-
 extern crate core;
 
 use core::game::{Game, Entity};
@@ -9,7 +7,7 @@ use serde_json;
 fn main() {
     let json_data = r#"
 		{
-			"Map":{
+			"map":{
 					"entities": [
 						{ "Core": { "team_id": 2, "x": 4, "y": 5 } }
 					]
@@ -21,7 +19,7 @@ fn main() {
 
     match result {
         Ok(item) => {
-			for e in item.Map.entities {
+			for e in item.map.entities {
 				match e {
 					Entity::Core(core) => {
 						println!("{:?}", core);
