@@ -3,3 +3,5 @@
 target/
 src/game/game
 src/visualizer/visualizer
+
+Cargo.lock
