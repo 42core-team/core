@@ -45,8 +45,8 @@ async fn handle_client(mut stream: tokio::net::TcpStream, sender: mpsc::Sender<t
 }
 
 pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
-	let listener = TcpListener::bind("127.0.0.1:3500").await?;
-    println!("Server listening on 127.0.0.1:3500");
+	let listener = TcpListener::bind("127.0.0.1:4242").await?;
+    println!("Server listening on 127.0.0.1:4242");
 
     let (sender, mut receiver) = mpsc::channel(32);
 
