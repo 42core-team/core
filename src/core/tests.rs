@@ -3,6 +3,17 @@ extern crate core;
 use crate::game::{Game, Team, Entity, Core, Unit, Warrior, Worker, Resource};
 use lazy_static::lazy_static;
 
+///
+/// 
+/// 
+/// !!!!!CAUTION!!!! DEPRECATED @jgotz will change it soon
+/// 
+/// 
+/// 
+
+
+
+
 lazy_static! {
     static ref JSON_DATA: &'static str = r#"
     {
