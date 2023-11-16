@@ -2,60 +2,41 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Game {
-	pub map: Map
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-pub struct Map {
-	pub width: u128,
-	pub height: u128,
-	pub teams: Vec<Team>,
-	pub entities: Vec<Entity>
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-pub struct Team {
-	pub id: u8,
-	pub name: String
+	pub status: u64,
+	pub entities: Vec<Entity>,
+	pub units: Vec<Unit>
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum Entity {
 	Core(Core),
-	Unit(Unit),
 	Resource(Resource)
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Core {
-	pub team_id: u8,
-	pub x: u128,
-	pub y: u128
+	pub id: u64,
+	pub team_id: u64,
+	pub x: u64,
+	pub y: u64,
+	pub hp: u64
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Resource {
-	pub x: u128,
-	pub y: u128,
-	pub value: u8
+	pub id: u64,
+	pub value: u64,
+	pub x: u64,
+	pub y: u64,
+	pub hp: u64
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub enum Unit {
-	Warrior(Warrior),
-	Worker(Worker)
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-pub struct Warrior {
-	pub team_id: u8,
-	pub x: u128,
-	pub y: u128
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-pub struct Worker {
-	pub team_id: u8,
-	pub x: u128,
-	pub y: u128
+pub struct Unit {
+	pub id: u64,
+	pub type_id: u64,
+	pub hp: u64,
+	pub x: u64,
+	pub y: u64,
+	pub team_id: u64
 }
