@@ -25,53 +25,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
 	loop {
 		let json_data = remove_after_last_brace(get_response(&mut socket).await?.trim());
 
-		println!("Received data: {}", json_data.as_str().trim_end_matches(" \n\t"));
+		//println!("Received data: {}", json_data.as_str().trim_end_matches(" \n\t"));
 
 		let result: Result<Game, serde_json::Error> = serde_json::from_str(json_data.as_str().trim_end_matches(" \n\t"));
 
-		println!("---------- Game data: ---------\nWidth: {:?}\nHeight: {:?}\n",
-			result.as_ref().unwrap().map.width,
-			result.as_ref().unwrap().map.height
-		);
-
-		println!("---------- Teams: ---------");
-		if result.as_ref().unwrap().map.teams.len() == 0 {
-			println!("No teams");
-		}
-		else {
-			for team in result.as_ref().unwrap().map.teams.iter() {
-				println!("{:?}", team);
-			}
-		}
-		println!("");
-
-		println!("---------- Entities: ---------");
 		match result {
-			Ok(item) => {
-				for e in item.map.entities {
-					match e {
+			Ok(game) => {
+				println!("---------- Entities: ---------");
+				for entity in game.entities {
+					match entity {
 						Entity::Core(core) => {
-							println!("{:?}", core);
-						}
-						Entity::Unit(unit) =>{
-							match unit {
-								core::game::Unit::Warrior(warrior) => {
-									println!("{:?}", warrior);
-								},
-								core::game::Unit::Worker(worker) => {
-									println!("{:?}", worker);
-								},
-							}
+							println!("Core id: {} x {} y {} hp {} team id {}", core.id, core.x, core.y, core.hp, core.team_id);
 						},
 						Entity::Resource(resource) => {
-							println!("{:?}", resource);
-						},
+							println!("Resource id: {} value {} x {} y {}", resource.id, resource.value, resource.x, resource.y);
+						}
 					}
 				}
-
-			}
-			Err(e) => {
-				println!("Error parsing JSON: {:?}", e);
+				for unit in game.units {
+					println!("Unit id: {} type id {} hp {} x {} y {} team id {}", unit.id, unit.type_id, unit.hp, unit.x, unit.y, unit.team_id);
+				}
+			},
+			Err(error) => {
+				println!("Error parsing json {}", error);
+				continue;
 			}
 		}
 	}
