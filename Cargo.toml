@@ -14,9 +14,14 @@ lazy_static = "1.4.0"
 [[bin]]
 name = "game"
 path = "src/game/main.rs"
+
 [[bin]]
 name = "visualizer"
 path = "src/visualizer/main.rs"
+
+[[bin]]
+name = "fake_client"
+path = "src/fake_client/main.rs"
 
 [lib]
 name = "core"
