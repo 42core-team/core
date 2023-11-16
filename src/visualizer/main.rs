@@ -1,6 +1,6 @@
 extern crate core;
 
-use core::game::{Game, Entity};
+use core::game::{Update, Entity};
 use core::socket_client::{connect, get_response};
 
 use serde_json;
@@ -27,12 +27,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 		//println!("Received data: {}", json_data.as_str().trim_end_matches(" \n\t"));
 
-		let result: Result<Game, serde_json::Error> = serde_json::from_str(json_data.as_str().trim_end_matches(" \n\t"));
+		let result: Result<Update, serde_json::Error> = serde_json::from_str(json_data.as_str().trim_end_matches(" \n\t"));
 
 		match result {
-			Ok(game) => {
+			Ok(update) => {
 				println!("---------- Entities: ---------");
-				for entity in game.entities {
+				for entity in update.entities {
 					match entity {
 						Entity::Core(core) => {
 							println!("Core id: {} x {} y {} hp {} team id {}", core.id, core.x, core.y, core.hp, core.team_id);
@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 						}
 					}
 				}
-				for unit in game.units {
+				for unit in update.units {
 					println!("Unit id: {} type id {} hp {} x {} y {} team id {}", unit.id, unit.type_id, unit.hp, unit.x, unit.y, unit.team_id);
 				}
 			},

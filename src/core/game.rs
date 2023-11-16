@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub struct Game {
+pub struct Update {
 	pub status: u64,
 	pub entities: Vec<Entity>,
 	pub units: Vec<Unit>
