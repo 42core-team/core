@@ -11,7 +11,7 @@ pub struct Team {
 
     pub sender: Sender<State>,
     receiver: Receiver<Vec<Action>>,
-    disconnect: Receiver<()>,
+    disconnect: Receiver<()>, // @TODO disconnect check in the loop 
 }
 
 impl Team {

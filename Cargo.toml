@@ -19,10 +19,6 @@ path = "src/game/main.rs"
 name = "visualizer"
 path = "src/visualizer/main.rs"
 
-[[bin]]
-name = "fake_client"
-path = "src/fake_client/main.rs"
-
 [lib]
 name = "core"
 path = "src/core/mod.rs"
