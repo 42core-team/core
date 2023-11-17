@@ -23,5 +23,8 @@ fclean: clean
 
 re: fclean all
 
+doc:
+	cargo doc --no-deps
+
 test:
 	cargo test
