@@ -40,7 +40,12 @@ impl Game {
         let state = State::from_game(self);
         for team in self.teams.iter_mut() {
             let state = state.clone();
-            team.sender.send(state).await;
+            match team.sender.send(state).await {
+				Ok(_) => {}
+				Err(_) => {
+					println!("Error sending state to team");
+				}
+			}
         }
     }
 
