@@ -1,3 +1,4 @@
+#[allow(dead_code)] //@TODO remove if used
 pub struct GameConfig {
     height: u64,
     width: u64,
@@ -42,6 +43,8 @@ impl GameConfig {
         }
     }
 }
+
+#[allow(dead_code)] //@TODO remove if used
 pub struct UnitConfig {
     name: String,
     type_id: u64,
