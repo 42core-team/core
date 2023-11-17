@@ -19,3 +19,11 @@ https://github.com/Alphacharge/setup_docker_environment
 
 ### Start game local
 - run `make run`
+
+### build rust doc
+- run `make doc`
+- open the target folder
+- navigate to doc
+- open a folder and right click a index.html file
+- click open with live server
+- a new tab should open in your browser
