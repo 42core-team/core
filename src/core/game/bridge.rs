@@ -1,3 +1,9 @@
+//!
+//! ## Introduction
+//! The bridge is used to handel the socket connections.
+//! 
+//!
+
 use super::{action::Action, State};
 use serde_json;
 use tokio::{
