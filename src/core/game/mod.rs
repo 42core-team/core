@@ -1,3 +1,9 @@
+//!
+//! ## Introduction
+//! This module handels all the base structs that are used in the game.
+//! 
+//!
+
 pub mod game;
 pub use game::Game;
 
