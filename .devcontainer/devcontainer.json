@@ -28,7 +28,8 @@
 				"JScearcy.rust-doc-viewer",
 				"hdevalke.rust-test-lens",
 				"streetsidesoftware.code-spell-checker",
-				"GitHub.copilot"
+				"GitHub.copilot",
+				"ritwickdey.LiveServer"
 			]
 		}
 	},
