@@ -11,7 +11,7 @@ async fn main() {
     loop {
         let (stream, _) = listener.accept().await.unwrap();
 
-        queue.push(Team::from_tcpStream(stream));
+        queue.push(Team::from_tcp_stream(stream));
 
         if queue.len() >= 2 {
             let t1 = queue.remove(0);
