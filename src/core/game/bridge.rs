@@ -7,7 +7,7 @@ use tokio::{
 };
 
 pub(crate) fn bridge(
-    mut stream: TcpStream,
+    stream: TcpStream,
 ) -> (Sender<State>, Receiver<Vec<Action>>, Receiver<()>) {
     let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<State>(100);
     let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Vec<Action>>(100);
@@ -43,7 +43,7 @@ pub(crate) fn bridge(
                         }
                     };
                 }
-                Err(e) => {
+                Err(_e) => {
                     let _ = disconnect_sender.send(()).await;
                     break;
                 }
