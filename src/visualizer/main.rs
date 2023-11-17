@@ -1,3 +1,13 @@
+//!
+//! ## Introduction
+//! This module is part of the CORE Project.
+//! 
+//! The Project ist a coding challenge to create a bot that can play the game CORE.
+//! 
+//! In this module you will find the basic visualizer that connects to the game and visualizes the game state.
+//!
+
+
 use core::game::action::{Action, Create};
 
 fn main() {
