@@ -1,5 +1,4 @@
 name: Run Cargo tests on release
-
 on:
   push:
     branches:
