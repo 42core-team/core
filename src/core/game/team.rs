@@ -60,7 +60,6 @@ impl Team {
 					Action::Attack(action) => {
 						println!("Attack unit of type {:?}", action);
 						// @TODO handel attack action here
-						// changed line
 					}
 				}
 			}
