@@ -1,7 +1,10 @@
 use std::time::Duration;
 
-use super::{utils::get_ms, Entity, GameConfig, State, Team, Unit};
+use uuid::Uuid;
 
+use super::{utils::get_ms, Entity, GameConfig, State, Team, Unit, entity::Core};
+
+#[derive(Debug)]
 pub struct Game {
     pub teams: Vec<Team>,
     pub config: GameConfig,
@@ -27,10 +30,12 @@ impl Game {
         loop {
             self.wait_till_next_tick().await;
             println!("TICK");
-
-            for team in self.teams.iter_mut() {
-                team.update();
-            }
+			
+            for team_index in 0..self.teams.len() {
+				let team = &mut self.teams[team_index];
+				Team::update(team.id, &mut team.receiver, &mut self);
+			}
+			
 
             self.send_state().await;
         }
@@ -50,7 +55,7 @@ impl Game {
     }
 
     async fn wait_till_next_tick(&mut self) {
-        let min_ms_per_tick = 3000;
+        let min_ms_per_tick: u128 = 3000;
 
         loop {
             // This is so that it always takes 1ms steps minimum
@@ -69,4 +74,52 @@ impl Game {
             tokio::time::sleep(Duration::from_millis(((min_ms_per_tick / 2) + 1) as u64)).await;
         }
     }
+
+	pub fn generate_u64_id() -> u64 {
+		let uuid = Uuid::default();
+	
+		let u64_id = u64::from_le_bytes(uuid.as_bytes()[..8].try_into().unwrap());
+	
+		u64_id
+	}
+	
+
+	pub fn get_team_by_id(&self, id: u64) -> Option<&Team> {
+		for team in self.teams.iter() {
+			if team.id == id {
+				return Some(team);
+			}
+		}
+
+		None
+	}
+
+	pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
+		for entity in self.entities.iter() {
+			println!("Entity: {:?}", entity);
+			match entity {
+				Entity::Core(core) => {
+					if core.team_id == team_id {
+						return Some(core);
+					}
+				}
+				_ => {}
+			}
+		}
+		None
+	}
+
+	pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
+		println!("Create unit of type {:?} for team with id {:?}", type_id, team_id);
+		println!("width: {:?}, height: {:?}", self.config.width, self.config.height);
+		println!("Teams: {:?}", self.teams);
+		let team_core = self.get_core_by_team_id(team_id);
+		if team_core.is_none() {
+			println!("Core of team with id {:?} not found", team_id);
+			return;
+		}
+		let team_core = team_core.unwrap();
+		let unit = Unit::new(team_id, type_id, team_core.x, team_core.y);
+		self.units.push(unit);
+	}
 }
