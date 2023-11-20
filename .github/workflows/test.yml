@@ -1,5 +1,12 @@
 name: Run Cargo tests on release
 
+on:
+  push:
+    branches:
+      - '*'
+
+runs-on: self-hosted
+
 jobs:
   test:
     runs-on: ubuntu-latest
