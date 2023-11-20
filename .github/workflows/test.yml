@@ -14,9 +14,8 @@ jobs:
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
-        override: true
-        path: ${{ github.workspace }}
+          toolchain: stable
+          override: true
     - name: Build and test
       run: |
           cargo test
