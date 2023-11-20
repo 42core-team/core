@@ -16,6 +16,7 @@ jobs:
       with:
         toolchain: stable
         override: true
+        path: ${{ github.workspace }}
     - name: Build and test
       run: |
           cargo test
