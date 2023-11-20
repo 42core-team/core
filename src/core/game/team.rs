@@ -1,18 +1,19 @@
-use super::{action::Action, bridge::bridge, State};
+use super::{action::Action, bridge::bridge, State, Game};
 
 use tokio::{net::TcpStream, sync::mpsc::Receiver, sync::mpsc::Sender};
 
 #[allow(dead_code)] // @TODO remove when used
+#[derive(Debug)]
 pub struct Team {
     pub id: u64,
-    uuid: String,
-    name: String,
+    pub uuid: String,
+    pub name: String,
 
     pub balance: u64,
 
     pub sender: Sender<State>,
-    receiver: Receiver<Vec<Action>>,
-    disconnect: Receiver<()>, // @TODO disconnect check in the loop 
+    pub receiver: Receiver<Vec<Action>>,
+    pub disconnect: Receiver<()>, // @TODO disconnect check in the loop 
 }
 
 impl Team {
@@ -20,7 +21,7 @@ impl Team {
         let (sender, receiver, disconnect) = bridge(stream);
 
         Team {
-            id: 1212,
+            id: Game::generate_u64_id(),
             uuid: String::from("Hello"),
             name: String::from("asdf"),
             balance: 100,
@@ -44,14 +45,14 @@ impl Team {
 	/// 
 	/// You need at least two netcat instances to start a game
 	/// 
-    pub fn update(&mut self) {
-        while let Ok(actions) = self.receiver.try_recv() {
-            println!("TEAM {:?} send action: {:?}", self.name, actions);
+    pub fn update(team_id: u64, receiver: &mut Receiver<Vec<Action>>, game: &mut Game) {
+        while let Ok(actions) = receiver.try_recv() {
+            println!("TEAM send action: {:?}", actions);
 			for action in actions {
 				match action {
 					Action::Create(action) => {
 						println!("Create unit of type {:?}", action);
-						// @TODO handel create action here
+						Game::create_unit(game, team_id, action.type_id);
 					},
 					Action::Travel(action) => {
 						println!("Travel unit of type {:?}", action);
@@ -65,14 +66,5 @@ impl Team {
 				}
 			}
         }
-		match self.disconnect.try_recv() {
-			Ok(()) => {
-				println!("Disconnect signal received");
-				// @TODO Handle disconnect here
-			},
-			Err(_) => {
-				// No disconnect signal received 
-			}
-		}
     }
 }
