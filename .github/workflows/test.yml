@@ -1,9 +1,5 @@
 name: Run Cargo tests on release
 
-on:
-  release:
-    types: [published]
-
 jobs:
   test:
     runs-on: ubuntu-latest
