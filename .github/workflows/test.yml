@@ -21,6 +21,6 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and test
       run: |
-          $PATH=$PATH:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          $PATH=$PATH:/root/.cargo/bin:/usr/bin
           /root/.cargo/bin/rustup default stable
           /root/.cargo/bin/cargo test
