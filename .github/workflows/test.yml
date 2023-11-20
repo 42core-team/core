@@ -10,6 +10,7 @@ jobs:
     runs-on: self-hosted
     container:
       image: jonasgoetz01/codespaces-core:latest
+      options: --user root
 
     steps:
     - name: Checkout code
