@@ -1,10 +1,13 @@
+use serde::de;
+
 #[allow(dead_code)] //@TODO remove if used
+#[derive(Debug)]
 pub struct GameConfig {
-    height: u64,
-    width: u64,
-    idle_income: u64,
-    core_hp: u64,
-    units: Vec<UnitConfig>,
+    pub height: u64,
+    pub width: u64,
+    pub idle_income: u64,
+    pub core_hp: u64,
+    pub units: Vec<UnitConfig>,
 }
 
 impl GameConfig {
@@ -42,18 +45,30 @@ impl GameConfig {
             ],
         }
     }
+
+	/// Function to get the unit config by type id without the need of a game instance
+	pub fn get_unit_config_by_type_id(type_id: u64) -> Option<UnitConfig> {
+		let config = GameConfig::patch_0_1_0();
+		for unit in config.units {
+			if unit.type_id == type_id {
+				return Some(unit);
+			}
+		}
+		None
+	}
 }
 
 #[allow(dead_code)] //@TODO remove if used
+#[derive(Debug)]
 pub struct UnitConfig {
-    name: String,
-    type_id: u64,
-    cost: u64,
-    hp: u64,
-    dmg_core: u64,
-    dmg_unit: u64,
-    dmg_resource: u64,
-    max_range: u64,
-    min_range: u64,
-    speed: u64,
+    pub name: String,
+    pub type_id: u64,
+    pub cost: u64,
+    pub hp: u64,
+    pub dmg_core: u64,
+    pub dmg_unit: u64,
+    pub dmg_resource: u64,
+    pub max_range: u64,
+    pub min_range: u64,
+    pub speed: u64,
 }
