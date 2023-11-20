@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use super::{utils::get_ms, Entity, GameConfig, State, Team, Unit};
+use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit};
 
 pub struct Game {
     pub teams: Vec<Team>,

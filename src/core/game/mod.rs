@@ -1,7 +1,7 @@
 //!
 //! ## Introduction
 //! This module handels all the base structs that are used in the game.
-//! 
+//!
 //!
 
 pub mod game;
@@ -26,5 +26,9 @@ pub use config::UnitConfig;
 pub mod bridge;
 
 pub mod action;
+
+pub mod entity;
+pub use entity::Resource;
+pub use entity::Core;
 
 pub mod utils;
