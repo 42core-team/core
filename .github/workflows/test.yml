@@ -23,4 +23,4 @@ jobs:
       run: |
           echo "CARGO_HOME: $CARGO_HOME"
           echo "PATH: $PATH"
-          cargo test
+          /root/.cargo/bin/cargo test
