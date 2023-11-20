@@ -21,6 +21,5 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and test
       run: |
-          echo "CARGO_HOME: $CARGO_HOME"
-          echo "PATH: $PATH"
+          rustup default stable
           /root/.cargo/bin/cargo test
