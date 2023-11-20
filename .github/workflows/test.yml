@@ -19,7 +19,10 @@ jobs:
       with:
         repository: 42core-team/core
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Activate Rust Environment
+      run: source $HOME/.cargo/env
     - name: Build and test
       run: |
+          $PATH=$PATH:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
           /root/.cargo/bin/rustup default stable
           /root/.cargo/bin/cargo test
