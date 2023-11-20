@@ -7,9 +7,6 @@
 pub mod game;
 pub use game::Game;
 
-pub mod entity;
-pub use entity::Entity;
-
 pub mod unit;
 pub use unit::Unit;
 
@@ -26,5 +23,7 @@ pub use config::UnitConfig;
 pub mod bridge;
 
 pub mod action;
+
+pub mod entity;
 
 pub mod utils;

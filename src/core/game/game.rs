@@ -5,7 +5,8 @@ use super::{utils::get_ms, Entity, GameConfig, State, Team, Unit};
 pub struct Game {
     pub teams: Vec<Team>,
     pub config: GameConfig,
-    pub entities: Vec<Entity>,
+    pub cores: Vec<Core>,
+	pub resources: Vec<Resource>,
     pub units: Vec<Unit>,
     pub last_tick_time: u128,
     pub time_since_last_tick: u128,
@@ -16,7 +17,8 @@ impl Game {
         Game {
             teams,
             config: GameConfig::patch_0_1_0(),
-            entities: vec![],
+            resources: vec![],
+			cores: vec![],
             units: vec![],
             last_tick_time: get_ms(),
             time_since_last_tick: 0,
