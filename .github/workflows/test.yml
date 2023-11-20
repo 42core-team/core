@@ -8,13 +8,17 @@ on:
 jobs:
   docker-job:
     runs-on: self-hosted
-    container:
-      image: jonasgoetz01/codespaces-core:latest
-      options: --user root
+    services:
+      my-docker-service:
+        image: jonasgoetz01/codespaces-core:latest
+        options: --user root
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        repository: 42core-team/core
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and test
       run: |
           cargo test
