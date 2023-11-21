@@ -10,26 +10,17 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     services:
       docker:
-        image: jonasgoetz01/codespaces-core:latest
+        image: jonasgoetz01/core-runner:latest
         ports:
           - 8080:8080
-        options: --entrypoint "sleep 600"
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-
-      - name: Set up Rust
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          export PATH="$HOME/.cargo/bin:$PATH"
-          rustc --version
-          cargo --version
-
       - name: Build and Test
         run: |
           cargo build --verbose
