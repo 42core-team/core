@@ -20,7 +20,7 @@ impl Game {
         Game {
             teams,
             config: GameConfig::patch_0_1_0(),
-            cores: vec![],
+            cores: vec![Core::new(0, 2, 2), Core::new(1, 4, 4)],
 			resources: vec![],
             units: vec![],
             last_tick_time: get_ms(),
@@ -112,6 +112,14 @@ impl Game {
 		None
 	}
 
+	///
+	/// Function to create a new unit
+	/// 
+	/// Security:
+	/// - check if team exists
+	/// - check if unit type exists
+	/// - check if team has enough balance
+	/// 
 	pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
 		println!("Create unit of type {:?} for team with id {:?}", type_id, team_id);
 		let team_core = self.get_core_by_team_id(team_id);
@@ -120,8 +128,19 @@ impl Game {
 			return;
 		}
 		let team_core = team_core.unwrap();
-		let unit = Unit::new(team_id, type_id, team_core.x, team_core.y);
-		self.units.push(unit);
+		let unit = Unit::new(self, team_id, type_id, team_core.x, team_core.y);
+		match unit {
+			Some(unit) => {
+				if self.get_team_by_id(team_id).unwrap().balance < GameConfig::get_unit_config_by_type_id(type_id).unwrap().cost {
+					println!("Team with id {:?} has not enough balance", team_id);
+					return;
+				}
+				self.units.push(unit);
+			}
+			None => {
+				println!("Unit could not be created");
+			}
+		}
 	}
 
 	///
