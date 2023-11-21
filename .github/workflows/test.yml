@@ -13,11 +13,6 @@ jobs:
         image: jonasgoetz01/codespaces-core:latest
 
     steps:
-    # - name: Checkout code
-    #   uses: actions/checkout@v2
-    #   with:
-    #     repository: 42core-team/core
-    #     token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and test
       run: |
           cargo test
