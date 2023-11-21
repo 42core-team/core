@@ -21,5 +21,5 @@ name = "visualizer"
 path = "src/visualizer/main.rs"
 
 [lib]
-name = "core"
+name = "lib"
 path = "src/core/mod.rs"
