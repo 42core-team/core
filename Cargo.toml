@@ -23,3 +23,7 @@ path = "src/visualizer/main.rs"
 [lib]
 name = "lib"
 path = "src/core/mod.rs"
+
+[[test]]
+name = "game_tests"
+path = "src/core/game/tests/mod.rs"
