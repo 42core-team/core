@@ -120,6 +120,10 @@ impl Game {
 	/// - check if unit type exists
 	/// - check if team has enough balance
 	/// 
+	/// Features:
+	/// - create unit
+	/// - reduce team balance
+	/// 
 	pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
 		println!("Create unit of type {:?} for team with id {:?}", type_id, team_id);
 		let team_core = self.get_core_by_team_id(team_id);
@@ -148,6 +152,7 @@ impl Game {
 	/// 
 	/// a valid json to send with netcat is:
 	/// [{"Create":{"type_id":3}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]
+	/// [{"Create":{"type_id":1}}]
 	/// 
 	/// To uns netcat:
 	/// ```sh
