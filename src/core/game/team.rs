@@ -30,11 +30,11 @@ impl Team {
 		}
 	}
 
-	pub fn get_fake_team() -> Self {
+	pub fn get_fake_team(id: u64, name: String) -> Self {
 		Team {
-			id: 0,
+			id: id,
 			uuid: String::from("Hello"),
-			name: String::from("asdf"),
+			name: name,
 			balance: 100,
 			sender: None,
 			receiver: None,
