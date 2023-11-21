@@ -102,6 +102,11 @@ impl Game {
 		None
 	}
 
+	fn get_team_by_id_mut(&mut self, team_id: u64) -> Option<&mut Team> {
+		self.teams.iter_mut().find(|team| team.id == team_id)
+	}
+	
+
 	pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
 		for core in self.cores.iter() {
 			println!("Core: {:?}", core);
