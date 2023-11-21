@@ -23,6 +23,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Build and Test
         run: |
-          source /root/.bashrc
+          $PATH="/vscode/vscode-server/bin/linux-x64/e7e037083ff4455cf320e344325dacb480062c3c/bin/remote-cli:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
           cargo build --verbose
           cargo test
