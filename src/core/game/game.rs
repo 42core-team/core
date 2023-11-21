@@ -139,6 +139,16 @@ impl Game {
 					println!("Team with id {:?} has not enough balance", team_id);
 					return;
 				}
+				let team = self.get_team_by_id_mut(team_id);
+				match team {
+					Some(team) => {
+						team.balance -= unit_cost;
+					}
+					None => {
+						println!("Team with id {:?} not found", team_id);
+						return;
+					}
+				}
 				self.units.push(unit);
 			}
 			None => {
