@@ -1,23 +1,34 @@
-name: Run Cargo tests on release
+name: Rust Test
 
 on:
   push:
     branches:
-      - '*'
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  docker-job:
-    runs-on: self-hosted
+  build:
+    runs-on: ubuntu-latest
+
     services:
-      my-docker-service:
+      docker:
         image: jonasgoetz01/codespaces-core:latest
+        ports:
+          - 8080:8080
+        options: --entrypoint "sleep 600"
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-      with:
-        repository: 42core-team/core
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build and test
-      run: |
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Rust
+        uses: actions/setup-rust@v2
+        with:
+          toolchain: stable
+
+      - name: Build and Test
+        run: |
+          cargo build --verbose
           cargo test
