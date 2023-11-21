@@ -24,9 +24,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Rust
-        uses: actions/setup-rust@v2
-        with:
-          toolchain: stable
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustc --version
+          cargo --version
 
       - name: Build and Test
         run: |
