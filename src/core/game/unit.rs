@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Game, GameConfig, team};
+use super::{Game, GameConfig};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {

@@ -1,4 +1,4 @@
-use core::game::{Game, Team};
+use lib::game::{Game, Team};
 
 use tokio::net::TcpListener;
 
