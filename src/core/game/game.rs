@@ -6,27 +6,27 @@ use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action
 
 #[derive(Debug)]
 pub struct Game {
-    pub teams: Vec<Team>,
-    pub config: GameConfig,
-    pub resources: Vec<Resource>,
+	pub teams: Vec<Team>,
+	pub config: GameConfig,
+	pub resources: Vec<Resource>,
 	pub cores: Vec<Core>,
-    pub units: Vec<Unit>,
-    pub last_tick_time: u128,
-    pub time_since_last_tick: u128,
+	pub units: Vec<Unit>,
+	pub last_tick_time: u128,
+	pub time_since_last_tick: u128,
 }
 
 impl Game {
-    pub fn new(teams: Vec<Team>) -> Self {
-        Game {
-            teams,
-            config: GameConfig::patch_0_1_0(),
-            cores: vec![Core::new(0, 2, 2), Core::new(1, 4, 4)],
+	pub fn new(teams: Vec<Team>) -> Self {
+		Game {
+			teams,
+			config: GameConfig::patch_0_1_0(),
+			cores: vec![Core::new(0, 2, 2), Core::new(1, 4, 4)],
 			resources: vec![],
-            units: vec![],
-            last_tick_time: get_ms(),
-            time_since_last_tick: 0,
-        }
-    }
+			units: vec![],
+			last_tick_time: get_ms(),
+			time_since_last_tick: 0,
+		}
+	}
 
 	pub async fn start(&mut self) {
 		loop {
