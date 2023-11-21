@@ -2,31 +2,31 @@ use std::time::Duration;
 
 use uuid::Uuid;
 
-use crate::game::action::Action;
-
-use super::{utils::get_ms, Entity, GameConfig, State, Team, Unit, entity::Core};
+use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::Action};
 
 #[derive(Debug)]
 pub struct Game {
-	pub teams: Vec<Team>,
-	pub config: GameConfig,
-	pub entities: Vec<Entity>,
-	pub units: Vec<Unit>,
-	pub last_tick_time: u128,
-	pub time_since_last_tick: u128,
+    pub teams: Vec<Team>,
+    pub config: GameConfig,
+    pub resources: Vec<Resource>,
+	pub cores: Vec<Core>,
+    pub units: Vec<Unit>,
+    pub last_tick_time: u128,
+    pub time_since_last_tick: u128,
 }
 
 impl Game {
-	pub fn new(teams: Vec<Team>) -> Self {
-		Game {
-			teams,
-			config: GameConfig::patch_0_1_0(),
-			entities: vec![],
-			units: vec![],
-			last_tick_time: get_ms(),
-			time_since_last_tick: 0,
-		}
-	}
+    pub fn new(teams: Vec<Team>) -> Self {
+        Game {
+            teams,
+            config: GameConfig::patch_0_1_0(),
+            cores: vec![],
+			resources: vec![],
+            units: vec![],
+            last_tick_time: get_ms(),
+            time_since_last_tick: 0,
+        }
+    }
 
 	pub async fn start(&mut self) {
 		loop {
@@ -103,15 +103,10 @@ impl Game {
 	}
 
 	pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
-		for entity in self.entities.iter() {
-			println!("Entity: {:?}", entity);
-			match entity {
-				Entity::Core(core) => {
-					if core.team_id == team_id {
-						return Some(core);
-					}
-				}
-				_ => {}
+		for core in self.cores.iter() {
+			println!("Core: {:?}", core);
+			if core.team_id == team_id {
+				return Some(core);
 			}
 		}
 		None

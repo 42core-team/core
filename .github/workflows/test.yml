@@ -1,20 +1,42 @@
-name: Run Cargo tests on release
+name: Rust Test
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: self-hosted
+
+    services:
+      docker:
+        image: jonasgoetz01/core-runner:latest
+        ports:
+          - 8080:8080
+    env:
+      PATH: "/vscode/vscode-server/bin/linux-x64/e7e037083ff4455cf320e344325dacb480062c3c/bin/remote-cli:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-    - name: Build and test
-      run: |
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          apt update && \
+          apt install -y \
+          build-essential \
+          curl \
+          wget \
+          git \
+          cmake \
+          clang \
+          gdb \
+          && rm -rf /var/lib/apt/lists/*
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+      - name: Test
+        run: |
           cargo test
+
