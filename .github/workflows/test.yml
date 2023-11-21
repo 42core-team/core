@@ -36,7 +36,6 @@ jobs:
           gdb \
           && rm -rf /var/lib/apt/lists/*
           curl https://sh.rustup.rs -sSf | sh -s -- -y
-      - name: Build and Test
+      - name: Test
         run: |
-          cargo build --verbose
           cargo test
