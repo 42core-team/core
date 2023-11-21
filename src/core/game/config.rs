@@ -1,5 +1,3 @@
-use serde::de;
-
 #[allow(dead_code)] //@TODO remove if used
 #[derive(Debug)]
 pub struct GameConfig {
