@@ -37,7 +37,7 @@ impl Game {
 			
 			for team_index in 0..self.teams.len() {
 				let team = &mut self.teams[team_index];
-				while let Ok(actions) = team.receiver.try_recv() {
+				while let Ok(actions) = team.receiver.as_mut().unwrap().try_recv() {
 					println!("TEAM send action: {:?}", actions);
 					for action in actions {
 						team_actions.push((team.id, action));
@@ -53,7 +53,7 @@ impl Game {
 		let state = State::from_game(self);
 		for team in self.teams.iter_mut() {
 			let state = state.clone();
-			match team.sender.send(state).await {
+			match team.sender.as_mut().unwrap().send(state).await {
 				Ok(_) => {}
 				Err(_) => {
 					println!("Error sending state to team");

@@ -11,24 +11,35 @@ pub struct Team {
 
     pub balance: u64,
 
-    pub sender: Sender<State>,
-    pub receiver: Receiver<Vec<Action>>,
-    pub disconnect: Receiver<()>, // @TODO disconnect check in the loop 
+	pub sender: Option<Sender<State>>,
+	pub receiver: Option<Receiver<Vec<Action>>>,
+	pub disconnect: Option<Receiver<()>>, // @TODO disconnect check in the loop 
 }
 
 impl Team {
     pub fn from_tcp_stream(stream: TcpStream) -> Self {
         let (sender, receiver, disconnect) = bridge(stream);
 
-        Team {
-            id: Game::generate_u64_id(),
-            uuid: String::from("Hello"),
-            name: String::from("asdf"),
-            balance: 100,
-            sender,
-            receiver,
-            disconnect,
-        }
-    }
+		Team {
+			id: Game::generate_u64_id(),
+			uuid: String::from("Hello"),
+			name: String::from("asdf"),
+			balance: 100,
+			sender: Some(sender),
+			receiver: Some(receiver),
+			disconnect: Some(disconnect),
+		}
+	}
 
+	pub fn get_fake_team() -> Self {
+		Team {
+			id: 0,
+			uuid: String::from("Hello"),
+			name: String::from("asdf"),
+			balance: 100,
+			sender: None,
+			receiver: None,
+			disconnect: None
+		}
+	}
 }
