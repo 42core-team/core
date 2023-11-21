@@ -17,12 +17,13 @@ jobs:
         image: jonasgoetz01/core-runner:latest
         ports:
           - 8080:8080
+    env:
+      PATH: "/vscode/vscode-server/bin/linux-x64/e7e037083ff4455cf320e344325dacb480062c3c/bin/remote-cli:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
       - name: Build and Test
         run: |
-          PATH="/vscode/vscode-server/bin/linux-x64/e7e037083ff4455cf320e344325dacb480062c3c/bin/remote-cli:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
           cargo build --verbose
           cargo test
