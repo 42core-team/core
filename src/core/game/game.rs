@@ -102,7 +102,7 @@ impl Game {
 		None
 	}
 
-	fn get_team_by_id_mut(&mut self, team_id: u64) -> Option<&mut Team> {
+	pub fn get_team_by_id_mut(&mut self, team_id: u64) -> Option<&mut Team> {
 		self.teams.iter_mut().find(|team| team.id == team_id)
 	}
 	
