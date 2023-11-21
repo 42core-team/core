@@ -23,5 +23,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Build and Test
         run: |
+          source /root/.bashrc
           cargo build --verbose
           cargo test
