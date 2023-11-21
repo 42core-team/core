@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Game, GameConfig};
+use super::{Game, GameConfig, team};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -12,15 +12,31 @@ pub struct Unit {
     pub team_id: u64,
 }
 
+///
+/// Unit implementation
+/// 
 impl Unit {
-	pub fn new(team_id: u64, type_id: u64, x: u64, y: u64) -> Self {
-		Unit {
-			id: Game::generate_u64_id(),
-			type_id,
-			hp: GameConfig::get_unit_config_by_type_id(type_id).unwrap().hp,
-			x,
-			y,
-			team_id,
+	///
+	/// Function to create a new unit
+	/// 
+	pub fn new(game: &mut Game, team_id: u64, type_id: u64, x: u64, y: u64) -> Option<Self> {
+		let unit_config = GameConfig::get_unit_config_by_type_id(type_id);
+		let team = game.get_team_by_id(team_id);
+		if team.is_none() {
+			return None;
+		}
+		match unit_config {
+			Some(unit_config) => {
+				return Some(Unit {
+					id: Game::generate_u64_id(),
+					type_id,
+					hp: unit_config.hp,
+					x,
+					y,
+					team_id,
+				});
+			}
+			None => { return None }
 		}
 	}
 }
