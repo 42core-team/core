@@ -135,7 +135,9 @@ impl Game {
 		let unit = Unit::new(self, team_id, type_id, team_core.x, team_core.y);
 		match unit {
 			Some(unit) => {
-				if self.get_team_by_id(team_id).unwrap().balance < GameConfig::get_unit_config_by_type_id(type_id).unwrap().cost {
+				let team_balance = self.get_team_by_id(team_id).unwrap().balance;
+				let unit_cost = GameConfig::get_unit_config_by_type_id(type_id).unwrap().cost;
+				if team_balance < unit_cost {
 					println!("Team with id {:?} has not enough balance", team_id);
 					return;
 				}
