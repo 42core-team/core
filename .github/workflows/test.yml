@@ -23,6 +23,19 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          apt update && \
+          apt install -y \
+          build-essential \
+          curl \
+          wget \
+          git \
+          cmake \
+          clang \
+          gdb \
+          && rm -rf /var/lib/apt/lists/*
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
       - name: Build and Test
         run: |
           cargo build --verbose
