@@ -1,14 +1,15 @@
 //!
 //! ## Introduction
 //! This module handels all the base structs that are used in the game.
-//! 
+//!
 //!
 
 pub mod game;
 pub use game::Game;
 
 pub mod entity;
-pub use entity::Entity;
+pub use entity::Resource;
+pub use entity::Core;
 
 pub mod unit;
 pub use unit::Unit;
