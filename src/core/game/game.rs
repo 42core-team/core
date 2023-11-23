@@ -90,7 +90,7 @@ impl Game {
 	}
 
 	pub fn generate_u64_id() -> u64 {
-		static mut COUNTER: u64 = 0;
+		static mut COUNTER: u64 = 1;
 	
 		unsafe {
 			COUNTER += 1;
