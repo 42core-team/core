@@ -1,9 +1,10 @@
 //!
 //! ## Introduction
 //! The bridge is used to handel the socket connections.
-//! 
+//!
 //!
 
+use std::ops::Add;
 use super::{action::Action, State};
 use serde_json;
 use tokio::{
@@ -61,7 +62,7 @@ pub(crate) fn bridge(
         loop {
             match mscp_to_socket_receiver.recv().await {
                 Some(state) => {
-                    let json_string = serde_json::to_string(&state).unwrap();
+                    let json_string = serde_json::to_string(&state).unwrap().add("\n");
                     let _ = writer.write_all(json_string.as_bytes()).await;
                 }
                 None => {
