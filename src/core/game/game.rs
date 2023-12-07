@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use uuid::Uuid;
 
-use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::{Action, travel::{self, Travel}}};
+use crate::game::entity::resource;
+
+use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::{Action, Travel}, helper::Target};
 
 #[derive(Debug)]
 pub struct Game {
@@ -11,6 +13,9 @@ pub struct Game {
 	pub resources: Vec<Resource>,
 	pub cores: Vec<Core>,
 	pub units: Vec<Unit>,
+	targets: Vec<(u64, u64)>,
+	moves: Vec<(u64, Vec<u64, u64>)>,
+	pub tick_rate: u128,
 	pub last_tick_time: u128,
 	pub time_since_last_tick: u128,
 }
@@ -20,9 +25,11 @@ impl Game {
 		Game {
 			teams,
 			config: GameConfig::patch_0_1_0(),
-			cores: vec![Core::new(0, 2, 2), Core::new(1, 4, 4)],
+			cores: vec![Core::new(0, 2000, 2000), Core::new(1, 4000, 4000)],
 			resources: vec![],
 			units: vec![],
+			targets: vec![],
+			tick_rate: 3000,
 			last_tick_time: get_ms(),
 			time_since_last_tick: 0,
 		}
@@ -62,8 +69,8 @@ impl Game {
 		}
 	}
 
-	async fn wait_till_next_tick(&mut self) {
-		let min_ms_per_tick: u128 = 3000;
+	pub async fn wait_till_next_tick(&mut self) {
+		let min_ms_per_tick: u128 = self.tick_rate;
 
 		loop {
 			// This is so that it always takes 1ms steps minimum
@@ -84,11 +91,13 @@ impl Game {
 	}
 
 	pub fn generate_u64_id() -> u64 {
-		let uuid = Uuid::default();
+		static mut COUNTER: u64 = 1;
 	
-		let u64_id = u64::from_le_bytes(uuid.as_bytes()[..8].try_into().unwrap());
-	
-		u64_id
+		unsafe {
+			COUNTER += 1;
+			COUNTER
+		}
+		
 	}
 	
 
@@ -174,24 +183,203 @@ impl Game {
 		}
 	}
 
+	///
+	/// Handel the attack action
+	/// 
+	/// Security:
+	/// - check if attacker exists
+	/// - check if target exists
+	/// - check if attacker is in own team
+	/// 
+	/// if target is equal to attacker:
+	/// - remove target from targets
+	/// 
+	pub fn handel_attack_action(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
+		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
+		let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
+		let target = self.units.iter().find(|unit| unit.id == target_id);
+		match (attacker, target) {
+			(Some(attacker), Some(target)) => {
+				if attacker.team_id == team_id {
+					if attacker_id == target_id {
+						self.targets.retain(|target| target.0 != attacker_id);
+					} else if target_id != team_id {
+						self.targets.push((attacker_id, target_id));
+					}
+				}
+			}
+			_ => {
+				println!("Attacker or target not found");
+			}
+		}
+	}
+
+	///
+	/// Find a target by id
+	/// 
+	/// Security:
+	/// - check if target exists
+	/// 
+	/// Features:
+	/// - return target in the following types:
+	/// 	- Unit
+	/// 	- Resource
+	/// 	- Core
+	/// 	- None
+	/// 
+	pub fn get_target_by_id(&self, id: u64) -> Target {
+		let unit = self.units.iter().find(|unit| unit.id == id);
+		let resource = self.resources.iter().find(|resource| resource.id == id);
+		let core = self.cores.iter().find(|core| core.id == id);
+		match (unit, resource, core) {
+			(Some(unit), _, _) => Target::Unit(unit.clone()),
+			(_, Some(resource), _) => Target::Resource(resource.clone()),
+			(_, _, Some(core)) => Target::Core(core.clone()),
+			_ => Target::None,
+		}
+	}
+
+	pub fn get_dist(&self, x1: u64, y1: u64, x2: u64, y2: u64) -> u64 {
+		let mut xdif = 0;
+		let mut ydif = 0;
+		if x1 > x2 {
+			xdif = x1 - x2;
+		} else {
+			xdif = x2 - x1;
+		}
+		if y1 > y2 {
+			ydif = y1 - y2;
+		} else {
+			ydif = y2 - y1;
+		}
+		(((xdif).pow(2) + (ydif).pow(2)) as f64).sqrt() as u64
+	}
+
+	pub fn is_target_in_range(&self, attacker_id: u64, target: &Target) -> bool {
+		if let Some(attacker) = self.units.iter().find(|unit| unit.id == attacker_id).cloned() {
+			match target {
+				Target::Unit(target) => {
+					let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+					let max_range = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+						.map(|config| config.max_range)
+						.unwrap_or_default();
+					return dist <= max_range;
+				}
+				Target::Resource(target) => {
+					let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+					let max_range = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+						.map(|config| config.max_range)
+						.unwrap_or_default();
+					return dist <= max_range;
+				}
+				Target::Core(target) => {
+					let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+					let max_range = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+						.map(|config| config.max_range)
+						.unwrap_or_default();
+					return dist <= max_range;
+				}
+				Target::None => {
+					return false;
+				}
+			}
+		}
+		false
+	}
+	
+	
+	
+
+	///
+	/// Fulfill the attack action
+	/// 
+	/// Security:
+	/// - check if attacker exists
+	/// - check if target exists
+	/// 
+	/// Features:
+	/// - attack target
+	/// - calculate damage per tick
+	/// 
+	/// Get the damage of the attacker based on the type of the target from the config
+	/// 
+	pub fn attack(&mut self, attacker_id: u64, target_id: u64) {
+		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
+		let attacker = self.units.iter().find(|unit| unit.id == attacker_id).cloned();
+		let target = self.get_target_by_id(target_id);
+		match (attacker, target) {
+			(Some(attacker), target @ Target::Unit(_)) |
+			(Some(attacker), target @ Target::Resource(_)) |
+			(Some(attacker), target @ Target::Core(_)) => {
+				if self.is_target_in_range(attacker_id, &target) {
+					match target {
+						Target::Unit(mut unit) => {
+							let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+								.unwrap()
+								.dmg_unit;
+							unit.hp -= damage / (self.tick_rate / 1000) as u64;
+							if unit.hp <= 0 {
+								self.units.retain(|unit| unit.id != target_id);
+							}
+						}
+						Target::Resource(mut resource) => {
+							let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+								.unwrap()
+								.dmg_resource;
+							resource.hp -= damage / (self.tick_rate / 1000) as u64;
+							if resource.hp <= 0 {
+								self.resources.retain(|resource| resource.id != target_id);
+							}
+						}
+						Target::Core(mut core) => {
+							let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+								.unwrap()
+								.dmg_core;
+							core.hp -= damage / (self.tick_rate / 1000) as u64;
+							if core.hp <= 0 {
+								self.cores.retain(|core| core.id != target_id);
+							}
+						}
+						_ => {
+							// Handle other cases if needed
+						}
+					}
+				}
+			}
+			_ => {
+				println!("Attacker or target not found");
+			}
+		}
+	}
+	
+	fn handle_moves(&self) {
+		for (id, dir) in self.moves {
+			let unit = self.get_unit_by_id(id).unwrap();
+			unit.x = dir[0] + GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed * 1000 / self.tick_rate;
+			unit.y = dir[1] + GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed * 1000 / self.tick_rate;
+		}
+	}
+
 	pub fn travel_unit(&self, travel: Travel, team_id: u64)
 	{
 		let unit = self.get_unit_by_id(travel.id);
 		match unit {
 			Some(unit) => {
-				if unit.team_id != team_id
+				if unit.team_id == team_id
 				{
-					// this has to be in the walk loop
-					if (unit.x + travel.x >= self.config.width || unit.x + travel.x <= 0)
-						|| (unit.y + travel.y >= self.config.height || unit.y + travel.y <= 0)
-					{
-						// traveling out of bounds
-						println!("Unit with id {:?} is traveling out of bounds. Stopping movement", unit.id);
-						return;
-					}
-					let tickrate = 50;
-					let mut unit_speed = GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed;
-					unit_speed = unit_speed 
+					let length = (travel.x * travel.x + travel.y * travel.y).sqrt();
+					self.moves.push((unit.id, !vec![travel.x / length, travel.y / length]));
+					// // this has to be in the walk loop
+					// if (unit.x + travel.x >= self.config.width || unit.x + travel.x <= 0)
+					// 	|| (unit.y + travel.y >= self.config.height || unit.y + travel.y <= 0)
+					// {
+					// 	// traveling out of bounds
+					// 	println!("Unit with id {:?} is traveling out of bounds. Stopping movement", unit.id);
+					// 	return;
+					// }
+					// let tickrate = self.tick_rate;
+					// let mut unit_speed = GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed;
+					// unit_speed = unit_speed 
 				}
 			}
 			None => {
@@ -222,12 +410,58 @@ impl Game {
 					self.create_unit(team_id, create.type_id);
 				}
 				Action::Attack(attack) => {
-					println!("Attack: {:?}", attack);
+					self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
 				}
 				Action::Travel(travel) => {
 					println!("Travel: {:?}", travel);
 				}
 			}
 		}
+		let targets: Vec<_> = self.targets.iter().cloned().collect();
+		for (attacker_id, target_id) in targets {
+			let attacker = self.units.iter().find(|unit| unit.id == attacker_id).cloned();
+			let target = self.get_target_by_id(target_id.clone());
+			match (attacker, target) {
+				(Some(attacker), Target::Unit(target)) => {
+					if attacker.team_id != target.team_id {
+						Game::attack(self, attacker.id, target.id);
+					}
+				}
+				(Some(attacker), Target::Resource(target)) => {
+					self.attack(attacker.id, target.id);
+				}
+				(Some(attacker), Target::Core(target)) => {
+					if attacker.team_id != target.team_id {
+						self.attack(attacker.id, target.id);
+					}
+				}
+				_ => {
+					println!("Attacker or target not found");
+				}
+			}
+		}
+	}
+
+
+	pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, x: u64, y: u64) {
+		let unit = Unit::new(self, team_id, type_id, x, y);
+		match unit {
+			Some(unit) => {
+				self.units.push(unit);
+			}
+			None => {
+				println!("Unit could not be created");
+			}
+		}
+	}
+
+	pub fn create_fake_resource(&mut self, x: u64, y: u64) {
+		let resource = Resource::new(0, 100, x, y, 100);
+		self.resources.push(resource);
+	}
+
+	pub fn create_fake_core(&mut self, team_id: u64, x: u64, y: u64) {
+		let core = Core::new(team_id, x, y);
+		self.cores.push(core);
 	}
 }
