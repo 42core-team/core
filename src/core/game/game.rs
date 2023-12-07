@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use uuid::Uuid;
 
-use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::Action};
+use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::{Action, travel::{self, Travel}}};
 
 #[derive(Debug)]
 pub struct Game {
@@ -117,6 +117,16 @@ impl Game {
 		None
 	}
 
+	pub fn get_unit_by_id(&self, unit_id: u64) -> Option<&Unit> {
+
+		for unit in self.units.iter() {
+			if unit.id == unit_id {
+				return Some(unit);
+			}
+		}
+		None
+	}
+
 	///
 	/// Function to create a new unit
 	/// 
@@ -164,6 +174,32 @@ impl Game {
 		}
 	}
 
+	pub fn travel_unit(&self, travel: Travel, team_id: u64)
+	{
+		let unit = self.get_unit_by_id(travel.id);
+		match unit {
+			Some(unit) => {
+				if unit.team_id != team_id
+				{
+					// this has to be in the walk loop
+					if (unit.x + travel.x >= self.config.width || unit.x + travel.x <= 0)
+						|| (unit.y + travel.y >= self.config.height || unit.y + travel.y <= 0)
+					{
+						// traveling out of bounds
+						println!("Unit with id {:?} is traveling out of bounds. Stopping movement", unit.id);
+						return;
+					}
+					let tickrate = 50;
+					let mut unit_speed = GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed;
+					unit_speed = unit_speed 
+				}
+			}
+			None => {
+				println!("Unit with id {:?} not found", travel.id)
+			}
+		}
+	}
+	
 	///
 	/// Handel the update of the game
 	/// 
