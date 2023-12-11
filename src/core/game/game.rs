@@ -107,7 +107,6 @@ impl Game {
 				return Some(team);
 			}
 		}
-
 		None
 	}
 
@@ -286,9 +285,6 @@ impl Game {
 		}
 		false
 	}
-	
-	
-	
 
 	///
 	/// Fulfill the attack action
@@ -352,14 +348,59 @@ impl Game {
 		}
 	}
 	
+	///
+	/// Handle all the moves
+	/// 
+	/// Security:
+	/// - checking out of bounds move
+	/// - check if target to move exists
+	/// 
+	/// Features:
+	/// - moves all the units in the moves array in their direction (with bounds check)
+	/// 
+	/// Gets the unit from the moves array and moves it.
+	/// 
 	fn handle_moves(&self) {
 		for (id, dir) in self.moves {
 			let unit = self.get_unit_by_id(id).unwrap();
-			unit.x = dir[0] + GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed * 1000 / self.tick_rate;
-			unit.y = dir[1] + GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed * 1000 / self.tick_rate;
+			let speed + GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed * 1000 / self.tick_rate;
+
+			// check if unit moves out of bounds and if yes just set the unit to the border
+			if (unit.x + dir[0] + speed >= self.config.map_size_x)
+			{
+				// set x to 0?
+				unit.x = self.config.map_size_x;
+			}
+			if (unit.y + dir[1] + speed >= self.config.map_size_y)
+			{
+				// set y to 0?
+				unit.y = self.config.map_size_y;
+			}
+
+			// move unit in direction
+			if (unit.x != self.config.map_size_x)
+			{
+				unit.x += dir[0] + speed;
+			}
+			if (unit.y != self.config.map_size_y)
+			{
+				unit.y += dir[1] + speed;
+			}
 		}
 	}
 
+	///
+	/// Validates move requests and adds them to the moves array
+	/// 
+	/// Security:
+	/// - checking if unit is in moves array
+	/// - check if unit belong to given team
+	/// 
+	/// Features:
+	/// - add unit to moves array if not already in it
+	/// - update direction of unit if already in moves array
+	/// - remove unit from moves array if x and y are 0
+	/// 
 	pub fn travel_unit(&self, travel: Travel, team_id: u64)
 	{
 		let unit = self.get_unit_by_id(travel.id);
@@ -367,19 +408,39 @@ impl Game {
 			Some(unit) => {
 				if unit.team_id == team_id
 				{
+					if (!self.moves.contains(unit))
+					{
+						println!("Unit with id {:?} is not int the moving arr", unit.id);
+						return;
+					}
+					if (travel.x == 0 && travel.y == 0)
+					{
+						// remove unit from moves list
+						self.moves.retain(|unit| unit.0 != travel.id); // if this breaks because it removes all the instances change this
+						println!("Unit with id {:?} is stops moving", unit.id);
+						return;
+					}
+
 					let length = (travel.x * travel.x + travel.y * travel.y).sqrt();
-					self.moves.push((unit.id, !vec![travel.x / length, travel.y / length]));
-					// // this has to be in the walk loop
-					// if (unit.x + travel.x >= self.config.width || unit.x + travel.x <= 0)
-					// 	|| (unit.y + travel.y >= self.config.height || unit.y + travel.y <= 0)
-					// {
-					// 	// traveling out of bounds
-					// 	println!("Unit with id {:?} is traveling out of bounds. Stopping movement", unit.id);
-					// 	return;
-					// }
-					// let tickrate = self.tick_rate;
-					// let mut unit_speed = GameConfig::get_unit_config_by_type_id(unit.type_id).unwrap().speed;
-					// unit_speed = unit_speed 
+					if (!sef.moves.contains(unit)) // check if unit is already in the moves array and if not add it
+					{
+						self.moves.push((unit.id, !vec![travel.x / length, travel.y / length]));
+					}
+					else // if unit is already in the moves array just update the direction
+					{
+						for (id, dir) in self.moves
+						{
+							if (id == unit.id)
+							{
+								dir[0] = travel.x / length;
+								dir[1] = travel.y / length;
+							}
+						}
+					}
+				}
+				else 
+				{
+					println!("Unable to move Unit with id {:?} because it doesnt belong to team {:?}", unit.id team_id);
 				}
 			}
 			None => {
