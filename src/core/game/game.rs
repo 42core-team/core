@@ -28,7 +28,7 @@ impl Game {
 			resources: vec![],
 			units: vec![],
 			targets: vec![],
-			tick_rate: 3000,
+			tick_rate: 50,
 			last_tick_time: get_ms(),
 			time_since_last_tick: 0,
 		}
@@ -112,6 +112,45 @@ impl Game {
 
 	pub fn get_team_by_id_mut(&mut self, team_id: u64) -> Option<&mut Team> {
 		self.teams.iter_mut().find(|team| team.id == team_id)
+	}
+
+	pub fn get_unit_by_id(&self, id: u64) -> Option<&Unit> {
+		for unit in self.units.iter() {
+			if unit.id == id {
+				return Some(unit);
+			}
+		}
+		None
+	}
+
+	pub fn get_unit_by_id_mut(&mut self, id: u64) -> Option<&mut Unit> {
+		self.units.iter_mut().find(|unit| unit.id == id)
+	}
+
+	pub fn get_resource_by_id(&self, id: u64) -> Option<&Resource> {
+		for resource in self.resources.iter() {
+			if resource.id == id {
+				return Some(resource);
+			}
+		}
+		None
+	}
+
+	pub fn get_resource_by_id_mut(&mut self, id: u64) -> Option<&mut Resource> {
+		self.resources.iter_mut().find(|resource| resource.id == id)
+	}
+
+	pub fn get_core_by_id(&self, id: u64) -> Option<&Core> {
+		for core in self.cores.iter() {
+			if core.id == id {
+				return Some(core);
+			}
+		}
+		None
+	}
+
+	pub fn get_core_by_id_mut(&mut self, id: u64) -> Option<&mut Core> {
+		self.cores.iter_mut().find(|core| core.id == id)
 	}
 	
 
@@ -302,30 +341,30 @@ impl Game {
 			(Some(attacker), target @ Target::Core(_)) => {
 				if self.is_target_in_range(attacker_id, &target) {
 					match target {
-						Target::Unit(mut unit) => {
+						Target::Unit(unit) => {
 							let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
 								.unwrap()
 								.dmg_unit;
-							unit.hp -= damage / (self.tick_rate / 1000) as u64;
-							if unit.hp <= 0 {
+							self.get_unit_by_id_mut(unit.id).unwrap().hp -= (damage / (1000 / self.tick_rate as u64)) as u64;
+							if self.get_unit_by_id_mut(unit.id).unwrap().hp <= 0 {
 								self.units.retain(|unit| unit.id != target_id);
 							}
 						}
-						Target::Resource(mut resource) => {
+						Target::Resource(resource) => {
 							let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
 								.unwrap()
 								.dmg_resource;
-							resource.hp -= damage / (self.tick_rate / 1000) as u64;
-							if resource.hp <= 0 {
+							self.get_resource_by_id_mut(resource.id).unwrap().hp -= (damage / (1000 / self.tick_rate as u64)) as u64;
+							if self.get_resource_by_id_mut(resource.id).unwrap().hp <= 0 {
 								self.resources.retain(|resource| resource.id != target_id);
 							}
 						}
-						Target::Core(mut core) => {
+						Target::Core(core) => {
 							let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
 								.unwrap()
 								.dmg_core;
-							core.hp -= damage / (self.tick_rate / 1000) as u64;
-							if core.hp <= 0 {
+							self.get_core_by_id_mut(core.id).unwrap().hp -= (damage / (1000 / self.tick_rate as u64)) as u64;
+							if self.get_core_by_id_mut(core.id).unwrap().hp <= 0 {
 								self.cores.retain(|core| core.id != target_id);
 							}
 						}
@@ -333,6 +372,8 @@ impl Game {
 							// Handle other cases if needed
 						}
 					}
+				} else {
+					println!("Target not in range");
 				}
 			}
 			_ => {
@@ -348,6 +389,7 @@ impl Game {
 	/// a valid json to send with netcat is:
 	/// [{"Create":{"type_id":3}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]
 	/// [{"Create":{"type_id":1}}]
+	/// [{"Attack":{"attacker_id":6,"target_id":6}}]
 	/// 
 	/// To uns netcat:
 	/// ```sh
