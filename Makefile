@@ -1,7 +1,7 @@
 .PHONY: run visualizer game all clean fclean
 
 run: all
-	RUST_BACKTRACE=1 cargo run --bin game | cargo run --bin visualizer
+	cargo run --bin game | cargo run --bin visualizer
 
 visualizer:
 	cargo run --bin visualizer
