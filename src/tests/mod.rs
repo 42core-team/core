@@ -49,7 +49,7 @@ mod tests {
 		assert_eq!(game.units.len(), 0);
 		assert_eq!(game.teams[0].balance, 100);
 		assert_eq!(game.teams[1].balance, 100);
-		game.create_unit(0, 1);
+		game.create_unit(game.teams[0].id, 1);
 		assert_eq!(game.units.len(), 1);
 		assert_eq!(game.teams[0].balance, 100 - GameConfig::get_unit_config_by_type_id(1).unwrap().cost);
 		// Create another unit for team 0
@@ -125,12 +125,12 @@ mod tests {
 		let game = get_fake_game();
 		
 		let core1 = game.get_core_by_team_id(0);
-		assert_eq!(core1.unwrap().x, 2);
-		assert_eq!(core1.unwrap().y, 2);
+		assert_eq!(core1.unwrap().x, 2000);
+		assert_eq!(core1.unwrap().y, 2000);
 
 		let core2 = game.get_core_by_team_id(1);
-		assert_eq!(core2.unwrap().x, 4);
-		assert_eq!(core2.unwrap().y, 4);
+		assert_eq!(core2.unwrap().x, 4000);
+		assert_eq!(core2.unwrap().y, 4000);
 
 		let core3 = game.get_core_by_team_id(2);
 		assert_eq!(core3, None);
@@ -463,36 +463,41 @@ mod tests {
 		let c1_id = game.cores[0].id;
 		let c2_id = game.cores[1].id;
 
+		let mut before_hp = game.units[1].hp;
 		// 0 -> 1: false
 		game.attack(unit_id1, unit_id2);
 		// hp of unit2 should not change -> be the same as in the GameConfig
-		assert_eq!(game.units[1].hp , GameConfig::get_unit_config_by_type_id(unit2.type_id).unwrap().hp);
+		assert_eq!(game.units[1].hp , before_hp);
 		// 0 -> 2: true
-		println!("{:?}", game.units[2].hp);
+		before_hp = game.units[2].hp;
 		game.attack(unit_id1, unit_id3);
-		println!("{:?}", game.units[2].hp);
 		// hp of unit3 should change -> be lower than in the GameConfig
-		assert!(game.units[2].hp < GameConfig::get_unit_config_by_type_id(unit3.type_id).unwrap().hp);
+		assert!(game.get_unit_by_id(unit_id3).unwrap().hp < before_hp);
 		// 0 -> 3: false
+		before_hp = game.units[3].hp;
 		game.attack(unit_id1, unit_id4);
 		// hp of unit4 should not change -> be the same as in the GameConfig
-		assert_eq!(game.units[3].hp , GameConfig::get_unit_config_by_type_id(unit4.type_id).unwrap().hp);
+		assert_eq!(game.units[3].hp , before_hp);
 		// 0 -> r: false
+		before_hp = game.resources[0].hp;
 		game.attack(unit_id1, r_id);
 		// hp of resource should not change -> be the same as in the GameConfig
-		assert!(game.resources[0].hp > 0);
+		assert!(game.resources[0].hp == before_hp);
 		// 0 -> c1: true
+		before_hp = game.cores[0].hp;
 		game.attack(unit_id1, c1_id);
 		// hp of core1 should change -> be lower than in the GameConfig
-		assert!(game.cores[0].hp < GameConfig::patch_0_1_0().core_hp);
+		assert!(game.cores[0].hp < before_hp);
 		// 0 -> c2: false
+		before_hp = game.cores[1].hp;
 		game.attack(unit_id1, c2_id);
 		// hp of core2 should not change -> be the same as in the GameConfig
-		assert_eq!(game.cores[1].hp , GameConfig::patch_0_1_0().core_hp);
+		assert_eq!(game.cores[1].hp , before_hp);
 		// 1 -> 2: false
+		before_hp = game.units[2].hp;
 		game.attack(unit_id2, unit_id3);
 		// hp of unit3 should not change -> be the same as in the GameConfig
-		assert_eq!(game.units[2].hp , GameConfig::get_unit_config_by_type_id(unit3.type_id).unwrap().hp);
+		assert_eq!(game.units[2].hp , before_hp);
 		// 1 -> 3: false
 		game.attack(unit_id2, unit_id4);
 		// hp of unit4 should not change -> be the same as in the GameConfig
@@ -502,41 +507,49 @@ mod tests {
 		// hp of resource should not change -> be the same as in the GameConfig
 		assert_eq!(game.resources[0].hp , game.resources[0].hp);
 		// 1 -> c1: false
+		before_hp = game.cores[0].hp;
 		game.attack(unit_id2, c1_id);
 		// hp of core1 should not change -> be the same as in the GameConfig
-		assert_eq!(game.cores[0].hp , GameConfig::patch_0_1_0().core_hp);
+		assert_eq!(game.cores[0].hp , before_hp);
 		// 1 -> c2: false
+		before_hp = game.cores[1].hp;
 		game.attack(unit_id2, c2_id);
 		// hp of core2 should not change -> be the same as in the GameConfig
-		assert_eq!(game.cores[1].hp , GameConfig::patch_0_1_0().core_hp);
+		assert_eq!(game.cores[1].hp , before_hp);
 		// 2 -> 3: false
+		before_hp = game.units[3].hp;
 		game.attack(unit_id3, unit_id4);
 		// hp of unit4 should not change -> be the same as in the GameConfig
-		assert_eq!(game.units[3].hp , GameConfig::get_unit_config_by_type_id(unit4.type_id).unwrap().hp);
+		assert_eq!(game.units[3].hp , before_hp);
 		// 2 -> r: false
+		before_hp = game.resources[0].hp;
 		game.attack(unit_id3, r_id);
 		// hp of resource should not change -> be the same as in the GameConfig
-		assert_eq!(game.resources[0].hp , game.resources[0].hp);
+		assert_eq!(game.resources[0].hp , before_hp);
 		// 2 -> c1: true
+		before_hp = game.cores[0].hp;
 		game.attack(unit_id3, c1_id);
 		// hp of core1 should change -> be lower than in the GameConfig
-		assert!(game.cores[0].hp < GameConfig::patch_0_1_0().core_hp);
+		assert!(game.cores[0].hp < before_hp);
 		// 2 -> c2: false
 		game.attack(unit_id3, c2_id);
 		// hp of core2 should not change -> be the same as in the GameConfig
 		assert_eq!(game.cores[1].hp , GameConfig::patch_0_1_0().core_hp);
 		// 3 -> r: false
+		before_hp = game.resources[0].hp;
 		game.attack(unit_id4, r_id);
 		// hp of resource should not change -> be the same as in the GameConfig
-		assert_eq!(game.resources[0].hp , game.resources[0].hp);
+		assert_eq!(game.resources[0].hp , before_hp);
 		// 3 -> c1: false
+		before_hp = game.cores[0].hp;
 		game.attack(unit_id4, c1_id);
 		// hp of core1 should not change -> be the same as in the GameConfig
-		assert_eq!(game.cores[0].hp , GameConfig::patch_0_1_0().core_hp);
+		assert_eq!(game.cores[0].hp , before_hp);
 		// 3 -> c2: false
+		before_hp = game.cores[1].hp;
 		game.attack(unit_id4, c2_id);
 		// hp of core2 should not change -> be the same as in the GameConfig
-		assert_eq!(game.cores[1].hp , GameConfig::patch_0_1_0().core_hp);
+		assert_eq!(game.cores[1].hp , before_hp);
 
 	}
 
