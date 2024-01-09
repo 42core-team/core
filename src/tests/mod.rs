@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use lib::game::{Team, Game, GameConfig};
+	use lib::game::{Team, Game, GameConfig, helper::{Target, target}};
 
 
 	fn get_fake_game() -> Game{
@@ -49,7 +49,7 @@ mod tests {
 		assert_eq!(game.units.len(), 0);
 		assert_eq!(game.teams[0].balance, 100);
 		assert_eq!(game.teams[1].balance, 100);
-		game.create_unit(0, 1);
+		game.create_unit(game.teams[0].id, 1);
 		assert_eq!(game.units.len(), 1);
 		assert_eq!(game.teams[0].balance, 100 - GameConfig::get_unit_config_by_type_id(1).unwrap().cost);
 		// Create another unit for team 0
@@ -125,12 +125,12 @@ mod tests {
 		let game = get_fake_game();
 		
 		let core1 = game.get_core_by_team_id(0);
-		assert_eq!(core1.unwrap().x, 2);
-		assert_eq!(core1.unwrap().y, 2);
+		assert_eq!(core1.unwrap().x, 2000);
+		assert_eq!(core1.unwrap().y, 2000);
 
 		let core2 = game.get_core_by_team_id(1);
-		assert_eq!(core2.unwrap().x, 4);
-		assert_eq!(core2.unwrap().y, 4);
+		assert_eq!(core2.unwrap().x, 4000);
+		assert_eq!(core2.unwrap().y, 4000);
 
 		let core3 = game.get_core_by_team_id(2);
 		assert_eq!(core3, None);
@@ -226,12 +226,330 @@ mod tests {
 	}
 
 	#[test]
-	fn wait_till_next_tick() {
-
+	///
+	/// Generate 10000 ids and check that they are unique
+	/// 
+	fn generate_u64_id() {
+		let mut ids: Vec<u64> = Vec::new();
+		for _ in 0..10000 {
+			let id = Game::generate_u64_id();
+			assert!(!ids.contains(&id));
+			ids.push(id);
+		}
 	}
 
 	#[test]
-	fn generate_u64_id() {
+	fn get_target_by_id() {
+		let mut game = get_fake_game();
+		game.create_unit(0, 1);
+		for unit in game.units.iter() {
+			let target = game.get_target_by_id(unit.id);
+			match target {
+				Target::Unit(_) => {
+					assert!(true);
+				}
+				Target::Core(_) => {
+					assert!(false);
+				}
+				Target::Resource(_) => {
+					assert!(false);
+				}
+				Target::None => {
+					assert!(false);
+				}
+			}
+		}
+	}
+
+	#[test]
+	///
+	/// Units:
+	/// 0: (2000, 2000)
+	/// 1: (9000, 9000)
+	/// 2: (2100, 2100)
+	/// 3: (8000, 8000)
+	/// 
+	/// Resources:
+	/// 0: (5000, 5000)
+	/// 
+	/// Cores:
+	/// 0: (2000, 2000)
+	/// 1: (4000, 4000)
+	/// 
+	/// Actual Distances:
+	/// 0 -> 1: 9899
+	/// 0 -> 2: 141
+	/// 0 -> 3: 8485
+	/// 
+	/// 0 -> r: 4242
+	/// 0 -> c1: 0
+	/// 0 -> c2: 2828
+	/// 
+	/// 1 -> 2: 9758
+	/// 1 -> 3: 1414
+	/// 
+	/// 1 -> r: 5656
+	/// 1 -> c1: 9899
+	/// 1 -> c2: 7071
+	/// 
+	/// 2 -> 3: 8343
+	/// 
+	/// 2 -> r: 4101
+	/// 2 -> c1: 141
+	/// 2 -> c2: 2687
+	/// 
+	/// 3 -> r: 4242
+	/// 3 -> c1: 8485
+	/// 3 -> c2: 5656
+	/// 
+	/// Ranges:
+	/// 0: 1000
+	/// 1: 1000
+	/// 2: 200
+	/// 3: 200
+	/// 
+	/// Result:
+	/// 0 -> 1: false
+	/// 0 -> 2: true
+	/// 0 -> 3: false
+	/// 0 -> r: false
+	/// 0 -> c1: true
+	/// 0 -> c2: false
+	/// 1 -> 2: false
+	/// 1 -> 3: false
+	/// 1 -> r: false
+	/// 1 -> c1: false
+	/// 1 -> c2: false
+	/// 2 -> 3: false
+	/// 2 -> r: false
+	/// 2 -> c1: true
+	/// 2 -> c2: false
+	/// 3 -> r: false
+	/// 3 -> c1: false
+	/// 3 -> c2: false
+	///
+	fn is_target_in_range() {
+		let mut game = get_fake_game();
+		game.create_fake_resource(5000, 5000);
+		game.create_fake_unit(0, 1, 2000, 2000);
+		game.create_fake_unit(0, 2, 9000, 9000);
+		game.create_fake_unit(1, 1, 2100, 2100);
+		game.create_fake_unit(1, 2, 8000, 8000);
+
+		let unit1 = game.units[0].clone();
+		let unit2 = game.units[1].clone();
+		let unit3 = game.units[2].clone();
+		let unit4 = game.units[3].clone();
+
+		let unit_id1 = unit1.id;
+		let unit_id2 = unit2.id;
+		let unit_id3 = unit3.id;
+		let unit_id4 = unit4.id;
+
+		let u1 = game.get_target_by_id(unit_id1);
+		let u2 = game.get_target_by_id(unit_id2);
+		let u3 = game.get_target_by_id(unit_id3);
+		let u4 = game.get_target_by_id(unit_id4);
+		let r = game.get_target_by_id(game.resources[0].id);
+		let c1 = game.get_target_by_id(game.cores[0].id);
+		let c2 = game.get_target_by_id(game.cores[1].id);
+		
+		assert!(!game.is_target_in_range(unit1.id, &u2));
+		assert!(game.is_target_in_range(unit1.id, &u3));
+		assert!(!game.is_target_in_range(unit1.id, &u4));
+		assert!(!game.is_target_in_range(unit1.id, &r));
+		assert!(game.is_target_in_range(unit1.id, &c1));
+		assert!(!game.is_target_in_range(unit1.id, &c2));
+		assert!(!game.is_target_in_range(unit2.id, &u3));
+		assert!(!game.is_target_in_range(unit2.id, &u4));
+		assert!(!game.is_target_in_range(unit2.id, &r));
+		assert!(!game.is_target_in_range(unit2.id, &c1));
+		assert!(!game.is_target_in_range(unit2.id, &c2));
+		assert!(!game.is_target_in_range(unit3.id, &u4));
+		assert!(!game.is_target_in_range(unit3.id, &r));
+		assert!(game.is_target_in_range(unit3.id, &c1));
+		assert!(!game.is_target_in_range(unit3.id, &c2));
+		assert!(!game.is_target_in_range(unit4.id, &r));
+		assert!(!game.is_target_in_range(unit4.id, &c1));
+		assert!(!game.is_target_in_range(unit4.id, &c2));
+	}
+
+	#[test]
+	///
+	/// Units:
+	/// 0: (2000, 2000)
+	/// 1: (9000, 9000)
+	/// 2: (2100, 2100)
+	/// 3: (8000, 8000)
+	/// 
+	/// Resources:
+	/// 0: (5000, 5000)
+	/// 
+	/// Cores:
+	/// 0: (2000, 2000)
+	/// 1: (4000, 4000)
+	/// 
+	/// Actual Distances:
+	/// 0 -> 1: 9899
+	/// 0 -> 2: 141
+	/// 0 -> 3: 8485
+	/// 
+	/// 0 -> r: 4242
+	/// 0 -> c1: 0
+	/// 0 -> c2: 2828
+	/// 
+	/// 1 -> 2: 9758
+	/// 1 -> 3: 1414
+	/// 
+	/// 1 -> r: 5656
+	/// 1 -> c1: 9899
+	/// 1 -> c2: 7071
+	/// 
+	/// 2 -> 3: 8343
+	/// 
+	/// 2 -> r: 4101
+	/// 2 -> c1: 141
+	/// 2 -> c2: 2687
+	/// 
+	/// 3 -> r: 4242
+	/// 3 -> c1: 8485
+	/// 3 -> c2: 5656
+	/// 
+	/// Ranges:
+	/// 0: 1000
+	/// 1: 1000
+	/// 2: 200
+	/// 3: 200
+	/// 
+	/// Result:
+	/// 0 -> 1: false
+	/// 0 -> 2: true
+	/// 0 -> 3: false
+	/// 0 -> r: false
+	/// 0 -> c1: true
+	/// 0 -> c2: false
+	/// 1 -> 2: false
+	/// 1 -> 3: false
+	/// 1 -> r: false
+	/// 1 -> c1: false
+	/// 1 -> c2: false
+	/// 2 -> 3: false
+	/// 2 -> r: false
+	/// 2 -> c1: true
+	/// 2 -> c2: false
+	/// 3 -> r: false
+	/// 3 -> c1: false
+	/// 3 -> c2: false
+	/// 
+	fn attack() {
+		let mut game = get_fake_game();
+		game.create_fake_resource(5000, 5000);
+		game.create_fake_unit(0, 1, 2000, 2000);
+		game.create_fake_unit(0, 2, 9000, 9000);
+		game.create_fake_unit(1, 1, 2100, 2100);
+		game.create_fake_unit(1, 2, 8000, 8000);
+
+		let unit1 = game.units[0].clone();
+		let unit2 = game.units[1].clone();
+		let unit3 = game.units[2].clone();
+		let unit4 = game.units[3].clone();
+
+		let unit_id1 = unit1.id;
+		let unit_id2 = unit2.id;
+		let unit_id3 = unit3.id;
+		let unit_id4 = unit4.id;
+
+		let r_id = game.resources[0].id;
+		let c1_id = game.cores[0].id;
+		let c2_id = game.cores[1].id;
+
+		let mut before_hp = game.units[1].hp;
+		// 0 -> 1: false
+		game.attack(unit_id1, unit_id2);
+		// hp of unit2 should not change -> be the same as in the GameConfig
+		assert_eq!(game.units[1].hp , before_hp);
+		// 0 -> 2: true
+		before_hp = game.units[2].hp;
+		game.attack(unit_id1, unit_id3);
+		// hp of unit3 should change -> be lower than in the GameConfig
+		assert!(game.get_unit_by_id(unit_id3).unwrap().hp < before_hp);
+		// 0 -> 3: false
+		before_hp = game.units[3].hp;
+		game.attack(unit_id1, unit_id4);
+		// hp of unit4 should not change -> be the same as in the GameConfig
+		assert_eq!(game.units[3].hp , before_hp);
+		// 0 -> r: false
+		before_hp = game.resources[0].hp;
+		game.attack(unit_id1, r_id);
+		// hp of resource should not change -> be the same as in the GameConfig
+		assert!(game.resources[0].hp == before_hp);
+		// 0 -> c1: true
+		before_hp = game.cores[0].hp;
+		game.attack(unit_id1, c1_id);
+		// hp of core1 should change -> be lower than in the GameConfig
+		assert!(game.cores[0].hp < before_hp);
+		// 0 -> c2: false
+		before_hp = game.cores[1].hp;
+		game.attack(unit_id1, c2_id);
+		// hp of core2 should not change -> be the same as in the GameConfig
+		assert_eq!(game.cores[1].hp , before_hp);
+		// 1 -> 2: false
+		before_hp = game.units[2].hp;
+		game.attack(unit_id2, unit_id3);
+		// hp of unit3 should not change -> be the same as in the GameConfig
+		assert_eq!(game.units[2].hp , before_hp);
+		// 1 -> 3: false
+		game.attack(unit_id2, unit_id4);
+		// hp of unit4 should not change -> be the same as in the GameConfig
+		assert_eq!(game.units[3].hp , GameConfig::get_unit_config_by_type_id(unit4.type_id).unwrap().hp);
+		// 1 -> r: false
+		game.attack(unit_id2, r_id);
+		// hp of resource should not change -> be the same as in the GameConfig
+		assert_eq!(game.resources[0].hp , game.resources[0].hp);
+		// 1 -> c1: false
+		before_hp = game.cores[0].hp;
+		game.attack(unit_id2, c1_id);
+		// hp of core1 should not change -> be the same as in the GameConfig
+		assert_eq!(game.cores[0].hp , before_hp);
+		// 1 -> c2: false
+		before_hp = game.cores[1].hp;
+		game.attack(unit_id2, c2_id);
+		// hp of core2 should not change -> be the same as in the GameConfig
+		assert_eq!(game.cores[1].hp , before_hp);
+		// 2 -> 3: false
+		before_hp = game.units[3].hp;
+		game.attack(unit_id3, unit_id4);
+		// hp of unit4 should not change -> be the same as in the GameConfig
+		assert_eq!(game.units[3].hp , before_hp);
+		// 2 -> r: false
+		before_hp = game.resources[0].hp;
+		game.attack(unit_id3, r_id);
+		// hp of resource should not change -> be the same as in the GameConfig
+		assert_eq!(game.resources[0].hp , before_hp);
+		// 2 -> c1: true
+		before_hp = game.cores[0].hp;
+		game.attack(unit_id3, c1_id);
+		// hp of core1 should change -> be lower than in the GameConfig
+		assert!(game.cores[0].hp < before_hp);
+		// 2 -> c2: false
+		game.attack(unit_id3, c2_id);
+		// hp of core2 should not change -> be the same as in the GameConfig
+		assert_eq!(game.cores[1].hp , GameConfig::patch_0_1_0().core_hp);
+		// 3 -> r: false
+		before_hp = game.resources[0].hp;
+		game.attack(unit_id4, r_id);
+		// hp of resource should not change -> be the same as in the GameConfig
+		assert_eq!(game.resources[0].hp , before_hp);
+		// 3 -> c1: false
+		before_hp = game.cores[0].hp;
+		game.attack(unit_id4, c1_id);
+		// hp of core1 should not change -> be the same as in the GameConfig
+		assert_eq!(game.cores[0].hp , before_hp);
+		// 3 -> c2: false
+		before_hp = game.cores[1].hp;
+		game.attack(unit_id4, c2_id);
+		// hp of core2 should not change -> be the same as in the GameConfig
+		assert_eq!(game.cores[1].hp , before_hp);
 
 	}
 
