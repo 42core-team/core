@@ -26,7 +26,7 @@ impl Game {
 			resources: vec![],
 			units: vec![],
 			targets: vec![],
-			tick_rate: 1000,
+			tick_rate: 3000,
 			last_tick_time: get_ms(),
 			time_since_last_tick: 0,
 		}
@@ -401,9 +401,8 @@ impl Game {
 	/// Handel the update of the game
 	/// 
 	/// a valid json to send with netcat is:
-	/// [{"Create":{"type_id":3}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]
-	/// [{"Create":{"type_id":1}}]
-	/// [{"Attack":{"attacker_id":6,"target_id":6}}]
+	/// {"actions":[{"Create":{"type_id":0}}]}
+	/// {"actions":[{"Create":{"type_id":0}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]}
 	/// 
 	/// To uns netcat:
 	/// ```sh
