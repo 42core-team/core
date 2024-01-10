@@ -561,7 +561,7 @@ mod tests {
 		let (tx1, rx1) = oneshot::channel();
 		let (tx2, rx2) = oneshot::channel();
 		let (tx3, rx3) = oneshot::channel();
-		let mut tick_rate: u64 = 50;
+		let mut _tick_rate: u64 = 50;
 		
 
 		tokio::spawn(async move {
@@ -582,8 +582,6 @@ mod tests {
 					let t1 = queue.remove(0);
 					let t2 = queue.remove(0);
 					let mut game = Game::new(vec![t1, t2]);
-					tick_rate = game.tick_rate as u64;
-					
 					
 					tokio::spawn(async move {
 						println!("Game start!");
@@ -597,7 +595,7 @@ mod tests {
 		loop {
 			select! {
 				_ = rx3 => {
-					tokio::time::sleep(tokio::time::Duration::from_millis(tick_rate)).await;
+					tokio::time::sleep(tokio::time::Duration::from_millis(_tick_rate)).await;
 					break;
 				}
 			}
@@ -605,16 +603,16 @@ mod tests {
 
 		// Spawn the first secondary thread
 		tokio::spawn(async move {
-			let stream = TcpStream::connect("127.0.0.1:4242").await.unwrap();
+			let _stream = TcpStream::connect("127.0.0.1:4242").await.unwrap();
 			println!("Connected to server!");
 			//wait for a second
-			tokio::time::sleep(tokio::time::Duration::from_millis(tick_rate * 3)).await;
+			tokio::time::sleep(tokio::time::Duration::from_millis(_tick_rate * 3)).await;
 			let _ = tx1.send("");
 		});
 
 		// Spawn the second secondary thread
 		tokio::spawn(async move {
-			let stream = TcpStream::connect("127.0.0.1:4242").await.unwrap();
+			let _stream = TcpStream::connect("127.0.0.1:4242").await.unwrap();
 			println!("Connected to server!");
 			loop {
 				select! {
@@ -624,7 +622,7 @@ mod tests {
 				}
 			}
 	
-			tokio::time::sleep(tokio::time::Duration::from_millis(tick_rate * 2)).await;
+			tokio::time::sleep(tokio::time::Duration::from_millis(_tick_rate * 2)).await;
 			let _ = tx2.send("");
 		});
 
