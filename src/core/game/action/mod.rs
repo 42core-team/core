@@ -7,6 +7,9 @@
 pub mod action;
 pub use action::Action;
 
+pub mod request;
+pub use request::Request;
+
 pub mod travel;
 pub use travel::Travel;
 
