@@ -103,13 +103,15 @@ fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
     result
 }
 
-fn remove_after_last_brace(input: &str) -> String {
-    let reversed_string: String = input.chars().rev().collect();
+// in case the serde json parser is not able to parse the json string
+// 
+// fn remove_after_last_brace(input: &str) -> String {
+//     let reversed_string: String = input.chars().rev().collect();
 
-    if let Some(index) = reversed_string.find(']') {
-        let truncated_string = &reversed_string[index..].chars().rev().collect::<String>();
-        truncated_string.to_string()
-    } else {
-        input.to_string()
-    }
-}
+//     if let Some(index) = reversed_string.find(']') {
+//         let truncated_string = &reversed_string[index..].chars().rev().collect::<String>();
+//         truncated_string.to_string()
+//     } else {
+//         input.to_string()
+//     }
+// }
