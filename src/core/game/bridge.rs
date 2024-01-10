@@ -4,6 +4,8 @@
 //!
 //!
 
+use std::ops::Add;
+
 use super::{action::{Action, Request}, State};
 use serde_json;
 use tokio::{
@@ -63,7 +65,7 @@ pub(crate) fn bridge(
         loop {
             match mscp_to_socket_receiver.recv().await {
                 Some(state) => {
-                    let json_string = serde_json::to_string(&state).unwrap();
+                    let json_string = serde_json::to_string(&state).unwrap().add("\n");
                     if let Err(_) = writer.write_all(json_string.as_bytes()).await {
                         println!("Send Error in bridge");
                         let _ = writer.shutdown().await;
@@ -104,7 +106,7 @@ fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
 }
 
 // in case the serde json parser is not able to parse the json string
-// 
+//
 // fn remove_after_last_brace(input: &str) -> String {
 //     let reversed_string: String = input.chars().rev().collect();
 
