@@ -4,6 +4,8 @@
 //!
 //!
 
+use std::ops::Add;
+
 use super::{action::Action, State};
 use serde_json;
 use tokio::{
@@ -63,7 +65,7 @@ pub(crate) fn bridge(
         loop {
             match mscp_to_socket_receiver.recv().await {
                 Some(state) => {
-                    let json_string = serde_json::to_string(&state).unwrap();
+                    let json_string = serde_json::to_string(&state).unwrap().add("\n");
                     if let Err(_) = writer.write_all(json_string.as_bytes()).await {
                         println!("Send Error in bridge");
                         let _ = writer.shutdown().await;
