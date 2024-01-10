@@ -7,3 +7,17 @@ pub enum Action {
 	Create(Create),
 	Travel(Travel),
 }
+
+impl Action {
+	pub fn new_attack(attack: Attack) -> Self {
+		Self::Attack(attack)
+	}
+
+	pub fn new_create(create: Create) -> Self {
+		Self::Create(create)
+	}
+
+	pub fn new_travel(travel: Travel) -> Self {
+		Self::Travel(travel)
+	}
+}
