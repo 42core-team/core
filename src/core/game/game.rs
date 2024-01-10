@@ -26,7 +26,7 @@ impl Game {
 			resources: vec![],
 			units: vec![],
 			targets: vec![],
-			tick_rate: 3000,
+			tick_rate: 50,
 			last_tick_time: get_ms(),
 			time_since_last_tick: 0,
 		}
