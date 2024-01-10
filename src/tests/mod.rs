@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-	use lib::game::{Team, Game, GameConfig, helper::{Target, target}};
+	use lib::game::{Team, Game, GameConfig, helper::Target};
+	use tokio::{net::{TcpListener, TcpStream}, select, sync::oneshot, join};
 
 
 	fn get_fake_game() -> Game{
@@ -346,7 +347,7 @@ mod tests {
 		let unit_id3 = unit3.id;
 		let unit_id4 = unit4.id;
 
-		let u1 = game.get_target_by_id(unit_id1);
+		let _u1 = game.get_target_by_id(unit_id1);
 		let u2 = game.get_target_by_id(unit_id2);
 		let u3 = game.get_target_by_id(unit_id3);
 		let u4 = game.get_target_by_id(unit_id4);
@@ -551,6 +552,83 @@ mod tests {
 		// hp of core2 should not change -> be the same as in the GameConfig
 		assert_eq!(game.cores[1].hp , before_hp);
 
+	}
+
+
+
+	#[tokio::test]
+	async fn disconnect() {
+		let (tx1, rx1) = oneshot::channel();
+		let (tx2, rx2) = oneshot::channel();
+		let (tx3, rx3) = oneshot::channel();
+		let mut tick_rate: u64 = 50;
+		
+
+		tokio::spawn(async move {
+			// Start the first thread with the endless loop
+			let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
+
+			let mut queue: Vec<Team> = Vec::<Team>::new();
+			
+			let _ = tx3.send("");
+
+			loop {
+				let (stream, _) = listener.accept().await.unwrap();
+
+				queue.push(Team::from_tcp_stream(stream));
+				
+				
+				if queue.len() >= 2 {
+					let t1 = queue.remove(0);
+					let t2 = queue.remove(0);
+					let mut game = Game::new(vec![t1, t2]);
+					tick_rate = game.tick_rate as u64;
+					
+					
+					tokio::spawn(async move {
+						println!("Game start!");
+						game.start().await;
+						println!("Game ended!");
+					});
+				}
+			}
+		});
+		// wait for the game to start
+		loop {
+			select! {
+				_ = rx3 => {
+					tokio::time::sleep(tokio::time::Duration::from_millis(tick_rate)).await;
+					break;
+				}
+			}
+		}
+
+		// Spawn the first secondary thread
+		tokio::spawn(async move {
+			let stream = TcpStream::connect("127.0.0.1:4242").await.unwrap();
+			println!("Connected to server!");
+			//wait for a second
+			tokio::time::sleep(tokio::time::Duration::from_millis(tick_rate * 3)).await;
+			let _ = tx1.send("");
+		});
+
+		// Spawn the second secondary thread
+		tokio::spawn(async move {
+			let stream = TcpStream::connect("127.0.0.1:4242").await.unwrap();
+			println!("Connected to server!");
+			loop {
+				select! {
+					_ = rx1 => {
+						break;
+					}
+				}
+			}
+	
+			tokio::time::sleep(tokio::time::Duration::from_millis(tick_rate * 2)).await;
+			let _ = tx2.send("");
+		});
+
+		let _ = join!(rx2);
 	}
 
 }
