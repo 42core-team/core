@@ -1,9 +1,5 @@
 use std::time::Duration;
 
-use uuid::Uuid;
-
-use crate::game::entity::resource;
-
 use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::Action, helper::Target};
 
 #[derive(Debug)]
@@ -245,7 +241,7 @@ impl Game {
 		let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
 		let target = self.units.iter().find(|unit| unit.id == target_id);
 		match (attacker, target) {
-			(Some(attacker), Some(target)) => {
+			(Some(attacker), Some(_)) => {
 				if attacker.team_id == team_id {
 					if attacker_id == target_id {
 						self.targets.retain(|target| target.0 != attacker_id);
@@ -286,8 +282,8 @@ impl Game {
 	}
 
 	pub fn get_dist(&self, x1: u64, y1: u64, x2: u64, y2: u64) -> u64 {
-		let mut xdif = 0;
-		let mut ydif = 0;
+		let xdif;
+		let ydif;
 		if x1 > x2 {
 			xdif = x1 - x2;
 		} else {

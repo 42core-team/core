@@ -4,7 +4,6 @@
 //!
 //!
 
-use std::ops::Add;
 use super::{action::Action, State};
 use serde_json;
 use tokio::{
@@ -67,7 +66,7 @@ pub(crate) fn bridge(
                     let json_string = serde_json::to_string(&state).unwrap();
                     if let Err(_) = writer.write_all(json_string.as_bytes()).await {
                         println!("Send Error in bridge");
-                        writer.shutdown().await;
+                        let _ = writer.shutdown().await;
                         break;
                     }
                 }
