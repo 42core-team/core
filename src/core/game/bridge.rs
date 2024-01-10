@@ -4,7 +4,7 @@
 //!
 //!
 
-use super::{action::Action, State};
+use super::{action::{Action, Request}, State};
 use serde_json;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -42,7 +42,7 @@ pub(crate) fn bridge(
                             match convert_to_actions(line) {
                                 Ok(actions) => {
                                     // println!("Parsed Actions: {:?}", actions);
-                                    let _ = socket_to_mscp_sender.send(actions).await;
+                                    let _ = socket_to_mscp_sender.send(actions.actions).await;
                                 }
                                 Err(err) => {
                                     println!("Parse Error in bridge: {:?}", err);
@@ -98,11 +98,8 @@ pub(crate) fn bridge(
     );
 }
 
-fn convert_to_actions(buffer: &str) -> Result<Vec<Action>, serde_json::Error> {
-    let msg = remove_after_last_brace(&buffer);
-    // println!("MSG: {:?}", msg);
-
-    let result: Result<Vec<Action>, serde_json::Error> = serde_json::from_str(&msg);
+fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
+    let result: Result<Request, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 
