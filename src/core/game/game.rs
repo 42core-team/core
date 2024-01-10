@@ -8,6 +8,7 @@ use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action
 
 #[derive(Debug)]
 pub struct Game {
+	pub status: u64,
 	pub teams: Vec<Team>,
 	pub config: GameConfig,
 	pub resources: Vec<Resource>,
@@ -22,13 +23,14 @@ pub struct Game {
 impl Game {
 	pub fn new(teams: Vec<Team>) -> Self {
 		Game {
+			status: 0, // OK
 			teams,
 			config: GameConfig::patch_0_1_0(),
 			cores: vec![Core::new(0, 2000, 2000), Core::new(1, 4000, 4000)],
 			resources: vec![],
 			units: vec![],
 			targets: vec![],
-			tick_rate: 50,
+			tick_rate: 1000,
 			last_tick_time: get_ms(),
 			time_since_last_tick: 0,
 		}
@@ -36,23 +38,39 @@ impl Game {
 
 	pub async fn start(&mut self) {
 		loop {
-			self.wait_till_next_tick().await;
-			println!("TICK");
+			if self.tick().await {
+				break;
+			}
+		}
+		self.status = 2; // END
+		self.send_state().await;
+	}
 
-			let mut team_actions: Vec<(u64, Action)> = vec![];
-			
-			for team_index in 0..self.teams.len() {
-				let team = &mut self.teams[team_index];
-				while let Ok(actions) = team.receiver.as_mut().unwrap().try_recv() {
-					println!("TEAM send action: {:?}", actions);
-					for action in actions {
-						team_actions.push((team.id, action));
-					}
+	async fn tick(&mut self) -> bool{
+		for team in self.teams.iter_mut() {
+			if team.is_disconnected() {
+				println!("Team {:?} disconnected", team.id);
+				return true;
+			}
+		}
+		println!("------ Tick ------");
+		self.wait_till_next_tick().await;
+
+		let mut team_actions: Vec<(u64, Action)> = vec![];
+		
+		for team_index in 0..self.teams.len() {
+			let team = &mut self.teams[team_index];
+			while let Ok(actions) = team.receiver.as_mut().unwrap().try_recv() {
+				println!("TEAM send action: {:?}", actions);
+				for action in actions {
+					team_actions.push((team.id, action));
 				}
 			}
-			self.update(team_actions);
-			self.send_state().await;
 		}
+		self.update(team_actions);
+		self.send_state().await;	
+
+		false
 	}
 
 	async fn send_state(&mut self) {

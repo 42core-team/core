@@ -13,6 +13,8 @@ pub struct Team {
 	pub sender: Option<Sender<State>>,
 	pub receiver: Option<Receiver<Vec<Action>>>,
 	pub disconnect: Option<Receiver<()>>, // @TODO disconnect check in the loop 
+
+	is_disconnected: bool,
 }
 
 impl Team {
@@ -27,6 +29,7 @@ impl Team {
 			sender: Some(sender),
 			receiver: Some(receiver),
 			disconnect: Some(disconnect),
+			is_disconnected: false,
 		}
 	}
 
@@ -38,7 +41,27 @@ impl Team {
 			balance: 100,
 			sender: None,
 			receiver: None,
-			disconnect: None
+			disconnect: None,
+			is_disconnected: false,
 		}
 	}
+
+
+
+	pub fn is_disconnected(&mut self) -> bool {
+		if self.is_disconnected {
+			return true;
+		}
+		// @TODO commented out for testing
+		// if let None = self.disconnect {
+		// 	return true;
+		// }
+
+        if let Ok(_) = self.disconnect.as_mut().unwrap().try_recv() {
+			self.is_disconnected = true;
+            return true;
+        }
+        return false;
+    }
+
 }

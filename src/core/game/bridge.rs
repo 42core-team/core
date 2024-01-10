@@ -27,8 +27,10 @@ pub(crate) fn bridge(
         loop {
             match reader.read(&mut buffer).await {
                 Ok(n) if n == 0 => {
+                    println!("Connection closed by client");
+                    let _ = disconnect_sender.send(()).await;
                     break;
-                }
+                },
                 Ok(n) => {
                     if let Ok(s) = std::str::from_utf8(&buffer[..n]) {
                         let msg = s.to_string();
@@ -62,8 +64,12 @@ pub(crate) fn bridge(
         loop {
             match mscp_to_socket_receiver.recv().await {
                 Some(state) => {
-                    let json_string = serde_json::to_string(&state).unwrap().add("\n");
-                    let _ = writer.write_all(json_string.as_bytes()).await;
+                    let json_string = serde_json::to_string(&state).unwrap();
+                    if let Err(_) = writer.write_all(json_string.as_bytes()).await {
+                        println!("Send Error in bridge");
+                        writer.shutdown().await;
+                        break;
+                    }
                 }
                 None => {
                     break;
