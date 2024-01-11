@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::game::entity::resource;
 
-use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::Action, helper::Target};
+use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::Action, helper::Target, Message};
 
 #[derive(Debug)]
 pub struct Game {
@@ -35,6 +35,16 @@ impl Game {
 	}
 
 	pub async fn start(&mut self) {
+		for team_index in 0..self.teams.len() {
+			let team = &mut self.teams[team_index];
+			match team.sender.as_mut().unwrap().send(Message::from_game_config(&GameConfig::patch_0_1_0())).await {
+				Ok(_) => {}
+				Err(_) => {
+					println!("Error sending state to team");
+				}
+			}
+		}
+		
 		loop {
 			self.wait_till_next_tick().await;
 			println!("TICK");
@@ -59,7 +69,7 @@ impl Game {
 		let state = State::from_game(self);
 		for team in self.teams.iter_mut() {
 			let state = state.clone();
-			match team.sender.as_mut().unwrap().send(state).await {
+			match team.sender.as_mut().unwrap().send(Message::from_state(&state)).await {
 				Ok(_) => {}
 				Err(_) => {
 					println!("Error sending state to team");
