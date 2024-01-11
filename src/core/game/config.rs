@@ -1,5 +1,7 @@
+use serde::{Serialize, Deserialize};
+
 #[allow(dead_code)] //@TODO remove if used
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct GameConfig {
 	pub height: u64,
 	pub width: u64,
@@ -57,7 +59,7 @@ impl GameConfig {
 }
 
 #[allow(dead_code)] //@TODO remove if used
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct UnitConfig {
 	pub name: String,
 	pub type_id: u64,
