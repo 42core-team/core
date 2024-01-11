@@ -1,13 +1,12 @@
 use std::time::Duration;
 
-use uuid::Uuid;
+use crate::game::action::Action;
 
-use crate::game::entity::resource;
-
-use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::Action, helper::Target, Message};
+use super::{Team, Resource, GameConfig, Core, Unit, utils::get_ms, Message, helper::Target, State};
 
 #[derive(Debug)]
 pub struct Game {
+	pub status: u64,
 	pub teams: Vec<Team>,
 	pub config: GameConfig,
 	pub resources: Vec<Resource>,
@@ -22,13 +21,14 @@ pub struct Game {
 impl Game {
 	pub fn new(teams: Vec<Team>) -> Self {
 		Game {
+			status: 0, // OK
 			teams,
 			config: GameConfig::patch_0_1_0(),
 			cores: vec![Core::new(0, 2000, 2000), Core::new(1, 4000, 4000)],
 			resources: vec![],
 			units: vec![],
 			targets: vec![],
-			tick_rate: 50,
+			tick_rate: 1000,
 			last_tick_time: get_ms(),
 			time_since_last_tick: 0,
 		}
@@ -44,25 +44,41 @@ impl Game {
 				}
 			}
 		}
-		
-		loop {
-			self.wait_till_next_tick().await;
-			println!("TICK");
 
-			let mut team_actions: Vec<(u64, Action)> = vec![];
-			
-			for team_index in 0..self.teams.len() {
-				let team = &mut self.teams[team_index];
-				while let Ok(actions) = team.receiver.as_mut().unwrap().try_recv() {
-					println!("TEAM send action: {:?}", actions);
-					for action in actions {
-						team_actions.push((team.id, action));
-					}
+		loop {
+			if self.tick().await {
+				break;
+			}
+		}
+		self.status = 2; // END
+		self.send_state().await;
+	}
+
+	async fn tick(&mut self) -> bool{
+		for team in self.teams.iter_mut() {
+			if team.is_disconnected() {
+				println!("Team {:?} disconnected", team.id);
+				return true;
+			}
+		}
+		println!("------ Tick ------");
+		self.wait_till_next_tick().await;
+
+		let mut team_actions: Vec<(u64, Action)> = vec![];
+
+		for team_index in 0..self.teams.len() {
+			let team = &mut self.teams[team_index];
+			while let Ok(actions) = team.receiver.as_mut().unwrap().try_recv() {
+				println!("TEAM send action: {:?}", actions);
+				for action in actions {
+					team_actions.push((team.id, action));
 				}
 			}
-			self.update(team_actions);
-			self.send_state().await;
 		}
+		self.update(team_actions);
+		self.send_state().await;
+
+		false
 	}
 
 	async fn send_state(&mut self) {
@@ -101,14 +117,14 @@ impl Game {
 
 	pub fn generate_u64_id() -> u64 {
 		static mut COUNTER: u64 = 1;
-	
+
 		unsafe {
 			COUNTER += 1;
 			COUNTER
 		}
-		
+
 	}
-	
+
 
 	pub fn get_team_by_id(&self, id: u64) -> Option<&Team> {
 		for team in self.teams.iter() {
@@ -162,7 +178,7 @@ impl Game {
 	pub fn get_core_by_id_mut(&mut self, id: u64) -> Option<&mut Core> {
 		self.cores.iter_mut().find(|core| core.id == id)
 	}
-	
+
 
 	pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
 		for core in self.cores.iter() {
@@ -176,16 +192,16 @@ impl Game {
 
 	///
 	/// Function to create a new unit
-	/// 
+	///
 	/// Security:
 	/// - check if team exists
 	/// - check if unit type exists
 	/// - check if team has enough balance
-	/// 
+	///
 	/// Features:
 	/// - create unit
 	/// - reduce team balance
-	/// 
+	///
 	pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
 		println!("Create unit of type {:?} for team with id {:?}", type_id, team_id);
 		let team_core = self.get_core_by_team_id(team_id);
@@ -223,21 +239,21 @@ impl Game {
 
 	///
 	/// Handel the attack action
-	/// 
+	///
 	/// Security:
 	/// - check if attacker exists
 	/// - check if target exists
 	/// - check if attacker is in own team
-	/// 
+	///
 	/// if target is equal to attacker:
 	/// - remove target from targets
-	/// 
+	///
 	pub fn handel_attack_action(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
 		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
 		let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
 		let target = self.units.iter().find(|unit| unit.id == target_id);
 		match (attacker, target) {
-			(Some(attacker), Some(target)) => {
+			(Some(attacker), Some(_)) => {
 				if attacker.team_id == team_id {
 					if attacker_id == target_id {
 						self.targets.retain(|target| target.0 != attacker_id);
@@ -254,17 +270,17 @@ impl Game {
 
 	///
 	/// Find a target by id
-	/// 
+	///
 	/// Security:
 	/// - check if target exists
-	/// 
+	///
 	/// Features:
 	/// - return target in the following types:
 	/// 	- Unit
 	/// 	- Resource
 	/// 	- Core
 	/// 	- None
-	/// 
+	///
 	pub fn get_target_by_id(&self, id: u64) -> Target {
 		let unit = self.units.iter().find(|unit| unit.id == id);
 		let resource = self.resources.iter().find(|resource| resource.id == id);
@@ -278,8 +294,8 @@ impl Game {
 	}
 
 	pub fn get_dist(&self, x1: u64, y1: u64, x2: u64, y2: u64) -> u64 {
-		let mut xdif = 0;
-		let mut ydif = 0;
+		let xdif;
+		let ydif;
 		if x1 > x2 {
 			xdif = x1 - x2;
 		} else {
@@ -324,23 +340,23 @@ impl Game {
 		}
 		false
 	}
-	
-	
-	
+
+
+
 
 	///
 	/// Fulfill the attack action
-	/// 
+	///
 	/// Security:
 	/// - check if attacker exists
 	/// - check if target exists
-	/// 
+	///
 	/// Features:
 	/// - attack target
 	/// - calculate damage per tick
-	/// 
+	///
 	/// Get the damage of the attacker based on the type of the target from the config
-	/// 
+	///
 	pub fn attack(&mut self, attacker_id: u64, target_id: u64) {
 		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
 		let attacker = self.units.iter().find(|unit| unit.id == attacker_id).cloned();
@@ -391,24 +407,24 @@ impl Game {
 			}
 		}
 	}
-	
-	
+
+
 	///
 	/// Handel the update of the game
-	/// 
+	///
 	/// a valid json to send with netcat is:
 	/// [{"Create":{"type_id":3}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]
 	/// [{"Create":{"type_id":1}}]
 	/// [{"Attack":{"attacker_id":6,"target_id":6}}]
-	/// 
+	///
 	/// To uns netcat:
 	/// ```sh
 	/// nc localhost 4242
 	/// ```
 	/// then paste the json and press enter
-	/// 
+	///
 	/// You need at least two netcat instances to start a game
-	/// 
+	///
 	pub fn update(&mut self, team_actions: Vec<(u64, Action)>) {
 		for (team_id, action) in team_actions {
 			match action {
