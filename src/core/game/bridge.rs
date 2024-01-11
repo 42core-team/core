@@ -5,7 +5,7 @@
 //!
 
 use std::ops::Add;
-use super::{action::Action, Message};
+use super::{action::{Action, Request}, Message};
 use serde_json;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -43,7 +43,7 @@ pub(crate) fn bridge(
                             match convert_to_actions(line) {
                                 Ok(actions) => {
                                     // println!("Parsed Actions: {:?}", actions);
-                                    let _ = socket_to_mscp_sender.send(actions).await;
+                                    let _ = socket_to_mscp_sender.send(actions.actions).await;
                                 }
                                 Err(err) => {
                                     println!("Parse Error in bridge: {:?}", err);
@@ -111,21 +111,20 @@ pub(crate) fn bridge(
     );
 }
 
-fn convert_to_actions(buffer: &str) -> Result<Vec<Action>, serde_json::Error> {
-    let msg = remove_after_last_brace(&buffer);
-    // println!("MSG: {:?}", msg);
-
-    let result: Result<Vec<Action>, serde_json::Error> = serde_json::from_str(&msg);
+fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
+    let result: Result<Request, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 
-fn remove_after_last_brace(input: &str) -> String {
-    let reversed_string: String = input.chars().rev().collect();
+// in case the serde json parser is not able to parse the json string
+//
+// fn remove_after_last_brace(input: &str) -> String {
+//     let reversed_string: String = input.chars().rev().collect();
 
-    if let Some(index) = reversed_string.find(']') {
-        let truncated_string = &reversed_string[index..].chars().rev().collect::<String>();
-        truncated_string.to_string()
-    } else {
-        input.to_string()
-    }
-}
+//     if let Some(index) = reversed_string.find(']') {
+//         let truncated_string = &reversed_string[index..].chars().rev().collect::<String>();
+//         truncated_string.to_string()
+//     } else {
+//         input.to_string()
+//     }
+// }
