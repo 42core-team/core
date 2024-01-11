@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-	use lib::game::{Team, Game, GameConfig, helper::{Target, target}};
+	use std::thread::sleep;
+
+use lib::game::{Team, Game, GameConfig, helper::{Target}, bridge::bridge, team};
+use tokio::{sync::oneshot, net::{TcpListener, TcpStream}, select, join};
 
 
 	fn get_fake_game() -> Game{
@@ -551,6 +554,180 @@ mod tests {
 		// hp of core2 should not change -> be the same as in the GameConfig
 		assert_eq!(game.cores[1].hp , before_hp);
 
+	}
+
+	// core_test!(GAME_START, vec[TEAMS_Functions], spectator)
+	// select game vec spectator -> only spectator/tester should end;
+	// teamsfunctions.push ()
+	// spectator = () tester
+
+	#[macro_export]
+	macro_rules! core_test {
+		($game_start_func:expr, $team_funcs:expr, $spectator_func:expr) => {
+			#[tokio::test]
+			async fn integration_test() {
+				let mut handles = Vec::new();
+
+				// Spawn the game start function
+				handles.push(tokio::spawn(async move {
+					$game_start_func().await;
+				}));
+
+				// Spawn team functions
+				for team_func in $team_funcs.iter() {
+					let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+					handles.push(tokio::spawn(async move {
+						let mut stream;
+						loop {
+							stream = TcpStream::connect("127.0.0.1:4242").await;
+							if stream.is_ok() {
+								break;
+							}
+						}
+						let stream = stream.unwrap();
+						let (_sender, mut receiver, _disconnect) = bridge(stream);
+						println!("Connected to server!");	
+						team_func;
+						let _ = tx.send(());
+					}));
+				}
+
+				// Spawn spectator function
+				let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+				handles.push(tokio::spawn(async move {
+					$spectator_func().await;
+					let _ = tx.send(());
+				}));
+
+				// Dynamically wait for any of the tasks to complete
+				loop {
+					if handles.is_empty() {
+						break;
+					}
+				
+					tokio::select! {
+						_ = &handles[0] => { handles.swap_remove(0); },
+						_ = &handles[1], if handles.len() > 1 => { handles.swap_remove(1); },
+						_ = &handles[2], if handles.len() > 2 => { handles.swap_remove(2); },
+						// Add more cases if you need more tasks
+						else => break,
+					};
+
+					break;
+				}
+				
+			}
+		};
+	}
+
+
+	// #[tokio::test]
+	// async fn game_config() {
+	// 	let (tx1, rx1) = oneshot::channel::<()>();
+	// 	let (tx2, rx2) = oneshot::channel::<()>();
+	// 	let mut _tick_rate: u64 = 50;
+	//
+	//	
+	//
+	// 	tokio::spawn(async move {
+	// 		let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
+	// 		let mut queue: Vec<Team> = Vec::<Team>::new();
+    //
+	// 		loop {
+	// 			let (stream, _) = listener.accept().await.unwrap();
+	//
+	// 			queue.push(Team::from_tcp_stream(stream));
+	//
+	//
+	// 			if queue.len() >= 2 {
+	// 				let t1 = queue.remove(0);
+	// 				let t2 = queue.remove(0);
+	// 				let mut game = Game::new(vec![t1, t2]);
+	//
+	// 				tokio::spawn(async move {
+	// 					println!("Game start!");
+	// 					game.start().await;
+	// 					println!("Game ended!");
+	// 				});
+	// 			}
+	// 		}
+	// 	});
+	//
+	// 	tokio::spawn(async move {
+	// 		let mut stream;
+	// 		loop {
+	// 			stream = TcpStream::connect("127.0.0.1:4242").await;
+	// 			if stream.is_ok() {
+	// 				break;
+	// 			}
+	// 		}
+	// 		let stream = stream.unwrap();
+	// 		let (_sender, mut receiver, _disconnect) = bridge(stream);
+	// 		println!("Connected to server!");
+	// 		// Do something
+	// 		let _ = tx1.send(());
+	// 	});
+	//
+	// 	tokio::spawn(async move {
+	// 		let mut stream;
+	// 		loop {
+	// 			stream = TcpStream::connect("127.0.0.1:4242").await;
+	// 			if stream.is_ok() {
+	// 				break;
+	// 			}
+	// 		}
+	// 		let _stream = stream.unwrap();
+	// 		let (_sender, mut receiver, _disconnect) = bridge(stream);
+	// 		println!("Connected to server!");
+	// 		// Do something
+	// 		let _ = tx2.send(());
+	// 	});
+	//
+	// 	let _ = join!(rx1, rx2);
+	// }
+
+	pub async fn start() {
+		let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
+		let mut queue: Vec<Team> = Vec::<Team>::new();
+
+		loop {
+			let (stream, _) = listener.accept().await.unwrap();
+
+			queue.push(Team::from_tcp_stream(stream));
+
+
+			if queue.len() >= 2 {
+				let t1 = queue.remove(0);
+				let t2 = queue.remove(0);
+				let mut game = Game::new(vec![t1, t2]);
+
+				tokio::spawn(async move {
+					println!("Game start!");
+					game.start().await;
+					println!("Game ended!");
+				});
+			}
+		}
+	}
+
+	pub async fn team1() {
+		println!("Team 1");
+		tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+	}
+
+	pub async fn team2() {
+		println!("Team 2");
+		tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+	}
+
+	pub async fn spectator() {
+		println!("Spectator");
+		tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+	}
+
+	#[tokio::test]
+	async fn game_config() {
+		core_test!(start, vec![Box::pin(team1()), Box::pin(team2())], spectator);
 	}
 
 }
