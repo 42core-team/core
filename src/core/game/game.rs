@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use super::{utils::get_ms, Resource, Core, GameConfig, State, Team, Unit, action::Action, helper::Target};
+use crate::game::action::Action;
+
+use super::{Team, Resource, GameConfig, Core, Unit, utils::get_ms, Message, helper::Target, State};
 
 #[derive(Debug)]
 pub struct Game {
@@ -33,6 +35,16 @@ impl Game {
 	}
 
 	pub async fn start(&mut self) {
+		for team_index in 0..self.teams.len() {
+			let team = &mut self.teams[team_index];
+			match team.sender.as_mut().unwrap().send(Message::from_game_config(&GameConfig::patch_0_1_0())).await {
+				Ok(_) => {}
+				Err(_) => {
+					println!("Error sending state to team");
+				}
+			}
+		}
+
 		loop {
 			if self.tick().await {
 				break;
@@ -53,7 +65,7 @@ impl Game {
 		self.wait_till_next_tick().await;
 
 		let mut team_actions: Vec<(u64, Action)> = vec![];
-		
+
 		for team_index in 0..self.teams.len() {
 			let team = &mut self.teams[team_index];
 			while let Ok(actions) = team.receiver.as_mut().unwrap().try_recv() {
@@ -64,7 +76,7 @@ impl Game {
 			}
 		}
 		self.update(team_actions);
-		self.send_state().await;	
+		self.send_state().await;
 
 		false
 	}
@@ -73,7 +85,7 @@ impl Game {
 		let state = State::from_game(self);
 		for team in self.teams.iter_mut() {
 			let state = state.clone();
-			match team.sender.as_mut().unwrap().send(state).await {
+			match team.sender.as_mut().unwrap().send(Message::from_state(&state)).await {
 				Ok(_) => {}
 				Err(_) => {
 					println!("Error sending state to team");
@@ -105,14 +117,14 @@ impl Game {
 
 	pub fn generate_u64_id() -> u64 {
 		static mut COUNTER: u64 = 1;
-	
+
 		unsafe {
 			COUNTER += 1;
 			COUNTER
 		}
-		
+
 	}
-	
+
 
 	pub fn get_team_by_id(&self, id: u64) -> Option<&Team> {
 		for team in self.teams.iter() {
@@ -166,7 +178,7 @@ impl Game {
 	pub fn get_core_by_id_mut(&mut self, id: u64) -> Option<&mut Core> {
 		self.cores.iter_mut().find(|core| core.id == id)
 	}
-	
+
 
 	pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
 		for core in self.cores.iter() {
@@ -180,16 +192,16 @@ impl Game {
 
 	///
 	/// Function to create a new unit
-	/// 
+	///
 	/// Security:
 	/// - check if team exists
 	/// - check if unit type exists
 	/// - check if team has enough balance
-	/// 
+	///
 	/// Features:
 	/// - create unit
 	/// - reduce team balance
-	/// 
+	///
 	pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
 		println!("Create unit of type {:?} for team with id {:?}", type_id, team_id);
 		let team_core = self.get_core_by_team_id(team_id);
@@ -227,15 +239,15 @@ impl Game {
 
 	///
 	/// Handel the attack action
-	/// 
+	///
 	/// Security:
 	/// - check if attacker exists
 	/// - check if target exists
 	/// - check if attacker is in own team
-	/// 
+	///
 	/// if target is equal to attacker:
 	/// - remove target from targets
-	/// 
+	///
 	pub fn handel_attack_action(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
 		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
 		let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
@@ -258,17 +270,17 @@ impl Game {
 
 	///
 	/// Find a target by id
-	/// 
+	///
 	/// Security:
 	/// - check if target exists
-	/// 
+	///
 	/// Features:
 	/// - return target in the following types:
 	/// 	- Unit
 	/// 	- Resource
 	/// 	- Core
 	/// 	- None
-	/// 
+	///
 	pub fn get_target_by_id(&self, id: u64) -> Target {
 		let unit = self.units.iter().find(|unit| unit.id == id);
 		let resource = self.resources.iter().find(|resource| resource.id == id);
@@ -328,23 +340,23 @@ impl Game {
 		}
 		false
 	}
-	
-	
-	
+
+
+
 
 	///
 	/// Fulfill the attack action
-	/// 
+	///
 	/// Security:
 	/// - check if attacker exists
 	/// - check if target exists
-	/// 
+	///
 	/// Features:
 	/// - attack target
 	/// - calculate damage per tick
-	/// 
+	///
 	/// Get the damage of the attacker based on the type of the target from the config
-	/// 
+	///
 	pub fn attack(&mut self, attacker_id: u64, target_id: u64) {
 		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
 		let attacker = self.units.iter().find(|unit| unit.id == attacker_id).cloned();
@@ -395,23 +407,27 @@ impl Game {
 			}
 		}
 	}
-	
-	
+
+
 	///
 	/// Handel the update of the game
-	/// 
+	///
 	/// a valid json to send with netcat is:
+	/// [{"Create":{"type_id":3}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]
+	/// [{"Create":{"type_id":1}}]
+	/// [{"Attack":{"attacker_id":6,"target_id":6}}]
+	///
 	/// {"actions":[{"Create":{"type_id":0}}]}
 	/// {"actions":[{"Create":{"type_id":0}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]}
-	/// 
+	///
 	/// To uns netcat:
 	/// ```sh
 	/// nc localhost 4242
 	/// ```
 	/// then paste the json and press enter
-	/// 
+	///
 	/// You need at least two netcat instances to start a game
-	/// 
+	///
 	pub fn update(&mut self, team_actions: Vec<(u64, Action)>) {
 		for (team_id, action) in team_actions {
 			match action {

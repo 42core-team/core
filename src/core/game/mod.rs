@@ -24,6 +24,9 @@ pub mod config;
 pub use config::GameConfig;
 pub use config::UnitConfig;
 
+pub mod message;
+pub use message::Message;
+
 pub mod bridge;
 
 pub mod action;

@@ -1,7 +1,6 @@
-use super::{action::Action, bridge::bridge, State, Game};
+use super::{action::Action, bridge::bridge, Game, Message};
 use tokio::{net::TcpStream, sync::mpsc::Receiver, sync::mpsc::Sender};
 
-#[allow(dead_code)] // @TODO remove when used
 #[derive(Debug)]
 pub struct Team {
 	pub id: u64,
@@ -10,9 +9,9 @@ pub struct Team {
 
 	pub balance: u64,
 
-	pub sender: Option<Sender<State>>,
+	pub sender: Option<Sender<Message>>,
 	pub receiver: Option<Receiver<Vec<Action>>>,
-	pub disconnect: Option<Receiver<()>>, // @TODO disconnect check in the loop 
+	pub disconnect: Option<Receiver<()>>, // @TODO disconnect check in the loop
 
 	is_disconnected: bool,
 }

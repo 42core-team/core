@@ -14,9 +14,9 @@ mod tests {
 	#[test]
 	///
 	/// Test if the fake team creation works
-	/// 
+	///
 	/// The fake team is used to test the game logic
-	/// 
+	///
 	fn test_create_fake_team() {
 		let team = Team::get_fake_team(0, "asdf".to_string());
 		assert_eq!(team.id, 0);
@@ -27,9 +27,9 @@ mod tests {
 	#[test]
 	///
 	/// Test if the fake game creation works
-	/// 
+	///
 	/// The fake Game is used to test the game logic
-	/// 
+	///
 	fn test_create_fake_game() {
 		let game = get_fake_game();
 		assert_eq!(game.teams.len(), 2);
@@ -42,7 +42,7 @@ mod tests {
 	#[test]
 	///
 	/// Test if a team can create a unit
-	/// 
+	///
 	fn test_create_unit() {
 		let mut game = get_fake_game();
 
@@ -74,7 +74,7 @@ mod tests {
 	#[test]
 	///
 	/// Test for invalid input in the create_unit function
-	/// 
+	///
 	fn test_invalid_input_create_unit(){
 		let mut game = get_fake_game();
 
@@ -117,14 +117,14 @@ mod tests {
 	#[test]
 	///
 	/// Test the get_team_by_id function
-	/// 
+	///
 	/// the cores are
 	/// 0: (2, 2)
 	/// 1: (4, 4)
-	/// 
+	///
 	fn test_get_core_by_team_id() {
 		let game = get_fake_game();
-		
+
 		let core1 = game.get_core_by_team_id(0);
 		assert_eq!(core1.unwrap().x, 2000);
 		assert_eq!(core1.unwrap().y, 2000);
@@ -140,7 +140,7 @@ mod tests {
 	#[test]
 	fn test_get_team_by_id() {
 		let game = get_fake_game();
-		
+
 		let team1 = game.get_team_by_id(0);
 		match team1 {
 			Some(team) => {
@@ -175,7 +175,7 @@ mod tests {
 	#[test]
 	fn test_get_team_by_id_mut() {
 		let mut game = get_fake_game();
-		
+
 		let team1 = game.get_team_by_id_mut(0);
 		assert_eq!(team1.unwrap().name, "Team 1");
 
@@ -229,7 +229,7 @@ mod tests {
 	#[test]
 	///
 	/// Generate 10000 ids and check that they are unique
-	/// 
+	///
 	fn generate_u64_id() {
 		let mut ids: Vec<u64> = Vec::new();
 		for _ in 0..10000 {
@@ -269,46 +269,46 @@ mod tests {
 	/// 1: (9000, 9000)
 	/// 2: (2100, 2100)
 	/// 3: (8000, 8000)
-	/// 
+	///
 	/// Resources:
 	/// 0: (5000, 5000)
-	/// 
+	///
 	/// Cores:
 	/// 0: (2000, 2000)
 	/// 1: (4000, 4000)
-	/// 
+	///
 	/// Actual Distances:
 	/// 0 -> 1: 9899
 	/// 0 -> 2: 141
 	/// 0 -> 3: 8485
-	/// 
+	///
 	/// 0 -> r: 4242
 	/// 0 -> c1: 0
 	/// 0 -> c2: 2828
-	/// 
+	///
 	/// 1 -> 2: 9758
 	/// 1 -> 3: 1414
-	/// 
+	///
 	/// 1 -> r: 5656
 	/// 1 -> c1: 9899
 	/// 1 -> c2: 7071
-	/// 
+	///
 	/// 2 -> 3: 8343
-	/// 
+	///
 	/// 2 -> r: 4101
 	/// 2 -> c1: 141
 	/// 2 -> c2: 2687
-	/// 
+	///
 	/// 3 -> r: 4242
 	/// 3 -> c1: 8485
 	/// 3 -> c2: 5656
-	/// 
+	///
 	/// Ranges:
 	/// 0: 1000
 	/// 1: 1000
 	/// 2: 200
 	/// 3: 200
-	/// 
+	///
 	/// Result:
 	/// 0 -> 1: false
 	/// 0 -> 2: true
@@ -354,7 +354,7 @@ mod tests {
 		let r = game.get_target_by_id(game.resources[0].id);
 		let c1 = game.get_target_by_id(game.cores[0].id);
 		let c2 = game.get_target_by_id(game.cores[1].id);
-		
+
 		assert!(!game.is_target_in_range(unit1.id, &u2));
 		assert!(game.is_target_in_range(unit1.id, &u3));
 		assert!(!game.is_target_in_range(unit1.id, &u4));
@@ -382,46 +382,46 @@ mod tests {
 	/// 1: (9000, 9000)
 	/// 2: (2100, 2100)
 	/// 3: (8000, 8000)
-	/// 
+	///
 	/// Resources:
 	/// 0: (5000, 5000)
-	/// 
+	///
 	/// Cores:
 	/// 0: (2000, 2000)
 	/// 1: (4000, 4000)
-	/// 
+	///
 	/// Actual Distances:
 	/// 0 -> 1: 9899
 	/// 0 -> 2: 141
 	/// 0 -> 3: 8485
-	/// 
+	///
 	/// 0 -> r: 4242
 	/// 0 -> c1: 0
 	/// 0 -> c2: 2828
-	/// 
+	///
 	/// 1 -> 2: 9758
 	/// 1 -> 3: 1414
-	/// 
+	///
 	/// 1 -> r: 5656
 	/// 1 -> c1: 9899
 	/// 1 -> c2: 7071
-	/// 
+	///
 	/// 2 -> 3: 8343
-	/// 
+	///
 	/// 2 -> r: 4101
 	/// 2 -> c1: 141
 	/// 2 -> c2: 2687
-	/// 
+	///
 	/// 3 -> r: 4242
 	/// 3 -> c1: 8485
 	/// 3 -> c2: 5656
-	/// 
+	///
 	/// Ranges:
 	/// 0: 1000
 	/// 1: 1000
 	/// 2: 200
 	/// 3: 200
-	/// 
+	///
 	/// Result:
 	/// 0 -> 1: false
 	/// 0 -> 2: true
@@ -441,7 +441,7 @@ mod tests {
 	/// 3 -> r: false
 	/// 3 -> c1: false
 	/// 3 -> c2: false
-	/// 
+	///
 	fn attack() {
 		let mut game = get_fake_game();
 		game.create_fake_resource(5000, 5000);
@@ -562,27 +562,27 @@ mod tests {
 		let (tx2, rx2) = oneshot::channel();
 		let (tx3, rx3) = oneshot::channel();
 		let mut _tick_rate: u64 = 50;
-		
+
 
 		tokio::spawn(async move {
 			// Start the first thread with the endless loop
 			let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
 
 			let mut queue: Vec<Team> = Vec::<Team>::new();
-			
+
 			let _ = tx3.send("");
 
 			loop {
 				let (stream, _) = listener.accept().await.unwrap();
 
 				queue.push(Team::from_tcp_stream(stream));
-				
-				
+
+
 				if queue.len() >= 2 {
 					let t1 = queue.remove(0);
 					let t2 = queue.remove(0);
 					let mut game = Game::new(vec![t1, t2]);
-					
+
 					tokio::spawn(async move {
 						println!("Game start!");
 						game.start().await;
@@ -621,7 +621,7 @@ mod tests {
 					}
 				}
 			}
-	
+
 			tokio::time::sleep(tokio::time::Duration::from_millis(_tick_rate * 2)).await;
 			let _ = tx2.send("");
 		});
