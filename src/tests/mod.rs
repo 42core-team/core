@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use lib::game::{Team, Game, GameConfig, helper::{Target, target}};
+	use lib::game::{Team, Game, GameConfig, helper::Target};
 
 
 	fn get_fake_game() -> Game{

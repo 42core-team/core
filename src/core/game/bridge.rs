@@ -5,8 +5,7 @@
 //!
 
 use std::ops::Add;
-
-use super::{action::Action, State};
+use super::{action::Action, Message};
 use serde_json;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -16,8 +15,8 @@ use tokio::{
 
 pub(crate) fn bridge(
     stream: TcpStream,
-) -> (Sender<State>, Receiver<Vec<Action>>, Receiver<()>) {
-    let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<State>(100);
+) -> (Sender<Message>, Receiver<Vec<Action>>, Receiver<()>) {
+    let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<Message>(100);
     let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Vec<Action>>(100);
     let (disconnect_sender, disconnect_receiver) = mpsc::channel::<()>(1);
 
@@ -64,12 +63,24 @@ pub(crate) fn bridge(
     tokio::spawn(async move {
         loop {
             match mscp_to_socket_receiver.recv().await {
-                Some(state) => {
-                    let json_string = serde_json::to_string(&state).unwrap().add("\n");
-                    if let Err(_) = writer.write_all(json_string.as_bytes()).await {
-                        println!("Send Error in bridge");
-                        let _ = writer.shutdown().await;
-                        break;
+                Some(message) => {
+                    match message {
+                        Message::State(state) => {
+                            let json_string = serde_json::to_string(&state).unwrap().add("\n");
+                            if let Err(_) = writer.write_all(json_string.as_bytes()).await {
+                                println!("Send Error in bridge");
+                                let _ = writer.shutdown().await;
+                                break;
+                            }
+                        }
+                        Message::GameConfig(game_config) => {
+                            let json_string = serde_json::to_string(&game_config).unwrap().add("\n");
+                            if let Err(_) = writer.write_all(json_string.as_bytes()).await {
+                                println!("Send Error in bridge");
+                                let _ = writer.shutdown().await;
+                                break;
+                            }
+                        }
                     }
                 }
                 None => {
