@@ -1,4 +1,4 @@
-use super::{action::Action, bridge::bridge, Game, Message};
+use super::{bridge::bridge, Message, Game};
 use tokio::{net::TcpStream, sync::mpsc::Receiver, sync::mpsc::Sender};
 
 #[derive(Debug)]
@@ -12,6 +12,7 @@ pub struct Team {
 	pub sender: Option<Sender<Message>>,
 	pub receiver: Option<Receiver<Message>>,
 	pub disconnect: Option<Receiver<()>>,
+	pub is_disconnected: bool,
 }
 
 impl Team {

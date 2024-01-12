@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
-	use lib::game::{Team, Game, GameConfig, helper::Target, bridge::bridge, Message};
-use tokio::{sync::oneshot, net::{TcpListener, TcpStream}, join, select};
+
+use lib::game::{Team, Game, GameConfig, helper::Target, bridge::bridge, Message};
+use tokio::{sync::oneshot, net::{TcpListener, TcpStream}, select};
 
 
 	fn get_fake_game() -> Game{
@@ -597,15 +598,43 @@ use tokio::{sync::oneshot, net::{TcpListener, TcpStream}, join, select};
 			}
 			let stream = stream.unwrap();
 			let (_sender, mut receiver, _disconnect) = bridge(stream);
-			tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-			let result = receiver.recv().await;
-			println!("Result: {:?}", result);
+			let mut result = receiver.recv().await;
 			assert!(result.is_some());
 			match result {
-				State => {
-					assert!(true);
+				Some(message) => {
+					match message {
+						Message::State(_)=>{
+							assert!(false);
+						}
+						Message::GameConfig(_)=>{
+							assert!(true);
+						}
+    					Message::VecAction(_) => {
+							assert!(false);
+						}, 
+					}
 				}
-				GameConfig => {
+				None => {
+					assert!(false);
+				}
+			}
+			result = receiver.recv().await;
+			assert!(result.is_some());
+			match result {
+				Some(message) => {
+					match message {
+						Message::State(_)=>{
+							assert!(true);
+						}
+						Message::GameConfig(_)=>{
+							assert!(false);
+						}
+    					Message::VecAction(_) => {
+							assert!(false);
+						}, 
+					}
+				}
+				None => {
 					assert!(false);
 				}
 			}
@@ -622,7 +651,7 @@ use tokio::{sync::oneshot, net::{TcpListener, TcpStream}, join, select};
 				}
 			}
 			let stream = stream.unwrap();
-			let (_sender, mut receiver, _disconnect) = bridge(stream);
+			let (_sender, _receiver, _disconnect) = bridge(stream);
 			println!("Connected to server!");	
 			tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
 			let _ = tx2.send(());
