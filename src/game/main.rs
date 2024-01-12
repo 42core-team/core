@@ -13,7 +13,7 @@ use lib::game::{Game, Team};
 use tokio::net::TcpListener;
 
 #[tokio::main]
-async fn main() {
+pub async fn main() {
 	let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
 
 	let mut queue: Vec<Team> = Vec::<Team>::new();
