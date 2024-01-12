@@ -112,9 +112,7 @@ pub fn bridge(
 }
 
 fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
-    // println!("MSG: {:?}", msg);
-
-    let result: Result<Request, serde_json::Error> = serde_json::from_str(&msg);
+    let result: Result<Request, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 
