@@ -44,6 +44,7 @@ pub fn bridge(
                                 Ok(actions) => {
                                     // println!("Parsed Actions: {:?}", actions);
                                     let _ = socket_to_mscp_sender.send(actions.actions).await;
+                                    let _ = socket_to_mscp_sender.send(actions.actions).await;
                                 }
                                 Err(err) => {
                                     println!("Parse Error in bridge: {:?}", err);

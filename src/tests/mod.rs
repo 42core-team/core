@@ -348,6 +348,7 @@ mod tests {
 		let unit_id4 = unit4.id;
 
 		let _u1 = game.get_target_by_id(unit_id1);
+		let _u1 = game.get_target_by_id(unit_id1);
 		let u2 = game.get_target_by_id(unit_id2);
 		let u3 = game.get_target_by_id(unit_id3);
 		let u4 = game.get_target_by_id(unit_id4);
