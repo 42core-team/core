@@ -68,21 +68,27 @@ impl Game {
 
 		log(LogOptions::State, "State");
 
-		let mut team_actions: Vec<(u64, Action)> = vec![];
-
-		for team_index in 0..self.teams.len() {
-			let team = &mut self.teams[team_index];
-			while let Ok(actions) = team.receiver.as_mut().unwrap().try_recv() {
-				println!("TEAM send action: {:?}", actions);
-				for action in actions {
-					team_actions.push((team.id, action));
+			let mut team_actions: Vec<(u64, Action)> = vec![];
+			
+			for team_index in 0..self.teams.len() {
+				let team = &mut self.teams[team_index];
+				while let Ok(message) = team.receiver.as_mut().unwrap().try_recv() {
+					match message {
+						Message::VecAction(actions) => {
+							println!("TEAM send action: {:?}", actions);
+							for action in actions {
+								team_actions.push((team.id, action));
+							}
+						}
+						_ => {
+							println!("TEAM received unknown message");
+						}
+					}
 				}
 			}
+			self.update(team_actions);
+			self.send_state().await;
 		}
-		self.update(team_actions);
-		self.send_state().await;
-
-		false
 	}
 
 	async fn send_state(&mut self) {

@@ -10,10 +10,8 @@ pub struct Team {
 	pub balance: u64,
 
 	pub sender: Option<Sender<Message>>,
-	pub receiver: Option<Receiver<Vec<Action>>>,
-	pub disconnect: Option<Receiver<()>>, // @TODO disconnect check in the loop
-
-	is_disconnected: bool,
+	pub receiver: Option<Receiver<Message>>,
+	pub disconnect: Option<Receiver<()>>,
 }
 
 impl Team {
