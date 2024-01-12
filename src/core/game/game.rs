@@ -418,7 +418,6 @@ impl Game {
 		}
 	}
 
-
 	///
 	/// Handel the update of the game
 	///
