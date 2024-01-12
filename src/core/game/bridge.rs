@@ -13,7 +13,7 @@ use tokio::{
     sync::mpsc::{self, Receiver, Sender},
 };
 
-pub(crate) fn bridge(
+pub fn bridge(
     stream: TcpStream,
 ) -> (Sender<Message>, Receiver<Vec<Action>>, Receiver<()>) {
     let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<Message>(100);
