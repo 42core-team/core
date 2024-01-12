@@ -5,7 +5,7 @@
 //!
 
 use std::ops::Add;
-use super::{action::Action, Message};
+use super::{action::Request, Message, GameConfig, State};
 use serde_json;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -42,12 +42,27 @@ pub fn bridge(
                             }
                             match convert_to_actions(line) {
                                 Ok(actions) => {
-                                    // println!("Parsed Actions: {:?}", actions);
-                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(actions)).await;
+                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(actions.actions)).await;
                                 }
-                                Err(err) => {
-                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(vec![])).await;
-                                    println!("Parse Error in bridge: {:?}", err);
+                                // at the first send the game config gets send
+                                Err(_) => {
+                                    match convert_to_config(line) {
+                                        Ok(config) => {
+                                            let _ = socket_to_mscp_sender.send(Message::from_game_config(&config)).await;
+                                        }
+                                        Err(_) => {
+                                            match convert_to_state(line) {
+                                                Ok(state) => {
+                                                    let _ = socket_to_mscp_sender.send(Message::from_state(&state)).await;
+                                                }
+                                                Err(err) => {
+                                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(vec![])).await;
+                                                    println!("Parse Error in bridge: {:?} from {:?}", err, line);
+                                                }
+                                                
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -124,6 +139,16 @@ pub fn bridge(
 
 fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
     let result: Result<Request, serde_json::Error> = serde_json::from_str(&buffer);
+    result
+}
+
+fn convert_to_config(buffer: &str) -> Result<GameConfig, serde_json::Error> {
+    let result: Result<GameConfig, serde_json::Error> = serde_json::from_str(&buffer);
+    result
+}
+
+fn convert_to_state(buffer: &str) -> Result<State, serde_json::Error> {
+    let result: Result<State, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 

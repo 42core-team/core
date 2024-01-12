@@ -458,7 +458,7 @@ impl Game {
 			match (attacker, target) {
 				(Some(attacker), Target::Unit(target)) => {
 					if attacker.team_id != target.team_id {
-						Game::attack(self, attacker.id, target.id);
+						self.attack(attacker.id, target.id);
 					}
 				}
 				(Some(attacker), Target::Resource(target)) => {
