@@ -1,7 +1,6 @@
-use super::{action::Action, bridge::bridge, State, Game, Message};
+use super::{action::Action, bridge::bridge, Game, Message};
 use tokio::{net::TcpStream, sync::mpsc::Receiver, sync::mpsc::Sender};
 
-#[allow(dead_code)] // @TODO remove when used
 #[derive(Debug)]
 pub struct Team {
 	pub id: u64,
@@ -27,6 +26,7 @@ impl Team {
 			sender: Some(sender),
 			receiver: Some(receiver),
 			disconnect: Some(disconnect),
+			is_disconnected: false,
 		}
 	}
 
@@ -38,7 +38,27 @@ impl Team {
 			balance: 100,
 			sender: None,
 			receiver: None,
-			disconnect: None
+			disconnect: None,
+			is_disconnected: false,
 		}
 	}
+
+
+
+	pub fn is_disconnected(&mut self) -> bool {
+		if self.is_disconnected {
+			return true;
+		}
+		// @TODO commented out for testing
+		// if let None = self.disconnect {
+		// 	return true;
+		// }
+
+        if let Ok(_) = self.disconnect.as_mut().unwrap().try_recv() {
+			self.is_disconnected = true;
+            return true;
+        }
+        return false;
+    }
+
 }

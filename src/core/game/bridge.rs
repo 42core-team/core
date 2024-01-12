@@ -27,8 +27,10 @@ pub fn bridge(
         loop {
             match reader.read(&mut buffer).await {
                 Ok(n) if n == 0 => {
+                    println!("Connection closed by client");
+                    let _ = disconnect_sender.send(()).await;
                     break;
-                }
+                },
                 Ok(n) => {
                     if let Ok(s) = std::str::from_utf8(&buffer[..n]) {
                         let msg = s.to_string();
@@ -41,7 +43,7 @@ pub fn bridge(
                             match convert_to_actions(line) {
                                 Ok(actions) => {
                                     // println!("Parsed Actions: {:?}", actions);
-                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(actions)).await;
+                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(actions.actions)).await;
                                 }
                                 Err(err) => {
                                     let _ = socket_to_mscp_sender.send(Message::from_vec_action(vec![])).await;
@@ -66,11 +68,22 @@ pub fn bridge(
                     match message {
                         Message::State(state) => {
                             let json_string = serde_json::to_string(&state).unwrap().add("\n");
-                            let _ = writer.write_all(json_string.as_bytes()).await;
-                            let _ = writer.flush().await;
+                            if let Err(_) = writer.write_all(json_string.as_bytes()).await {
+                                println!("Send Error in bridge");
+                                let _ = writer.shutdown().await;
+                                break;
+                            }
                         }
                         Message::GameConfig(game_config) => {
                             let json_string = serde_json::to_string(&game_config).unwrap().add("\n");
+                            if let Err(_) = writer.write_all(json_string.as_bytes()).await {
+                                println!("Send Error in bridge");
+                                let _ = writer.shutdown().await;
+                                break;
+                            }
+                        }
+                        Message::VecAction(vec_action) => {
+                            let json_string = serde_json::to_string(&vec_action).unwrap().add("\n");
                             let _ = writer.write_all(json_string.as_bytes()).await;
                             let _ = writer.flush().await;
                         }
@@ -109,21 +122,20 @@ pub fn bridge(
     );
 }
 
-fn convert_to_actions(buffer: &str) -> Result<Vec<Action>, serde_json::Error> {
-    let msg = remove_after_last_brace(&buffer);
-    // println!("MSG: {:?}", msg);
-
-    let result: Result<Vec<Action>, serde_json::Error> = serde_json::from_str(&msg);
+fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
+    let result: Result<Request, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 
-fn remove_after_last_brace(input: &str) -> String {
-    let reversed_string: String = input.chars().rev().collect();
+// in case the serde json parser is not able to parse the json string
+//
+// fn remove_after_last_brace(input: &str) -> String {
+//     let reversed_string: String = input.chars().rev().collect();
 
-    if let Some(index) = reversed_string.find(']') {
-        let truncated_string = &reversed_string[index..].chars().rev().collect::<String>();
-        truncated_string.to_string()
-    } else {
-        input.to_string()
-    }
-}
+//     if let Some(index) = reversed_string.find(']') {
+//         let truncated_string = &reversed_string[index..].chars().rev().collect::<String>();
+//         truncated_string.to_string()
+//     } else {
+//         input.to_string()
+//     }
+// }

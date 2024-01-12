@@ -4,7 +4,7 @@ use super::{Game, Team, Unit, Resource, Core};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct State {
-    pub status: u8,
+    pub status: u64,
     pub cores: Vec<Core>,
 	pub resources: Vec<Resource>,
     pub units: Vec<Unit>,
@@ -14,7 +14,7 @@ pub struct State {
 impl State {
     pub fn from_game(game: &Game) -> Self {
         State {
-            status: 0, // @TODO THAT STUFF
+            status: game.status,
             cores: game.cores.clone(),
 			resources: game.resources.clone(),
             units: game.units.clone(),
