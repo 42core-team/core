@@ -1,5 +1,3 @@
-extern crate time;
-
 use std::time::{UNIX_EPOCH, SystemTime};
 
 use super::LogOptions;
