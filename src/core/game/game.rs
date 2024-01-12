@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use crate::game::action::Action;
 
+use crate::game::log::{log, log_options::LogOptions};
+
 use super::{Team, Resource, GameConfig, Core, Unit, utils::get_ms, Message, helper::Target, State};
 
 #[derive(Debug)]
@@ -63,6 +65,8 @@ impl Game {
 		}
 		println!("------ Tick ------");
 		self.wait_till_next_tick().await;
+
+		log(LogOptions::State, "State");
 
 		let mut team_actions: Vec<(u64, Action)> = vec![];
 
