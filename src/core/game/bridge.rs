@@ -5,7 +5,7 @@
 //!
 
 use std::ops::Add;
-use super::{action::{Action, Request}, Message};
+use super::{action::Request, Message, GameConfig, State};
 use serde_json;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -13,11 +13,11 @@ use tokio::{
     sync::mpsc::{self, Receiver, Sender},
 };
 
-pub(crate) fn bridge(
+pub fn bridge(
     stream: TcpStream,
-) -> (Sender<Message>, Receiver<Vec<Action>>, Receiver<()>) {
+) -> (Sender<Message>, Receiver<Message>, Receiver<()>) {
     let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<Message>(100);
-    let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Vec<Action>>(100);
+    let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Message>(100);
     let (disconnect_sender, disconnect_receiver) = mpsc::channel::<()>(1);
 
     let (mut reader, mut writer) = tokio::io::split(stream);
@@ -42,11 +42,27 @@ pub(crate) fn bridge(
                             }
                             match convert_to_actions(line) {
                                 Ok(actions) => {
-                                    // println!("Parsed Actions: {:?}", actions);
-                                    let _ = socket_to_mscp_sender.send(actions.actions).await;
+                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(actions.actions)).await;
                                 }
-                                Err(err) => {
-                                    println!("Parse Error in bridge: {:?}", err);
+                                // at the first send the game config gets send
+                                Err(_) => {
+                                    match convert_to_config(line) {
+                                        Ok(config) => {
+                                            let _ = socket_to_mscp_sender.send(Message::from_game_config(&config)).await;
+                                        }
+                                        Err(_) => {
+                                            match convert_to_state(line) {
+                                                Ok(state) => {
+                                                    let _ = socket_to_mscp_sender.send(Message::from_state(&state)).await;
+                                                }
+                                                Err(err) => {
+                                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(vec![])).await;
+                                                    println!("Parse Error in bridge: {:?} from {:?}", err, line);
+                                                }
+                                                
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -81,6 +97,11 @@ pub(crate) fn bridge(
                                 break;
                             }
                         }
+                        Message::VecAction(vec_action) => {
+                            let json_string = serde_json::to_string(&vec_action).unwrap().add("\n");
+                            let _ = writer.write_all(json_string.as_bytes()).await;
+                            let _ = writer.flush().await;
+                        }
                     }
                 }
                 None => {
@@ -113,6 +134,16 @@ pub(crate) fn bridge(
 
 fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
     let result: Result<Request, serde_json::Error> = serde_json::from_str(&buffer);
+    result
+}
+
+fn convert_to_config(buffer: &str) -> Result<GameConfig, serde_json::Error> {
+    let result: Result<GameConfig, serde_json::Error> = serde_json::from_str(&buffer);
+    result
+}
+
+fn convert_to_state(buffer: &str) -> Result<State, serde_json::Error> {
+    let result: Result<State, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 
