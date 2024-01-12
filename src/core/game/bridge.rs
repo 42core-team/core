@@ -44,7 +44,6 @@ pub fn bridge(
                                 Ok(actions) => {
                                     // println!("Parsed Actions: {:?}", actions);
                                     let _ = socket_to_mscp_sender.send(actions.actions).await;
-                                    let _ = socket_to_mscp_sender.send(actions.actions).await;
                                 }
                                 Err(err) => {
                                     println!("Parse Error in bridge: {:?}", err);
@@ -113,7 +112,9 @@ pub fn bridge(
 }
 
 fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
-    let result: Result<Request, serde_json::Error> = serde_json::from_str(&buffer);
+    // println!("MSG: {:?}", msg);
+
+    let result: Result<Request, serde_json::Error> = serde_json::from_str(&msg);
     result
 }
 
