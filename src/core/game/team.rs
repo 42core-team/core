@@ -11,7 +11,7 @@ pub struct Team {
 	pub balance: u64,
 
 	pub sender: Option<Sender<Message>>,
-	pub receiver: Option<Receiver<Vec<Action>>>,
+	pub receiver: Option<Receiver<Message>>,
 	pub disconnect: Option<Receiver<()>>,
 }
 

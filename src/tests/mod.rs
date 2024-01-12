@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-	use lib::game::{Team, Game, GameConfig, helper::Target};
+	use lib::game::{Team, Game, GameConfig, helper::Target, bridge::bridge, Message};
+use tokio::{sync::oneshot, net::{TcpListener, TcpStream}, join, select};
 
 
 	fn get_fake_game() -> Game{
@@ -551,6 +552,86 @@ mod tests {
 		// hp of core2 should not change -> be the same as in the GameConfig
 		assert_eq!(game.cores[1].hp , before_hp);
 
+	}
+
+	#[tokio::test]
+	async fn game_config() {
+		let (tx1, rx1) = oneshot::channel::<()>();
+		let (tx2, rx2) = oneshot::channel::<()>();
+		let mut _tick_rate: u64 = 50;
+
+
+		tokio::spawn(async move {
+			// Start the first thread with the endless loop
+			let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
+
+			let mut queue: Vec<Team> = Vec::<Team>::new();
+
+			loop {
+				let (stream, _) = listener.accept().await.unwrap();
+
+				queue.push(Team::from_tcp_stream(stream));
+
+
+				if queue.len() >= 2 {
+					let t1 = queue.remove(0);
+					let t2 = queue.remove(0);
+					let mut game = Game::new(vec![t1, t2]);
+
+					tokio::spawn(async move {
+						println!("Game start!");
+						game.start().await;
+						println!("Game ended!");
+					});
+				}
+			}
+		});
+
+		tokio::spawn(async move {
+			let mut stream;
+			loop {
+				stream = TcpStream::connect("127.0.0.1:4242").await;
+				if stream.is_ok() {
+					break;
+				}
+			}
+			let stream = stream.unwrap();
+			let (_sender, mut receiver, _disconnect) = bridge(stream);
+			tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+			let result = receiver.recv().await;
+			println!("Result: {:?}", result);
+			assert!(result.is_some());
+			match result {
+				State => {
+					assert!(true);
+				}
+				GameConfig => {
+					assert!(false);
+				}
+			}
+			let _ = tx1.send(());
+		});
+
+		// Spawn the second secondary thread
+		tokio::spawn(async move {
+			let mut stream;
+			loop {
+				stream = TcpStream::connect("127.0.0.1:4242").await;
+				if stream.is_ok() {
+					break;
+				}
+			}
+			let stream = stream.unwrap();
+			let (_sender, mut receiver, _disconnect) = bridge(stream);
+			println!("Connected to server!");	
+			tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+			let _ = tx2.send(());
+		});
+
+		select! {
+			_ = rx1 => {}
+			_ = rx2 => {}
+		}
 	}
 
 }

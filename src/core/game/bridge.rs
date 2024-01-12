@@ -5,7 +5,7 @@
 //!
 
 use std::ops::Add;
-use super::{action::Action, State, Message};
+use super::{action::Action, Message};
 use serde_json;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -13,11 +13,11 @@ use tokio::{
     sync::mpsc::{self, Receiver, Sender},
 };
 
-pub(crate) fn bridge(
+pub fn bridge(
     stream: TcpStream,
-) -> (Sender<Message>, Receiver<Vec<Action>>, Receiver<()>) {
+) -> (Sender<Message>, Receiver<Message>, Receiver<()>) {
     let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<Message>(100);
-    let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Vec<Action>>(100);
+    let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Message>(100);
     let (disconnect_sender, disconnect_receiver) = mpsc::channel::<()>(1);
 
     let (mut reader, mut writer) = tokio::io::split(stream);
@@ -41,9 +41,10 @@ pub(crate) fn bridge(
                             match convert_to_actions(line) {
                                 Ok(actions) => {
                                     // println!("Parsed Actions: {:?}", actions);
-                                    let _ = socket_to_mscp_sender.send(actions).await;
+                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(actions)).await;
                                 }
                                 Err(err) => {
+                                    let _ = socket_to_mscp_sender.send(Message::from_vec_action(vec![])).await;
                                     println!("Parse Error in bridge: {:?}", err);
                                 }
                             }
@@ -70,6 +71,11 @@ pub(crate) fn bridge(
                         }
                         Message::GameConfig(game_config) => {
                             let json_string = serde_json::to_string(&game_config).unwrap().add("\n");
+                            let _ = writer.write_all(json_string.as_bytes()).await;
+                            let _ = writer.flush().await;
+                        }
+                        Message::VecAction(vec_action) => {
+                            let json_string = serde_json::to_string(&vec_action).unwrap().add("\n");
                             let _ = writer.write_all(json_string.as_bytes()).await;
                             let _ = writer.flush().await;
                         }
