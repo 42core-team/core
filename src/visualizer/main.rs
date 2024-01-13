@@ -12,20 +12,32 @@ use std::os::macos::raw::stat;
 use lib::game::{bridge::bridge, Message, Login, State, GameConfig};
 use tokio::net::TcpStream;
 
+use crossterm::{execute, cursor, Result};
+use std::io::{stdout, Write};
+
 
 // IN THE HOME DIRECTORY 
 // cargo run --manifest-path core/Cargo.toml --bin game
 // cargo run --manifest-path core/Cargo.toml --bin visualizer
 
+// fn clear_map () {
+// 	let mut stdout = stdout();
+// 	execute!(stdout, cursor::Hide)?;
+// 	execute!(stdout, cursor::MoveTo(0, 0))?;
+// 	execute!(stdout, cursor::Show)?;
+// }
+
+// fn print_map
+
 /// PLEASE CHANGE THIS
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let mut stream = TcpStream::connect("127.0.0.1:4242").await;
+	let mut stream = TcpStream::connect("127.0.0.1:4242").await;
 
 	if let Ok(s) = stream {
 		let (sender, mut reciever, disconnect) = bridge(s);
 
-		let config: GameConfig = GameConfig::patch_0_1_0();
+		let config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
 		sender.send(Message::Login(Login{id: 42})).await;
 		loop {
 			if let Some(m) = reciever.recv().await {
@@ -37,12 +49,12 @@ async fn main() -> std::io::Result<()> {
 		
 	}
 	
-    Ok(())
+	Ok(())
 }
 
 
 async fn print(config: &GameConfig, state: State) {
-	// DEFENETLY REMOVE THIS AT THE END PLEASE!!!!!!!
+	// DEFINETLY REMOVE THIS AT THE END PLEASE!!!!!!!
 	println!("XXX {:?}", state);
 	
 }
