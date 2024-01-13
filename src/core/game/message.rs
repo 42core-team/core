@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::{State, GameConfig, action::Action};
+use super::{State, GameConfig, action::Action, Login};
 
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -8,6 +8,7 @@ pub enum Message {
     VecAction(Vec<Action>),
     State(State),
     GameConfig(GameConfig),
+    Login(Login),
 }
 
 impl Message {
@@ -20,5 +21,9 @@ impl Message {
 
     pub fn from_vec_action(vec_action: Vec<Action>) -> Self {
         Message::VecAction(vec_action)
+    }
+
+    pub fn from_login(login: &Login) -> Self {
+        Message::Login(login.clone())
     }
 }

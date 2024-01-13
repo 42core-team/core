@@ -8,31 +8,21 @@
 //!
 
 
-use lib::game::{Game, Team};
+use std::env;
 
-use tokio::net::TcpListener;
+use lib::game::Game;
 
 #[tokio::main]
 async fn main() {
-	let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
-
-	let mut queue: Vec<Team> = Vec::<Team>::new();
-
-	loop {
-		let (stream, _) = listener.accept().await.unwrap();
-
-		queue.push(Team::from_tcp_stream(stream));
-
-		if queue.len() >= 2 {
-			let t1 = queue.remove(0);
-			let t2 = queue.remove(0);
-			let mut game = Game::new(vec![t1, t2]);
-
-			tokio::spawn(async move {
-				println!("Game start!");
-				game.start().await;
-				println!("Game ended!");
-			});
+	let mut reqired_team_ids = Vec::new();
+	for argument in env::args() {
+		println!("Argument: {}", argument);
+		let n = argument.parse::<u64>();
+		if n.is_ok() {
+			reqired_team_ids.push(n.unwrap());
 		}
-	}
+    }
+
+	let game: Game = Game::new(reqired_team_ids);
+	game.init().await;
 }

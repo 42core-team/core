@@ -1,8 +1,10 @@
 use std::time::Duration;
 
+use tokio::{net::TcpListener, sync::mpsc};
+
 use crate::game::action::Action;
 
-use super::{Team, Resource, GameConfig, Core, Unit, utils::get_ms, Message, helper::Target, State};
+use super::{Team, Resource, GameConfig, Core, Unit, utils::get_ms, Message, helper::Target, State, Spectator, team};
 
 #[derive(Debug)]
 pub struct Game {
@@ -16,13 +18,17 @@ pub struct Game {
 	pub tick_rate: u128,
 	pub last_tick_time: u128,
 	pub time_since_last_tick: u128,
+
+
+	pub spectators: Vec<Spectator>,
+	pub required_team_ids: Vec<u64>,
 }
 
 impl Game {
-	pub fn new(teams: Vec<Team>) -> Self {
+	pub fn new(required_team_ids: Vec<u64>) -> Self {
 		Game {
 			status: 0, // OK
-			teams,
+			teams: vec![],
 			config: GameConfig::patch_0_1_0(),
 			cores: vec![Core::new(0, 2000, 2000), Core::new(1, 4000, 4000)],
 			resources: vec![],
@@ -31,21 +37,84 @@ impl Game {
 			tick_rate: 50,
 			last_tick_time: get_ms(),
 			time_since_last_tick: 0,
+
+			spectators: vec![],
+			required_team_ids,
 		}
 	}
 
-	pub async fn start(&mut self) {
+	pub async fn init(mut self) {
+		let (team_sender, mut team_receiver) = mpsc::channel::<Team>(100);
+		let (spectator_sender, mut spectator_receiver) = mpsc::channel::<Spectator>(100);
+
+		Self::open(team_sender, spectator_sender);
+	
+		loop {
+			if let Ok(team) = team_receiver.try_recv() {
+				println!("Team received");
+				// if self.required_team_ids.contains(&team.id) && !self.teams.iter().any(|team| team.id == team.id){
+					self.teams.push(team);
+				// }
+			}
+			if let Ok(spectator) = spectator_receiver.try_recv() {
+				println!("Spectator received");
+				self.spectators.push(spectator);
+			}
+			tokio::time::sleep(Duration::from_millis(20)).await;
+			println!("Teams: {:?}", self.teams.len());
+			println!("Required: {:?}", self.required_team_ids.len());
+			if self.teams.len() == self.required_team_ids.len() {
+				break;
+			}
+		}
+		self.start(spectator_receiver).await;
+
+	}
+
+	pub fn open(team_sender: mpsc::Sender<Team>, spectator_sender: mpsc::Sender<Spectator>){
+		tokio::spawn(async move {
+			let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
+			loop {
+				let (stream, _) = listener.accept().await.unwrap();
+	
+				let mut team = Team::from_tcp_stream(stream);
+				
+				if let Some(message) = team.receiver.as_mut().unwrap().recv().await{
+					match message {
+						Message::Login(login) => {
+							if login.id == 42{
+								let _ = spectator_sender.send(Spectator::from_team(team)).await;
+							} else {
+								let _ = team_sender.send(team).await;
+
+							}
+						},
+						_ => {
+							println!("Error: First message is not a login message");
+						}
+					}
+				}
+			}
+		});
+	}
+
+	pub async fn start(&mut self, mut spectator_receiver: mpsc::Receiver<Spectator>) {
 		for team_index in 0..self.teams.len() {
 			let team = &mut self.teams[team_index];
 			match team.sender.as_mut().unwrap().send(Message::from_game_config(&GameConfig::patch_0_1_0())).await {
 				Ok(_) => {}
 				Err(_) => {
-					println!("Error sending state to team");
+					println!("Error sending config to team");
 				}
 			}
 		}
 
 		loop {
+			if let Ok(spectator) = spectator_receiver.try_recv() {
+				println!("Spectator received");
+				self.spectators.push(spectator);
+			}
+
 			if self.tick().await {
 				break;
 			}
@@ -95,6 +164,15 @@ impl Game {
 				Ok(_) => {}
 				Err(_) => {
 					println!("Error sending state to team");
+				}
+			}
+		}
+		for spectator in self.spectators.iter_mut() {
+			let state = state.clone();
+			match spectator.sender.as_mut().unwrap().send(Message::from_state(&state)).await {
+				Ok(_) => {}
+				Err(_) => {
+					println!("Error sending state to spectator");
 				}
 			}
 		}
@@ -425,6 +503,9 @@ impl Game {
 	///
 	/// {"actions":[{"Create":{"type_id":0}}]}
 	/// {"actions":[{"Create":{"type_id":0}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]}
+	/// {"id": 10}
+	/// {"id": 20}
+	/// {"id": 42}
 	///
 	/// To uns netcat:
 	/// ```sh
