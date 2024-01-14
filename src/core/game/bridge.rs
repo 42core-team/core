@@ -102,11 +102,6 @@ pub fn bridge(
                             let _ = writer.write_all(json_string.as_bytes()).await;
                             let _ = writer.flush().await;
                         }
-                        Message::VecAction(vec_action) => {
-                            let json_string = serde_json::to_string(&vec_action).unwrap().add("\n");
-                            let _ = writer.write_all(json_string.as_bytes()).await;
-                            let _ = writer.flush().await;
-                        }
                     }
                 }
                 None => {
