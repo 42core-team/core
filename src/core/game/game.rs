@@ -88,7 +88,7 @@ impl Game {
 			}
 			self.update(team_actions);
 			self.send_state().await;
-		}
+			false
 	}
 
 	async fn send_state(&mut self) {
