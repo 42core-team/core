@@ -42,7 +42,7 @@ impl Game {
 			match team.sender.as_mut().unwrap().send(Message::from_game_config(&GameConfig::patch_0_1_0())).await {
 				Ok(_) => {}
 				Err(_) => {
-					println!("Error sending state to team");
+					log(LogOptions::Error ,"Error sending state to team");
 				}
 			}
 		}
@@ -59,11 +59,11 @@ impl Game {
 	async fn tick(&mut self) -> bool{
 		for team in self.teams.iter_mut() {
 			if team.is_disconnected() {
-				println!("Team {:?} disconnected", team.id);
+				log(LogOptions::Info , format!("Team with id {:?} disconnected", team.id).as_str());
 				return true;
 			}
 		}
-		println!("------ Tick ------");
+		log(LogOptions::Info, "------ Tick ------");
 		self.wait_till_next_tick().await;
 
 		log(LogOptions::State, "State");
@@ -75,13 +75,13 @@ impl Game {
 				while let Ok(message) = team.receiver.as_mut().unwrap().try_recv() {
 					match message {
 						Message::VecAction(actions) => {
-							println!("TEAM send action: {:?}", actions);
+							log(LogOptions::Action ,  format!("TEAM send action: {:?}", actions).as_str());
 							for action in actions {
 								team_actions.push((team.id, action));
 							}
 						}
 						_ => {
-							println!("TEAM received unknown message");
+							log(LogOptions::Error, "TEAM received unknown message");
 						}
 					}
 				}
@@ -98,7 +98,7 @@ impl Game {
 			match team.sender.as_mut().unwrap().send(Message::from_state(&state)).await {
 				Ok(_) => {}
 				Err(_) => {
-					println!("Error sending state to team");
+					log(LogOptions::Error, "Error sending state to team");
 				}
 			}
 		}
@@ -192,7 +192,6 @@ impl Game {
 
 	pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
 		for core in self.cores.iter() {
-			println!("Core: {:?}", core);
 			if core.team_id == team_id {
 				return Some(core);
 			}
@@ -213,10 +212,10 @@ impl Game {
 	/// - reduce team balance
 	///
 	pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
-		println!("Create unit of type {:?} for team with id {:?}", type_id, team_id);
+		log(LogOptions::Changes, format!("Create unit of type {:?} for team with id {:?}", type_id, team_id).as_str());
 		let team_core = self.get_core_by_team_id(team_id);
 		if team_core.is_none() {
-			println!("Core of team with id {:?} not found", team_id);
+			log(LogOptions::Error, format!("Core of team with id {:?} not found", team_id).as_str());
 			return;
 		}
 		let team_core = team_core.unwrap();
@@ -226,7 +225,7 @@ impl Game {
 				let team_balance = self.get_team_by_id(team_id).unwrap().balance;
 				let unit_cost = GameConfig::get_unit_config_by_type_id(type_id).unwrap().cost;
 				if team_balance < unit_cost {
-					println!("Team with id {:?} has not enough balance", team_id);
+					log(LogOptions::Error, format!("Team with id {:?} has not enough balance", team_id).as_str());
 					return;
 				}
 				let team = self.get_team_by_id_mut(team_id);
@@ -235,14 +234,14 @@ impl Game {
 						team.balance -= unit_cost;
 					}
 					None => {
-						println!("Team with id {:?} not found", team_id);
+						log(LogOptions::Error, format!("Team with id {:?} not found", team_id).as_str());
 						return;
 					}
 				}
 				self.units.push(unit);
 			}
 			None => {
-				println!("Unit could not be created");
+				log(LogOptions::Error, "Unit could not be created");
 			}
 		}
 	}
@@ -259,7 +258,7 @@ impl Game {
 	/// - remove target from targets
 	///
 	pub fn handel_attack_action(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
-		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
+		log(LogOptions::Changes, format!("Attack: {:?} -> {:?}", attacker_id, target_id).as_str());
 		let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
 		let target = self.units.iter().find(|unit| unit.id == target_id);
 		match (attacker, target) {
@@ -273,7 +272,7 @@ impl Game {
 				}
 			}
 			_ => {
-				println!("Attacker or target not found");
+				log(LogOptions::Error, "Attacker or target not found");
 			}
 		}
 	}
@@ -368,7 +367,7 @@ impl Game {
 	/// Get the damage of the attacker based on the type of the target from the config
 	///
 	pub fn attack(&mut self, attacker_id: u64, target_id: u64) {
-		println!("Attack: {:?} -> {:?}", attacker_id, target_id);
+		log(LogOptions::Changes, format!("Attack: {:?} -> {:?}", attacker_id, target_id).as_str());
 		let attacker = self.units.iter().find(|unit| unit.id == attacker_id).cloned();
 		let target = self.get_target_by_id(target_id);
 		match (attacker, target) {
@@ -409,11 +408,11 @@ impl Game {
 						}
 					}
 				} else {
-					println!("Target not in range");
+					log(LogOptions::Error, "Target not in range");
 				}
 			}
 			_ => {
-				println!("Attacker or target not found");
+				log(LogOptions::Error, "Attacker or target not found");
 			}
 		}
 	}
@@ -447,7 +446,7 @@ impl Game {
 					self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
 				}
 				Action::Travel(travel) => {
-					println!("Travel: {:?}", travel);
+					log(LogOptions::Changes,  format!("Travel: {:?}", travel).as_str());
 				}
 			}
 		}
@@ -470,7 +469,7 @@ impl Game {
 					}
 				}
 				_ => {
-					println!("Attacker or target not found");
+					log(LogOptions::Error, "Attacker or target not found");
 				}
 			}
 		}
@@ -484,7 +483,7 @@ impl Game {
 				self.units.push(unit);
 			}
 			None => {
-				println!("Unit could not be created");
+				log(LogOptions::Error, "Unit could not be created");
 			}
 		}
 	}
