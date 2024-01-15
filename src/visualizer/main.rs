@@ -1,9 +1,9 @@
 //!
 //! ## Introduction
 //! This module is part of the CORE Project.
-//! 
+//!
 //! The Project ist a coding challenge to create a bot that can play the game CORE.
-//! 
+//!
 //! In this module you will find the basic visualizer that connects to the game and visualizes the game state.
 //!
 
@@ -18,7 +18,7 @@ use std::io::{stdout, Write};
 // use crossterm::cursor;
 // use std::io::Write;
 
-// IN THE HOME DIRECTORY 
+// IN THE HOME DIRECTORY
 // cargo run --manifest-path core/Cargo.toml --bin game
 // cargo run --manifest-path Cargo.toml --bin visualizer
 
@@ -61,7 +61,7 @@ fn show_map(state: State, config: GameConfig){
 }
 
 // fn print_map
-
+// test
 /// PLEASE CHANGE THIS
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -102,7 +102,6 @@ async fn main() -> std::io::Result<()> {
 	}
 	Ok(())
 }
-
 
 // async fn print(config: &GameConfig, state: State) {
 // 	// DEFINETLY REMOVE THIS AT THE END PLEASE!!!!!!!
