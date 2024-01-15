@@ -26,18 +26,21 @@ fn clear_map () {
 	println!("{}{}", cursor::MoveTo(0, 0), cursor::Hide);
 }
 
-fn print_character(x: u64, y: u64, state: State) {
+fn print_field(x: u64, y: u64, state: State) {
 	let team1: u64 = state.teams[0].id;
 	let team2: u64 = state.teams[1].id;
 	state.cores.iter().for_each(|core| {
 		if core.x == x && core.y == y && core.team_id == team1 {
 			print!("{}", "C".on_red());
+			return;
 		} else if core.x == x && core.y == y && core.team_id == team2 {
 			print!("{}", "C".on_blue());
-		} else {
-			// replace with something else since map shouldn't be compromised
-			println!("Unknown team id!");
-		}
+			return;
+		} 
+		// else {
+		// 	// replace with something else since map shouldn't be compromised
+		// 	println!("Unknown team id!");
+		// }
 	});
 	state.units.iter().for_each(|unit| {
 		if unit.team_id == team1 {
@@ -45,44 +48,52 @@ fn print_character(x: u64, y: u64, state: State) {
 				// Warrior
 				if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id{
 					print!("{}", "w".on_red());
+					return;
 				// Worker
 				} else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
 					print!("{}", "b".on_red());
-				} else {
-					println!("Unknown unit type!");
-				}
+					return;
+				} 
+				// else {
+				// 	println!("Unknown unit type!");
+				// }
 			}
 		} else if unit.team_id == team2 {
 			if unit.x == x && unit.y == y {
 				// Warrior
 				if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id{
 					print!("{}", "w".on_blue());
+					return;
 				// Worker
 				} else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
 					print!("{}", "b".on_blue());
-				} else {
-					// replace with something else since map shouldn't be compromised
-					println!("Unknown unit type!");
-				}
+					return;
+				} 
+				// else {
+				// 	// replace with something else since map shouldn't be compromised
+				// 	println!("Unknown unit type!");
+				// }
 			}
-		} else {
-			// replace with something else since map shouldn't be compromised
-			println!("Unknown team id!");
 		}
+		// } else {
+		// 	// replace with something else since map shouldn't be compromised
+		// 	println!("Unknown team id!");
+		// }
 	});
 	state.resources.iter().for_each(|resource| {
 		if resource.x == x && resource.y == y {
-			print!("R");
+			print!("{}", "R".on_white());
+			return;
 		}
 	});
-	print!("D");
+	print!("{}", " ".on_grey());
 }
 
 fn show_map(state: State, config: GameConfig){
 	clear_map();
 	for y in 0..config.height {
 		for x in 0..config.width {
-			print_character(x, y, state.clone());
+			print_field(x, y, state.clone());
 		}
 	}
 }
