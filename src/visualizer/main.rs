@@ -106,18 +106,18 @@ fn show_map(state: State, config: GameConfig){
 /// PLEASE CHANGE THIS
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-	let mut stream = TcpStream::connect("127.0.0.1:4242").await;
+	let stream = TcpStream::connect("127.0.0.1:4242").await;
 
 	if let Ok(s) = stream {
-		let (sender, mut reciever, disconnect) = bridge(s);
-		let gameconfig: GameConfig;
+		let (sender, mut reciever, _disconnect) = bridge(s);
+		let mut game_config: GameConfig = GameConfig::patch_0_1_0();
 
-		let config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
-		sender.send(Message::Login(Login{id: 42})).await;
+		let _config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
+		let _ = sender.send(Message::Login(Login{id: 42})).await;
 		if let Some(m) = reciever.recv().await {
 			match m {
-				Message::GameConfig(config) => {
-					gameconfig = config;
+				Message::GameConfig(_config) => {
+					game_config = _config;
 				},
 				_ => {
 					println!("First message was not a gameconfig!");
@@ -128,7 +128,7 @@ async fn main() -> std::io::Result<()> {
 			if let Some(m) = reciever.recv().await {
 				match m {
 					Message::State(state) => {
-						show_map(state, gameconfig);
+						show_map(state, game_config.clone());
 					},
 					_ => {
 						println!("unexpected message type!");
