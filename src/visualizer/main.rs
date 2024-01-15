@@ -106,9 +106,6 @@ fn show_map(state: State, config: GameConfig){
 /// PLEASE CHANGE THIS
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-	loop {
-		clear_map();
-	}
 	let mut stream = TcpStream::connect("127.0.0.1:4242").await;
 
 	if let Ok(s) = stream {
