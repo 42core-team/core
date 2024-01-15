@@ -1,7 +1,7 @@
 //!
 //! ## Introduction
 //! This module handels all the different actions that can be performed by a client in the game.
-//! 
+//!
 //!
 
 pub mod action;
