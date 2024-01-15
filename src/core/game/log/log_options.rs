@@ -1,7 +1,6 @@
-
 pub enum LogOptions {
-   State,
-   Error,
-   Action,
-   Changes
+    State,
+    Error,
+    Action,
+    Changes,
 }
