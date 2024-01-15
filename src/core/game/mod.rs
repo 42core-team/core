@@ -8,8 +8,8 @@ pub mod game;
 pub use game::Game;
 
 pub mod entity;
-pub use entity::Resource;
 pub use entity::Core;
+pub use entity::Resource;
 
 pub mod unit;
 pub use unit::Unit;
