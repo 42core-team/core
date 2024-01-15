@@ -20,15 +20,12 @@ use std::io::{stdout, Write};
 
 // IN THE HOME DIRECTORY
 // cargo run --manifest-path core/Cargo.toml --bin game
-// cargo run --manifest-path Cargo.toml --bin visualizer
-
-fn clear_map () {
-	println!("{}{}", cursor::MoveTo(0, 0), cursor::Hide);
-}
+// cargo run --manifest-path Cargo.toml --bin visualizer OR make visualizer
 
 fn print_field(x: u64, y: u64, state: State) {
 	let team1: u64 = state.teams[0].id;
 	let team2: u64 = state.teams[1].id;
+
 	state.cores.iter().for_each(|core| {
 		if core.x == x && core.y == y && core.team_id == team1 {
 			print!("{}", "C".on_red());
@@ -42,6 +39,7 @@ fn print_field(x: u64, y: u64, state: State) {
 		// 	println!("Unknown team id!");
 		// }
 	});
+
 	state.units.iter().for_each(|unit| {
 		if unit.team_id == team1 {
 			if unit.x == x && unit.y == y {
@@ -80,20 +78,25 @@ fn print_field(x: u64, y: u64, state: State) {
 		// 	println!("Unknown team id!");
 		// }
 	});
+
 	state.resources.iter().for_each(|resource| {
 		if resource.x == x && resource.y == y {
 			print!("{}", "R".on_white());
 			return;
 		}
 	});
+
 	print!("{}", " ".on_grey());
 }
 
 fn show_map(state: State, config: GameConfig){
-	clear_map();
+	print!("{}{}", cursor::MoveTo(0, 0), cursor::Hide); //move cursor to beginning of terminal and hide it
 	for y in 0..config.height {
 		for x in 0..config.width {
 			print_field(x, y, state.clone());
+			if x == config.width - 1 {
+				print!("\n");
+			}
 		}
 	}
 }
