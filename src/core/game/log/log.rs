@@ -1,8 +1,8 @@
-use std::sync::{RwLock, Arc};
+use lazy_static::lazy_static;
 use std::fs::{self, create_dir_all, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use lazy_static::lazy_static;
+use std::sync::{Arc, RwLock};
 
 use chrono::Utc;
 
@@ -64,7 +64,13 @@ impl Logger {
 
         create_dir_all(&old_logs_folder)?;
 
-        for log_option in &[LogOptions::State, LogOptions::Error, LogOptions::Action, LogOptions::Changes, LogOptions::Info] {
+        for log_option in &[
+            LogOptions::State,
+            LogOptions::Error,
+            LogOptions::Action,
+            LogOptions::Changes,
+            LogOptions::Info,
+        ] {
             let log_file_path = self.get_log_file_path(log_option);
             let old_log_file_path = old_logs_folder.join(log_file_path.file_name().unwrap());
 
@@ -87,7 +93,10 @@ impl Logger {
         self.copy_logs_to_old_folder()?;
 
         // Open the log file in append mode or create if it doesn't exist
-        let mut file = OpenOptions::new().create(true).append(true).open(&log_file_path)?;
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_file_path)?;
 
         // Write the log entry to the file
         writeln!(&mut file, "[{}] - {:?}: {}", timestamp, log_option, text)?;
