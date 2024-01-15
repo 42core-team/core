@@ -5,8 +5,8 @@ use tokio::{net::TcpListener, sync::mpsc};
 use crate::game::action::Action;
 
 use super::{
-    helper::Target, team, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State,
-    Team, Unit,
+    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State, Team,
+    Unit,
 };
 
 #[derive(Debug)]
@@ -28,11 +28,16 @@ pub struct Game {
 
 impl Game {
     pub fn new(required_team_ids: Vec<u64>) -> Self {
+        let game_config: GameConfig = GameConfig::patch_0_1_0();
+
         Game {
             status: 0, // OK
             teams: vec![],
-            config: GameConfig::patch_0_1_0(),
-            cores: vec![Core::new(0, 2000, 2000), Core::new(1, 4000, 4000)],
+            cores: vec![
+                Core::new(0, 2000, 2000, game_config.core_hp),
+                Core::new(1, 4000, 4000, game_config.core_hp),
+            ],
+            config: game_config,
             resources: vec![],
             units: vec![],
             targets: vec![],
@@ -99,13 +104,15 @@ impl Game {
     }
 
     pub async fn start(&mut self, mut spectator_receiver: mpsc::Receiver<Spectator>) {
+        GameConfig::fill_team_config(&mut self.config, &self.teams);
+
         for team_index in 0..self.teams.len() {
             let team = &mut self.teams[team_index];
             match team
                 .sender
                 .as_mut()
                 .unwrap()
-                .send(Message::from_game_config(&GameConfig::patch_0_1_0()))
+                .send(Message::from_game_config(&self.config))
                 .await
             {
                 Ok(_) => {}
@@ -316,7 +323,7 @@ impl Game {
         match unit {
             Some(unit) => {
                 let team_balance = self.get_team_by_id(team_id).unwrap().balance;
-                let unit_cost = GameConfig::get_unit_config_by_type_id(type_id)
+                let unit_cost = GameConfig::get_unit_config_by_type_id(&self.config, type_id)
                     .unwrap()
                     .cost;
                 if team_balance < unit_cost {
@@ -423,23 +430,26 @@ impl Game {
             match target {
                 Target::Unit(target) => {
                     let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
-                    let max_range = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                        .map(|config| config.max_range)
-                        .unwrap_or_default();
+                    let max_range =
+                        GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
+                            .map(|config| config.max_range)
+                            .unwrap_or_default();
                     return dist <= max_range;
                 }
                 Target::Resource(target) => {
                     let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
-                    let max_range = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                        .map(|config| config.max_range)
-                        .unwrap_or_default();
+                    let max_range =
+                        GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
+                            .map(|config| config.max_range)
+                            .unwrap_or_default();
                     return dist <= max_range;
                 }
                 Target::Core(target) => {
                     let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
-                    let max_range = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                        .map(|config| config.max_range)
-                        .unwrap_or_default();
+                    let max_range =
+                        GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
+                            .map(|config| config.max_range)
+                            .unwrap_or_default();
                     return dist <= max_range;
                 }
                 Target::None => {
@@ -478,9 +488,12 @@ impl Game {
                 if self.is_target_in_range(attacker_id, &target) {
                     match target {
                         Target::Unit(unit) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_unit;
+                            let damage = GameConfig::get_unit_config_by_type_id(
+                                &self.config,
+                                attacker.type_id,
+                            )
+                            .unwrap()
+                            .dmg_unit;
                             self.get_unit_by_id_mut(unit.id).unwrap().hp -=
                                 (damage / (1000 / self.tick_rate as u64)) as u64;
                             if self.get_unit_by_id_mut(unit.id).unwrap().hp <= 0 {
@@ -488,9 +501,12 @@ impl Game {
                             }
                         }
                         Target::Resource(resource) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_resource;
+                            let damage = GameConfig::get_unit_config_by_type_id(
+                                &self.config,
+                                attacker.type_id,
+                            )
+                            .unwrap()
+                            .dmg_resource;
                             self.get_resource_by_id_mut(resource.id).unwrap().hp -=
                                 (damage / (1000 / self.tick_rate as u64)) as u64;
                             if self.get_resource_by_id_mut(resource.id).unwrap().hp <= 0 {
@@ -498,9 +514,12 @@ impl Game {
                             }
                         }
                         Target::Core(core) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_core;
+                            let damage = GameConfig::get_unit_config_by_type_id(
+                                &self.config,
+                                attacker.type_id,
+                            )
+                            .unwrap()
+                            .dmg_core;
                             self.get_core_by_id_mut(core.id).unwrap().hp -=
                                 (damage / (1000 / self.tick_rate as u64)) as u64;
                             if self.get_core_by_id_mut(core.id).unwrap().hp <= 0 {
@@ -603,8 +622,8 @@ impl Game {
         self.resources.push(resource);
     }
 
-    pub fn create_fake_core(&mut self, team_id: u64, x: u64, y: u64) {
-        let core = Core::new(team_id, x, y);
+    pub fn create_fake_core(&mut self, team_id: u64, x: u64, y: u64, hp: u64) {
+        let core = Core::new(team_id, x, y, hp);
         self.cores.push(core);
     }
 }
