@@ -1,8 +1,10 @@
 #[cfg(test)]
 mod tests {
 
+    use std::time::Duration;
+
     use lib::game::{bridge::bridge, helper::Target, Game, GameConfig, Message, Team};
-    use tokio::{net::TcpStream, select, sync::oneshot};
+    use tokio::{io::AsyncWriteExt, net::TcpStream, select, sync::oneshot, time::timeout};
 
     fn get_fake_game() -> Game {
         let mut game = Game::new(vec![1, 2]);
@@ -10,6 +12,11 @@ mod tests {
             Team::get_fake_team(1, "Team 1".to_string()),
             Team::get_fake_team(2, "Team 2".to_string()),
         ];
+        game
+    }
+
+    fn get_fake_game_without_teams() -> Game {
+        let game = Game::new(vec![1, 2]);
         game
     }
 
@@ -596,12 +603,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn game_config() {
+    async fn game_login_config() {
         let (tx1, rx1) = oneshot::channel::<()>();
         let (tx2, rx2) = oneshot::channel::<()>();
+        let (tx3, rx3) = oneshot::channel::<()>();
+        let (tx4, rx4) = oneshot::channel::<()>();
         let mut _tick_rate: u64 = 50;
 
-        let game = get_fake_game();
+        let game = get_fake_game_without_teams();
         tokio::spawn(async move {
             game.init().await;
         });
@@ -614,8 +623,12 @@ mod tests {
                     break;
                 }
             }
-            let stream = stream.unwrap();
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 1}".as_bytes()).await.unwrap();
+
             let (_sender, mut receiver, _disconnect) = bridge(stream);
+
             let mut result = receiver.recv().await;
             assert!(result.is_some());
             match result {
@@ -661,6 +674,26 @@ mod tests {
             let _ = tx1.send(());
         });
 
+        // Try to connect with an invalid id
+        tokio::spawn(async move {
+            let mut stream;
+            loop {
+                stream = TcpStream::connect("127.0.0.1:4242").await;
+                if stream.is_ok() {
+                    break;
+                }
+            }
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 3}".as_bytes()).await.unwrap();
+
+            let (_sender, mut receiver, _disconnect) = bridge(stream);
+
+            let result = timeout(Duration::from_millis(100), receiver.recv()).await;
+            assert!(!result.is_ok());
+            let _ = tx3.send(());
+        });
+
         // Spawn the second secondary thread
         tokio::spawn(async move {
             let mut stream;
@@ -670,16 +703,122 @@ mod tests {
                     break;
                 }
             }
-            let stream = stream.unwrap();
-            let (_sender, _receiver, _disconnect) = bridge(stream);
-            println!("Connected to server!");
-            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 2}".as_bytes()).await.unwrap();
+
+            let (_sender, mut receiver, _disconnect) = bridge(stream);
+
+            let mut result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(false);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(true);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(true);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(false);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
             let _ = tx2.send(());
+        });
+
+        // Try to connect as spectator
+        tokio::spawn(async move {
+            let mut stream;
+            loop {
+                stream = TcpStream::connect("127.0.0.1:4242").await;
+                if stream.is_ok() {
+                    break;
+                }
+            }
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 42}".as_bytes()).await.unwrap();
+
+            let (_sender, mut receiver, _disconnect) = bridge(stream);
+
+            let mut result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(false);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(true);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(true);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(false);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            let _ = tx4.send(());
         });
 
         select! {
             _ = rx1 => {}
             _ = rx2 => {}
+            _ = rx3 => {}
+            _ = rx4 => {}
         }
     }
 }

@@ -53,10 +53,14 @@ impl Game {
 
         loop {
             if let Ok(team) = team_receiver.try_recv() {
-                println!("Team received");
-                // if self.required_team_ids.contains(&team.id) && !self.teams.iter().any(|team| team.id == team.id){
-                self.teams.push(team);
-                // }
+                if self.required_team_ids.contains(&team.id)
+                    && !self.teams.iter().any(|team| team.id == team.id)
+                {
+                    self.teams.push(team);
+                    println!("Team received");
+                } else {
+                    println!("Team not allowed");
+                }
             }
             if let Ok(spectator) = spectator_receiver.try_recv() {
                 println!("Spectator received");
