@@ -12,7 +12,7 @@
 use lib::game::{bridge::bridge, Message, Login, State, GameConfig, Game, state};
 use tokio::net::TcpStream;
 
-use crossterm::{execute, cursor};
+use crossterm::{execute, cursor, style::Stylize};
 use std::io::{stdout, Write};
 // use crossterm::execute::{execute, stdout};
 // use crossterm::cursor;
@@ -26,21 +26,42 @@ fn clear_map () {
 	println!("{}{}", cursor::MoveTo(0, 0), cursor::Hide);
 }
 
-fn get_character(x: u64, y: u64, state: State) {
+fn print_character(x: u64, y: u64, state: State) {
 	state.cores.iter().for_each(|core| {
-		if core.x == x && core.y == y {
+		if core.x == x && core.y == y && core.team_id == 0 {
+			// check for team ids for different background colors
 			print!("C");
 		}
 	});
 	state.units.iter().for_each(|unit| {
-		if unit.x == x && unit.y == y {
-			if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id{
-				print!("U");
-			} else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
-				print!("U");
-			} else {
-				println!("Unknown unit type!");
+		if unit.team_id == 0 {
+			if unit.x == x && unit.y == y {
+				// Warrior
+				if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id{
+					print!("{}", "w".on_red());
+				// Worker
+				} else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
+					print!("{}", "b".on_red());
+				} else {
+					println!("Unknown unit type!");
+				}
 			}
+		} else if unit.team_id == 1 {
+			if unit.x == x && unit.y == y {
+				// Warrior
+				if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id{
+					print!("{}", "w".on_blue());
+				// Worker
+				} else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
+					print!("{}", "b".on_blue());
+				} else {
+					// replace with something else since map shouldn't be compromised
+					println!("Unknown unit type!");
+				}
+			}
+		} else {
+			// replace with something else since map shouldn't be compromised
+			println!("Unknown team id!");
 		}
 	});
 	state.resources.iter().for_each(|resource| {
@@ -53,9 +74,10 @@ fn get_character(x: u64, y: u64, state: State) {
 
 fn show_map(state: State, config: GameConfig){
 	clear_map();
+	let team1: u64 = state.teams[0].;
 	for y in 0..config.height {
 		for x in 0..config.width {
-			get_character(x, y, state.clone());
+			print_character(x, y, state.clone());
 		}
 	}
 }
