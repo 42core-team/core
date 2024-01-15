@@ -1,7 +1,6 @@
 use serde::Deserialize;
 
-use super::{State, GameConfig, action::Action, Login};
-
+use super::{action::Action, GameConfig, Login, State};
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 pub enum Message {

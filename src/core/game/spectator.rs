@@ -1,6 +1,9 @@
-use tokio::{sync::mpsc::{Sender, Receiver}, net::TcpStream};
+use tokio::{
+    net::TcpStream,
+    sync::mpsc::{Receiver, Sender},
+};
 
-use super::{Message, bridge::bridge, Team};
+use super::{bridge::bridge, Message, Team};
 #[derive(Debug)]
 
 pub struct Spectator {
@@ -31,16 +34,16 @@ impl Spectator {
     }
 
     pub fn is_disconnected(&mut self) -> bool {
-		if self.is_disconnected {
-			return true;
-		}
-		// @TODO commented out for testing
-		// if let None = self.disconnect {
-		// 	return true;
-		// }
+        if self.is_disconnected {
+            return true;
+        }
+        // @TODO commented out for testing
+        // if let None = self.disconnect {
+        // 	return true;
+        // }
 
         if let Ok(_) = self.disconnect.as_mut().unwrap().try_recv() {
-			self.is_disconnected = true;
+            self.is_disconnected = true;
             return true;
         }
         return false;
