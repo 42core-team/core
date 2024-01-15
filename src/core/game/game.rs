@@ -5,8 +5,8 @@ use tokio::{net::TcpListener, sync::mpsc};
 use crate::game::action::Action;
 
 use super::{
-    helper::Target, team, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State,
-    Team, Unit,
+    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State, Team,
+    Unit,
 };
 
 #[derive(Debug)]
@@ -32,7 +32,7 @@ impl Game {
             status: 0, // OK
             teams: vec![],
             config: GameConfig::patch_0_1_0(),
-            cores: vec![Core::new(0, 2000, 2000), Core::new(1, 4000, 4000)],
+            cores: vec![Core::new(1, 2000, 2000), Core::new(2, 4000, 4000)],
             resources: vec![],
             units: vec![],
             targets: vec![],
