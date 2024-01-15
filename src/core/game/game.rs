@@ -543,17 +543,6 @@ impl Game {
             }
         }
     }
-    pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, x: u64, y: u64) {
-        let unit = Unit::new(self, team_id, type_id, x, y);
-        match unit {
-            Some(unit) => {
-                self.units.push(unit);
-            }
-            None => {
-                log(LogOptions::Error, "Unit could not be created");
-            }
-        }
-    }
 
     pub fn create_fake_resource(&mut self, x: u64, y: u64) {
         let resource = Resource::new(0, 100, x, y, 100);
