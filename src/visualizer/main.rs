@@ -27,14 +27,20 @@ fn clear_map () {
 }
 
 fn print_character(x: u64, y: u64, state: State) {
+	let team1: u64 = state.teams[0].id;
+	let team2: u64 = state.teams[1].id;
 	state.cores.iter().for_each(|core| {
-		if core.x == x && core.y == y && core.team_id == 0 {
-			// check for team ids for different background colors
-			print!("C");
+		if core.x == x && core.y == y && core.team_id == team1 {
+			print!("{}", "C".on_red());
+		} else if core.x == x && core.y == y && core.team_id == team2 {
+			print!("{}", "C".on_blue());
+		} else {
+			// replace with something else since map shouldn't be compromised
+			println!("Unknown team id!");
 		}
 	});
 	state.units.iter().for_each(|unit| {
-		if unit.team_id == 0 {
+		if unit.team_id == team1 {
 			if unit.x == x && unit.y == y {
 				// Warrior
 				if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id{
@@ -46,7 +52,7 @@ fn print_character(x: u64, y: u64, state: State) {
 					println!("Unknown unit type!");
 				}
 			}
-		} else if unit.team_id == 1 {
+		} else if unit.team_id == team2 {
 			if unit.x == x && unit.y == y {
 				// Warrior
 				if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id{
@@ -74,7 +80,6 @@ fn print_character(x: u64, y: u64, state: State) {
 
 fn show_map(state: State, config: GameConfig){
 	clear_map();
-	let team1: u64 = state.teams[0].;
 	for y in 0..config.height {
 		for x in 0..config.width {
 			print_character(x, y, state.clone());

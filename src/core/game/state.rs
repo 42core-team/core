@@ -34,8 +34,8 @@ impl State {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct StateTeam {
-    id: u64,
-    balance: u64,
+    pub id: u64,
+    pub balance: u64,
 }
 
 impl StateTeam {
