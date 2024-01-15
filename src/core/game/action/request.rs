@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Request {
-	pub actions: Vec<Action>,
+    pub actions: Vec<Action>,
 }
 
 impl Request {
