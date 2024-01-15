@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Game, Team, Unit, Resource, Core};
+use super::{Core, Game, Resource, Team, Unit};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct State {
     pub status: u8,
     pub cores: Vec<Core>,
-	pub resources: Vec<Resource>,
+    pub resources: Vec<Resource>,
     pub units: Vec<Unit>,
     pub teams: Vec<StateTeam>,
 }
@@ -16,7 +16,7 @@ impl State {
         State {
             status: 0, // @TODO THAT STUFF
             cores: game.cores.clone(),
-			resources: game.resources.clone(),
+            resources: game.resources.clone(),
             units: game.units.clone(),
             teams: game.teams.iter().map(|t| StateTeam::from_team(t)).collect(),
         }
@@ -25,7 +25,7 @@ impl State {
         State {
             status: state.status,
             cores: state.cores.clone(),
-			resources: state.resources.clone(),
+            resources: state.resources.clone(),
             units: state.units.clone(),
             teams: state.teams.clone(),
         }

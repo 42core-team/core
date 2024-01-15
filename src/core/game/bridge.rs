@@ -4,18 +4,16 @@
 //!
 //!
 
-use std::ops::Add;
 use super::{action::Action, State};
 use serde_json;
+use std::ops::Add;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
     sync::mpsc::{self, Receiver, Sender},
 };
 
-pub(crate) fn bridge(
-    stream: TcpStream,
-) -> (Sender<State>, Receiver<Vec<Action>>, Receiver<()>) {
+pub(crate) fn bridge(stream: TcpStream) -> (Sender<State>, Receiver<Vec<Action>>, Receiver<()>) {
     let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<State>(100);
     let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Vec<Action>>(100);
     let (disconnect_sender, disconnect_receiver) = mpsc::channel::<()>(1);

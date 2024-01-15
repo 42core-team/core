@@ -1,9 +1,8 @@
-use crate::game::{Unit, Resource, Core};
+use crate::game::{Core, Resource, Unit};
 
 pub enum Target {
-	Unit(Unit),
+    Unit(Unit),
     Resource(Resource),
     Core(Core),
-    None
+    None,
 }
-
