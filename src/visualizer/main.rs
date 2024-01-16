@@ -25,14 +25,10 @@ fn get_coordinates(x: u64, y: u64) -> (u64, u64) {
     (x, y)
 }
 
-fn next_1000(n: u64) -> u64 {
-    ((n + (SCALE - 1)) / SCALE) * SCALE
-}
-
-fn print_field(x: u64, y: u64, state: State) {
+async fn print_field(x: u64, y: u64, state: State) {
     let team1: u64 = state.teams[0].id;
     let team2: u64 = state.teams[1].id;
-    let mut coord: (u64, u64) = get_coordinates(x, y);
+    let mut coord: (u64, u64);
 
     for core in &state.cores {
         coord = get_coordinates(core.x, core.y);
@@ -66,8 +62,12 @@ fn print_field(x: u64, y: u64, state: State) {
                 print!("{}", "b".on_blue());
                 return;
             }
+            // !!!add shit here when new units released!!!
         }
     }
+    // !!!
+    // edit this as soon as ressource-ids are introduced!
+    // !!!
     for resource in &state.resources {
         coord = get_coordinates(resource.x, resource.y);
         if coord.0 == x && coord.1 == y {
@@ -75,6 +75,7 @@ fn print_field(x: u64, y: u64, state: State) {
             return;
         }
     }
+    print!("{}", " ".on_grey());
 }
 
 fn show_map(state: State, width: u64, height: u64) {
@@ -85,9 +86,11 @@ fn show_map(state: State, width: u64, height: u64) {
         while x < width {
             print_field(x, y, state.clone());
             if x == width - 1 {
-                print!("\n");
+                println!("");
+                x += 1;
             }
         }
+        y += 1;
     }
 }
 
@@ -158,31 +161,6 @@ fn print_field(x: &mut u64, y: &mut u64, state: State) {
     }
     // *x += 1;
     // *y += 1;
-}
-
-fn show_map(state: State, config: GameConfig) {
-    print!("{}{}", cursor::MoveTo(0, 0), cursor::Hide);
-    let mut y: u64 = 0;
-    let mut x: u64;
-    let mut old_x: u64;
-    let mut old_y: u64;
-    while y < config.height {
-        old_y = y;
-        x = 0;
-        while x < config.width {
-            old_x = x;
-            print_field(&mut x, &mut y, state.clone());
-            if x == config.width / SCALE && y == config.height / SCALE {
-                print!("\n");
-            }
-            if x == old_x {
-                x += 1;
-            }
-        }
-        if y == old_y {
-            y += 1;
-        }
-    }
 }
 
 // fn print_map
