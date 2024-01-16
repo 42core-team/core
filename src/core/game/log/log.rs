@@ -36,6 +36,7 @@ impl Logger {
         Logger {}
     }
 
+    #[cfg(not(test))]
     pub fn log(log_options: LogOptions, message: String) {
         let log_file_path = match log_options {
             LogOptions::State => "logs/state.log",
