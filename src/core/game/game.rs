@@ -86,7 +86,7 @@ impl Game {
                     Message::VecAction(actions) => {
                         log(
                             LogOptions::Action,
-                            format!("TEAM send action: {:?}", actions).as_str(),
+                            format!("TEAM ({:?}) send action: {:?}", team.id, actions).as_str(),
                         );
                         for action in actions {
                             team_actions.push((team.id, action));
