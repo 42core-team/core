@@ -19,8 +19,76 @@ use std::io::{stdout, Write};
 
 const SCALE: u64 = 1000;
 
+fn get_coordinates(x: u64, y: u64) -> (u64, u64) {
+    let x = x / SCALE;
+    let y = y / SCALE;
+    (x, y)
+}
+
 fn next_1000(n: u64) -> u64 {
     ((n + (SCALE - 1)) / SCALE) * SCALE
+}
+
+fn print_field(x: u64, y: u64, state: State) {
+    let team1: u64 = state.teams[0].id;
+    let team2: u64 = state.teams[1].id;
+    let mut coord: (u64, u64) = get_coordinates(x, y);
+
+    for core in &state.cores {
+        coord = get_coordinates(core.x, core.y);
+        if (coord.0 == x && coord.1 == y) && core.team_id == team1 {
+            print!("{}", "C".on_red());
+            return;
+        } else if (coord.0 == x && coord.1 == y) && core.team_id == team2 {
+            print!("{}", "C".on_blue());
+            return;
+        }
+    }
+    for unit in &state.units {
+        coord = get_coordinates(unit.x, unit.y);
+        if (coord.0 == x && coord.1 == y) && unit.team_id == team1 {
+            // Warrior
+            if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id {
+                print!("{}", "w".on_red());
+                return;
+            // Worker
+            } else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
+                print!("{}", "b".on_red());
+                return;
+            }
+        } else if (coord.0 == x && coord.1 == y) && unit.team_id == team2 {
+            // Warrior
+            if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id {
+                print!("{}", "w".on_blue());
+                return;
+            // Worker
+            } else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
+                print!("{}", "b".on_blue());
+                return;
+            }
+        }
+    }
+    for resource in &state.resources {
+        coord = get_coordinates(resource.x, resource.y);
+        if coord.0 == x && coord.1 == y {
+            print!("{}", "R".on_white());
+            return;
+        }
+    }
+}
+
+fn show_map(state: State, width: u64, height: u64) {
+    let mut y: u64 = 0;
+    let mut x: u64;
+    while y < height {
+        x = 0;
+        while x < width {
+            print_field(x, y, state.clone());
+            if x == width - 1 {
+                print!("\n");
+            }
+        }
+    }
 }
 
 fn print_field(x: &mut u64, y: &mut u64, state: State) {
@@ -140,11 +208,14 @@ async fn main() -> std::io::Result<()> {
                 }
             }
         }
+        const SCALE: u64 = 1000;
+        let WIDTH: u64 = game_config.width;
+        let HEIGHT: u64 = game_config.height;
         loop {
             if let Some(m) = reciever.recv().await {
                 match m {
                     Message::State(state) => {
-                        show_map(state, game_config.clone());
+                        show_map(state, WIDTH, HEIGHT);
                     }
                     _ => {
                         println!("unexpected message type!");
