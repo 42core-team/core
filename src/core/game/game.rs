@@ -410,45 +410,64 @@ impl Game {
             LogOptions::Changes,
             format!("Attack: {:?} -> {:?}", attacker_id, target_id).as_str(),
         );
+
         let attacker = self
             .units
             .iter()
             .find(|unit| unit.id == attacker_id)
             .cloned();
         let target = self.get_target_by_id(target_id);
+
         match (attacker, target) {
             (Some(attacker), target @ Target::Unit(_))
             | (Some(attacker), target @ Target::Resource(_))
             | (Some(attacker), target @ Target::Core(_)) => {
                 if self.is_target_in_range(attacker_id, &target) {
+                    let damage_per_second = match target {
+                        Target::Unit(_) => {
+                            GameConfig::get_unit_config_by_type_id(attacker.type_id)
+                                .unwrap()
+                                .dmg_unit
+                        }
+                        Target::Resource(_) => {
+                            GameConfig::get_unit_config_by_type_id(attacker.type_id)
+                                .unwrap()
+                                .dmg_resource
+                        }
+                        Target::Core(_) => {
+                            GameConfig::get_unit_config_by_type_id(attacker.type_id)
+                                .unwrap()
+                                .dmg_core
+                        }
+                        _ => 0, // Handle other cases if needed
+                    };
+
+                    let time_passed_seconds = self.tick_rate as f64 / 1000.0; // Convert milliseconds to seconds
+                    let damage = (damage_per_second as f64 * time_passed_seconds) as u64;
+
                     match target {
                         Target::Unit(unit) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_unit;
-                            self.get_unit_by_id_mut(unit.id).unwrap().hp -=
-                                (damage / (1000 / self.tick_rate as u64)) as u64;
-                            if self.get_unit_by_id_mut(unit.id).unwrap().hp <= 0 {
+                            let unit_id = unit.id;
+                            let unit_hp = &mut self.get_unit_by_id_mut(unit_id).unwrap().hp;
+                            *unit_hp = unit_hp.saturating_sub(damage);
+                            if *unit_hp == 0 {
                                 self.units.retain(|unit| unit.id != target_id);
                             }
                         }
                         Target::Resource(resource) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_resource;
-                            self.get_resource_by_id_mut(resource.id).unwrap().hp -=
-                                (damage / (1000 / self.tick_rate as u64)) as u64;
-                            if self.get_resource_by_id_mut(resource.id).unwrap().hp <= 0 {
+                            let resource_id = resource.id;
+                            let resource_hp =
+                                &mut self.get_resource_by_id_mut(resource_id).unwrap().hp;
+                            *resource_hp = resource_hp.saturating_sub(damage);
+                            if *resource_hp == 0 {
                                 self.resources.retain(|resource| resource.id != target_id);
                             }
                         }
                         Target::Core(core) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_core;
-                            self.get_core_by_id_mut(core.id).unwrap().hp -=
-                                (damage / (1000 / self.tick_rate as u64)) as u64;
-                            if self.get_core_by_id_mut(core.id).unwrap().hp <= 0 {
+                            let core_id = core.id;
+                            let core_hp = &mut self.get_core_by_id_mut(core_id).unwrap().hp;
+                            *core_hp = core_hp.saturating_sub(damage);
+                            if *core_hp == 0 {
                                 self.cores.retain(|core| core.id != target_id);
                             }
                         }
