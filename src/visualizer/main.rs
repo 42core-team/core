@@ -7,18 +7,10 @@
 //! In this module you will find the basic visualizer that connects to the game and visualizes the game state.
 //!
 
-use lib::game::{bridge::bridge, GameConfig, Login, Message, State};
 // use lib::game::{bridge::bridge, state, Game, GameConfig, Login, Message, State};
-use crossterm::cursor::{Hide, Show};
 use crossterm::style::Stylize;
-use crossterm::execute;
+use lib::game::{bridge::bridge, GameConfig, Login, Message, State};
 use tokio::net::TcpStream;
-
-use std::io::{stdout, Write};
-
-// IN THE HOME DIRECTORY
-// cargo run --manifest-path core/Cargo.toml --bin game
-// cargo run --manifest-path Cargo.toml --bin visualizer OR make visualizer
 
 const SCALE: u64 = 1000;
 
@@ -112,23 +104,16 @@ fn show_map(state: State, width: u64, height: u64) {
 async fn main() -> std::io::Result<()> {
     let stream = TcpStream::connect("127.0.0.1:4242").await;
 
-    println!("in main");
-	execute!(stdout(), Hide)?; // hide cursor
     if let Ok(s) = stream {
-        println!("is ok");
         let (sender, mut reciever, _disconnect) = bridge(s);
-        let mut game_config: GameConfig = GameConfig::patch_0_1_0();
-
+        let mut game_config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
         let _config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
         let _ = sender.send(Message::Login(Login { id: 42 })).await;
         if let Some(m) = reciever.recv().await {
-            println!("message received");
             match m {
                 Message::GameConfig(_config) => {
                     game_config = _config;
-                    // print config
                     println!("message was game config");
-                    print!("{}", game_config.width);
                 }
                 _ => {
                     println!("First message was not a gameconfig!");
@@ -138,23 +123,22 @@ async fn main() -> std::io::Result<()> {
             println!("error");
         }
         const SCALE: u64 = 1000;
-        let WIDTH: u64 = game_config.width / SCALE;
-        let HEIGHT: u64 = game_config.height / SCALE;
+        let width: u64 = game_config.width / SCALE;
+        let height: u64 = game_config.height / SCALE;
+
         loop {
             if let Some(m) = reciever.recv().await {
                 match m {
                     Message::State(state) => {
-                        show_map(state, WIDTH, HEIGHT);
+                        show_map(state, width, height);
                     }
                     _ => {
                         println!("unexpected message type!");
-						print!("\x1b[?25h"); // show cursor
-						break;
+                        break;
                     }
                 }
             }
         }
     }
-    execute!(stdout(), Show)?; //show again
     Ok(())
 }
