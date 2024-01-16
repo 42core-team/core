@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::game::action::Action;
 
-use crate::game::log::{log, log_options::LogOptions};
+use crate::game::log::{log::log, log_options::LogOptions};
 
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
@@ -77,8 +77,6 @@ impl Game {
         log(LogOptions::Info, "------ Tick ------");
         self.wait_till_next_tick().await;
 
-        log(LogOptions::State, "State");
-
         let mut team_actions: Vec<(u64, Action)> = vec![];
 
         for team_index in 0..self.teams.len() {
@@ -109,6 +107,7 @@ impl Game {
         let state = State::from_game(self);
         for team in self.teams.iter_mut() {
             let state = state.clone();
+            log(LogOptions::State, &format!("{:?}", state));
             match team
                 .sender
                 .as_mut()

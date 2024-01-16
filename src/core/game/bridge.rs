@@ -6,7 +6,7 @@
 
 use super::{
     action::Request,
-    log::{log, LogOptions},
+    log::{log::log, LogOptions},
     GameConfig, Message, State,
 };
 use serde_json;
