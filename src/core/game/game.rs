@@ -54,7 +54,7 @@ impl Game {
         loop {
             if let Ok(team) = team_receiver.try_recv() {
                 if self.required_team_ids.contains(&team.id)
-                    && !self.teams.iter().any(|team| team.id == team.id)
+                    && !self.teams.iter().any(|iter_team| iter_team.id == team.id)
                 {
                     self.teams.push(team);
                     println!("Team received");
