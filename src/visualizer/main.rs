@@ -7,10 +7,13 @@
 //! In this module you will find the basic visualizer that connects to the game and visualizes the game state.
 //!
 
-use lib::game::{bridge::bridge, state, Game, GameConfig, Login, Message, State};
+use lib::game::{bridge::bridge, GameConfig, Login, Message, State};
+// use lib::game::{bridge::bridge, state, Game, GameConfig, Login, Message, State};
+use crossterm::cursor::{Hide, Show};
+use crossterm::style::Stylize;
+use crossterm::execute;
 use tokio::net::TcpStream;
 
-use crossterm::{cursor, execute, style::Stylize};
 use std::io::{stdout, Write};
 
 // IN THE HOME DIRECTORY
@@ -25,7 +28,7 @@ fn get_coordinates(x: u64, y: u64) -> (u64, u64) {
     (x, y)
 }
 
-async fn print_field(x: u64, y: u64, state: State) {
+fn print_field(x: u64, y: u64, state: State) {
     let team1: u64 = state.teams[0].id;
     let team2: u64 = state.teams[1].id;
     let mut coord: (u64, u64);
@@ -83,6 +86,7 @@ async fn print_field(x: u64, y: u64, state: State) {
 }
 
 fn show_map(state: State, width: u64, height: u64) {
+    print!("\x1B[2J\x1B[1;1H");
     for y in 0..height {
         for x in 0..width {
             print_field(x, y, state.clone());
@@ -93,32 +97,49 @@ fn show_map(state: State, width: u64, height: u64) {
     }
 }
 
-// fn print_map
-// test
-/// PLEASE CHANGE THIS
+/// steps for testing
+/// 4 terminals
+/// terminal 1: make game
+/// terminal 2: make visualizer
+/// terminal 3:
+/// 	nc localhost 4242
+/// 	{id: 10}
+/// terminal 4:
+/// 	nc localhost 4242
+/// 	{id: 20}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     let stream = TcpStream::connect("127.0.0.1:4242").await;
 
+    println!("in main");
+	execute!(stdout(), Hide)?; // hide cursor
     if let Ok(s) = stream {
+        println!("is ok");
         let (sender, mut reciever, _disconnect) = bridge(s);
         let mut game_config: GameConfig = GameConfig::patch_0_1_0();
 
         let _config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
         let _ = sender.send(Message::Login(Login { id: 42 })).await;
         if let Some(m) = reciever.recv().await {
+            println!("message received");
             match m {
                 Message::GameConfig(_config) => {
                     game_config = _config;
+                    // print config
+                    println!("message was game config");
+                    print!("{}", game_config.width);
                 }
                 _ => {
                     println!("First message was not a gameconfig!");
                 }
             }
+        } else {
+            println!("error");
         }
         const SCALE: u64 = 1000;
-        let WIDTH: u64 = game_config.width;
-        let HEIGHT: u64 = game_config.height;
+        let WIDTH: u64 = game_config.width / SCALE;
+        let HEIGHT: u64 = game_config.height / SCALE;
         loop {
             if let Some(m) = reciever.recv().await {
                 match m {
@@ -127,16 +148,13 @@ async fn main() -> std::io::Result<()> {
                     }
                     _ => {
                         println!("unexpected message type!");
+						print!("\x1b[?25h"); // show cursor
+						break;
                     }
                 }
             }
         }
     }
+    execute!(stdout(), Show)?; //show again
     Ok(())
 }
-
-// async fn print(config: &GameConfig, state: State) {
-// 	// DEFINETLY REMOVE THIS AT THE END PLEASE!!!!!!!
-// 	println!("XXX {:?}", state);
-
-// }
