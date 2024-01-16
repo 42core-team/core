@@ -1,118 +1,62 @@
-use lazy_static::lazy_static;
-use std::fs::{self, create_dir_all, OpenOptions};
-use std::io::{self, Write};
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 
-use chrono::Utc;
+use chrono::Local;
 
 use super::LogOptions;
 
-lazy_static! {
-    static ref LOGGER: Arc<RwLock<Option<Logger>>> = {
-        let logger = Logger::new().expect("Failed to initialize logger");
-        let logger = Some(logger);
-        Arc::new(RwLock::new(logger))
-    };
-}
-
-pub struct Logger {
-    log_folder: PathBuf,
-    old_logs_folder: PathBuf,
-    old_logs_copied: bool, // Flag to track whether old logs have been copied
-}
+pub struct Logger {}
 
 impl Logger {
-    pub fn new() -> Result<Self, io::Error> {
-        let log_folder = Path::new("logs");
-        let old_logs_folder = Path::new("old-logs");
+    pub fn new() -> Logger {
+        // Create logs folder if it doesn't exist
+        fs::create_dir_all("logs").unwrap();
 
-        create_dir_all(log_folder)?;
-        create_dir_all(old_logs_folder)?;
+        // Create old-logs folder if it doesn't exist
+        fs::create_dir_all("old-logs").unwrap();
 
-        Ok(Logger {
-            log_folder: log_folder.to_path_buf(),
-            old_logs_folder: old_logs_folder.to_path_buf(),
-            old_logs_copied: false, // Initialize the flag to false
-        })
+        //if logs folder is not empty, move all files to old-logs folder
+        let paths = fs::read_dir("logs").unwrap();
+        for path in paths {
+            let path = path.unwrap().path();
+            let file_name = path.file_name().unwrap().to_str().unwrap();
+            let old_log_file_path = format!("old-logs/{}", file_name);
+            fs::rename(&path, &old_log_file_path).unwrap();
+        }
+
+        // Create a new log file for each log option if it doesn't exist
+        let log_options = vec!["error", "state", "action", "changes", "info"];
+        for option in log_options {
+            let log_file_path = format!("logs/{}.log", option);
+            if !fs::metadata(&log_file_path).is_ok() {
+                fs::File::create(&log_file_path).unwrap();
+            }
+        }
+        Logger {}
     }
 
-    fn get_log_file_path(&self, log_option: &LogOptions) -> PathBuf {
-        let timestamp = Utc::now();
-        let log_filename = match log_option {
-            LogOptions::State => format!("state-{}.log", timestamp.format("%Y-%m-%d-%H-%M-%S")),
-            LogOptions::Error => format!("error-{}.log", timestamp.format("%Y-%m-%d-%H-%M-%S")),
-            LogOptions::Action => format!("action-{}.log", timestamp.format("%Y-%m-%d-%H-%M-%S")),
-            LogOptions::Changes => format!("changes-{}.log", timestamp.format("%Y-%m-%d-%H-%M-%S")),
-            LogOptions::Info => format!("info-{}.log", timestamp.format("%Y-%m-%d-%H-%M-%S")),
+    pub fn log(log_options: LogOptions, message: String) {
+        let log_file_path = match log_options {
+            LogOptions::State => "logs/state.log",
+            LogOptions::Error => "logs/error.log",
+            LogOptions::Action => "logs/action.log",
+            LogOptions::Changes => "logs/changes.log",
+            LogOptions::Info => "logs/info.log",
         };
 
-        self.log_folder.join(log_filename)
-    }
+        // Get the current timestamp with milliseconds
+        let current_time = Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
 
-    fn get_old_logs_folder(&self, timestamp: &str) -> PathBuf {
-        self.old_logs_folder.join(timestamp)
-    }
-
-    fn copy_logs_to_old_folder(&mut self) -> Result<(), io::Error> {
-        if self.old_logs_copied {
-            return Ok(());
-        }
-
-        let timestamp = Utc::now().format("%Y-%m-%d_%H-%M-%S").to_string();
-        let old_logs_folder = self.get_old_logs_folder(&timestamp);
-
-        create_dir_all(&old_logs_folder)?;
-
-        for log_option in &[
-            LogOptions::State,
-            LogOptions::Error,
-            LogOptions::Action,
-            LogOptions::Changes,
-            LogOptions::Info,
-        ] {
-            let log_file_path = self.get_log_file_path(log_option);
-            let old_log_file_path = old_logs_folder.join(log_file_path.file_name().unwrap());
-
-            fs::copy(&log_file_path, &old_log_file_path)?;
-        }
-
-        self.old_logs_copied = true; // Set the flag to true after copying
-        Ok(())
-    }
-
-    pub fn copy_old_logs(&mut self) -> Result<(), io::Error> {
-        self.copy_logs_to_old_folder()
-    }
-
-    pub fn log(&mut self, log_option: LogOptions, text: &str) -> Result<(), io::Error> {
-        let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
-        let log_file_path = self.get_log_file_path(&log_option);
-
-        // Check if old logs need to be copied
-        self.copy_logs_to_old_folder()?;
-
-        // Open the log file in append mode or create if it doesn't exist
+        // Open the file in append mode and write the message with timestamp
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
-            .open(&log_file_path)?;
-
-        // Write the log entry to the file
-        writeln!(&mut file, "[{}] - {:?}: {}", timestamp, log_option, text)?;
-
-        Ok(())
+            .open(log_file_path)
+            .unwrap();
+        writeln!(file, "{} - {}", current_time, message).unwrap();
     }
 }
 
-pub fn log(log_option: LogOptions, text: &str) {
-    if let Ok(logger) = LOGGER.read() {
-        if let Some(logger) = logger.as_ref() {
-            if let Ok(mut logger) = LOGGER.write() {
-                if let Some(logger) = logger.as_mut() {
-                    let _ = logger.log(log_option, text);
-                }
-            }
-        }
-    }
+pub fn log(log_options: LogOptions, message: &str) {
+    Logger::log(log_options, message.to_string());
 }
