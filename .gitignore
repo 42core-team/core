@@ -5,5 +5,7 @@
 target/
 src/game/game
 src/visualizer/visualizer
+logs/
+old-logs/
 
 Cargo.lock
