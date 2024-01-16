@@ -22,9 +22,7 @@ impl Logger {
             let path = path.unwrap().path();
             let file_name = path.file_name().unwrap().to_str().unwrap();
             let old_log_file_path = format!("old-logs/{}", file_name);
-            if fs::metadata(&path).is_ok() && fs::metadata(&old_log_file_path).is_ok() {
-                fs::rename(&path, &old_log_file_path).unwrap();
-            }
+            fs::rename(&path, &old_log_file_path).unwrap();
         }
 
         // Create a new log file for each log option if it doesn't exist
