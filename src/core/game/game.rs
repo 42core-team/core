@@ -557,7 +557,7 @@ impl Game {
                 self.units.push(unit);
             }
             None => {
-                println!("Unit could not be created");
+                log(LogOptions::Error, "Unit could not be created");
             }
         }
     }

@@ -64,9 +64,12 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                                             let _ = socket_to_mscp_sender
                                                 .send(Message::from_vec_action(vec![]))
                                                 .await;
-                                            println!(
-                                                "Parse Error in bridge: {:?} from {:?}",
-                                                err, line
+                                            log(
+                                                LogOptions::Error,
+                                                &format!(
+                                                    "Parse Error in bridge: {:?} from {:?}",
+                                                    err, line
+                                                ),
                                             );
                                         }
                                     },
