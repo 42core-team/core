@@ -40,34 +40,35 @@ async fn print_field(x: u64, y: u64, state: State) {
             return;
         }
     }
+    let warrior: u64 = GameConfig::patch_0_1_0().units[0].type_id;
+    let worker: u64 = GameConfig::patch_0_1_0().units[1].type_id;
     for unit in &state.units {
         coord = get_coordinates(unit.x, unit.y);
         if (coord.0 == x && coord.1 == y) && unit.team_id == team1 {
-            // Warrior
-            if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id {
+            if unit.type_id == warrior {
                 print!("{}", "w".on_red());
                 return;
-            // Worker
-            } else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
+            } else if unit.type_id == worker {
+                // b for builder since w is already taken
                 print!("{}", "b".on_red());
                 return;
             }
         } else if (coord.0 == x && coord.1 == y) && unit.team_id == team2 {
-            // Warrior
-            if unit.type_id == GameConfig::patch_0_1_0().units[0].type_id {
+            if unit.type_id == warrior {
                 print!("{}", "w".on_blue());
                 return;
-            // Worker
-            } else if unit.type_id == GameConfig::patch_0_1_0().units[1].type_id {
+            } else if unit.type_id == worker {
                 print!("{}", "b".on_blue());
                 return;
             }
-            // !!!add shit here when new units released!!!
+            // !!!
+            // add shit here when new units released!
+            // !!!
         }
     }
     // !!!
     // edit this as soon as ressource-ids are introduced!
-    // !!!
+    // vvvvvvvvvvvvvvvv
     for resource in &state.resources {
         coord = get_coordinates(resource.x, resource.y);
         if coord.0 == x && coord.1 == y {
@@ -75,22 +76,20 @@ async fn print_field(x: u64, y: u64, state: State) {
             return;
         }
     }
+    // ^^^^^^^^^^^^^^^
+    // edit this as soon as ressource-ids are introduced!
+    // !!!
     print!("{}", " ".on_grey());
 }
 
 fn show_map(state: State, width: u64, height: u64) {
-    let mut y: u64 = 0;
-    let mut x: u64;
-    while y < height {
-        x = 0;
-        while x < width {
+    for y in 0..height {
+        for x in 0..width {
             print_field(x, y, state.clone());
             if x == width - 1 {
                 println!("");
-                x += 1;
             }
         }
-        y += 1;
     }
 }
 
