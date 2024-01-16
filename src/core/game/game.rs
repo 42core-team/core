@@ -34,8 +34,8 @@ impl Game {
             status: 0, // OK
             teams: vec![],
             cores: vec![
-                Core::new(0, 2000, 2000, game_config.core_hp),
-                Core::new(1, 4000, 4000, game_config.core_hp),
+                Core::new(1, 2000, 2000, game_config.core_hp),
+                Core::new(2, 4000, 4000, game_config.core_hp),
             ],
             config: game_config,
             resources: vec![],
