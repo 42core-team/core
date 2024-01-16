@@ -90,6 +90,7 @@ impl Game {
                             if login.id == 42 {
                                 let _ = spectator_sender.send(Spectator::from_team(team)).await;
                             } else {
+                                team.id = login.id;
                                 let _ = team_sender.send(team).await;
                             }
                         }
