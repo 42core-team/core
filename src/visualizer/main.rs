@@ -66,10 +66,15 @@ fn print_field(x: u64, y: u64, state: State) {
     // vvvvvvvvvvvvvvvv
     for resource in &state.resources {
         coord = get_coordinates(resource.x, resource.y);
+        // if coord.0 == x && coord.1 == y && resource.type_id == 1 {
         if coord.0 == x && coord.1 == y {
             print!("{}", "R".on_white());
             return;
         }
+        // else if coord.0 == x && coord.1 == y && resource.type_id == 2 {
+        // 	print!("{}", "R".on_white());
+        // 	return;
+        // }
     }
     // ^^^^^^^^^^^^^^^
     // edit this as soon as ressource-ids are introduced!
