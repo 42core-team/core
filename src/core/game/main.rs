@@ -19,9 +19,9 @@ async fn main() {
             let mut game = Game::new(vec![t1, t2]);
 
             tokio::spawn(async move {
-                println!("Game start!");
+                log(LogOptions::Info, "Game start!");
                 game.start().await;
-                println!("Game ended!");
+                log(LogOptions::Info, "Game ended!");
             });
         }
     }

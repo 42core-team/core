@@ -7,12 +7,19 @@
 //! In this module the game itself gets created.
 //!
 
-use lib::game::{Game, Team};
+use lib::game::{
+    log::{
+        log::{log, Logger},
+        LogOptions,
+    },
+    Game, Team,
+};
 
 use tokio::net::TcpListener;
 
 #[tokio::main]
-async fn main() {
+pub async fn main() {
+    let _: Logger = Logger::new();
     let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
 
     let mut queue: Vec<Team> = Vec::<Team>::new();
@@ -28,9 +35,9 @@ async fn main() {
             let mut game = Game::new(vec![t1, t2]);
 
             tokio::spawn(async move {
-                println!("Game start!");
+                log(LogOptions::Info, "Game start!");
                 game.start().await;
-                println!("Game ended!");
+                log(LogOptions::Info, "Game ended!");
             });
         }
     }
