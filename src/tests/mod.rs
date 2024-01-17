@@ -651,6 +651,7 @@ mod tests {
                     Message::VecAction(_) => {
                         assert!(false);
                     }
+                    Message::Login(_) => {}
                 },
                 None => {
                     assert!(false);

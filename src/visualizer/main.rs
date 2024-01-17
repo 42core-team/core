@@ -21,19 +21,27 @@ fn get_coordinates(x: u64, y: u64) -> (u64, u64) {
 }
 
 fn print_field(x: u64, y: u64, state: State) {
-    let team1: u64 = state.teams[0].id;
-    let team2: u64 = state.teams[1].id;
+    // let team1: u64 = state.teams[0].id;
+    // let team2: u64 = state.teams[1].id;
+    let team1: u64 = state.cores[0].team_id;
+    let team2: u64 = state.cores[1].team_id;
     let mut coord: (u64, u64);
 
     for core in &state.cores {
+        // debug
         coord = get_coordinates(core.x, core.y);
         if (coord.0 == x && coord.1 == y) && core.team_id == team1 {
-            print!("{}", "C".on_red());
+            print!("{}", "C".white().on_red());
             return;
         } else if (coord.0 == x && coord.1 == y) && core.team_id == team2 {
-            print!("{}", "C".on_blue());
+            print!("{}", "C".white().on_blue());
             return;
         }
+        // coord = get_coordinates(core.x, core.y);
+        // if coord.0 == x && coord.1 == y {
+        //     print!("{}", "C".white().on_red());
+        //     return;
+        // }
     }
     let warrior: u64 = GameConfig::patch_0_1_0().units[0].type_id;
     let worker: u64 = GameConfig::patch_0_1_0().units[1].type_id;
@@ -41,19 +49,19 @@ fn print_field(x: u64, y: u64, state: State) {
         coord = get_coordinates(unit.x, unit.y);
         if (coord.0 == x && coord.1 == y) && unit.team_id == team1 {
             if unit.type_id == warrior {
-                print!("{}", "w".on_red());
+                print!("{}", "w".white().on_red());
                 return;
             } else if unit.type_id == worker {
                 // b for builder since w is already taken
-                print!("{}", "b".on_red());
+                print!("{}", "b".white().on_red());
                 return;
             }
         } else if (coord.0 == x && coord.1 == y) && unit.team_id == team2 {
             if unit.type_id == warrior {
-                print!("{}", "w".on_blue());
+                print!("{}", "w".white().on_blue());
                 return;
             } else if unit.type_id == worker {
-                print!("{}", "b".on_blue());
+                print!("{}", "b".white().on_blue());
                 return;
             }
             // !!!
@@ -68,7 +76,7 @@ fn print_field(x: u64, y: u64, state: State) {
         coord = get_coordinates(resource.x, resource.y);
         // if coord.0 == x && coord.1 == y && resource.type_id == 1 {
         if coord.0 == x && coord.1 == y {
-            print!("{}", "R".on_white());
+            print!("{}", "R".white().on_black());
             return;
         }
         // else if coord.0 == x && coord.1 == y && resource.type_id == 2 {
@@ -100,10 +108,10 @@ fn show_map(state: State, width: u64, height: u64) {
 /// terminal 2: make visualizer
 /// terminal 3:
 /// 	nc localhost 4242
-/// 	{id: 10}
+/// 	{"id": 10}
 /// terminal 4:
 /// 	nc localhost 4242
-/// 	{id: 20}
+/// 	{"id": 20}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

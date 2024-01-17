@@ -32,8 +32,11 @@ impl Game {
             status: 0, // OK
             teams: vec![],
             config: GameConfig::patch_0_1_0(),
-            cores: vec![Core::new(0, 2000, 2000), Core::new(1, 4000, 4000)],
-            resources: vec![Resource::new(10, 100, 1000, 1000, 100)],
+            cores: vec![Core::new(10, 2000, 2000), Core::new(20, 4000, 4000)],
+            resources: vec![
+                Resource::new(0, 100, 1000, 1000, 100),
+                Resource::new(1, 100, 6000, 7000, 100),
+            ],
             units: vec![],
             targets: vec![],
             tick_rate: 50,
