@@ -2,8 +2,6 @@ use std::time::Duration;
 
 use crate::game::action::Action;
 
-use crate::game::log::{log::log, log_options::LogOptions};
-
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
@@ -32,7 +30,7 @@ impl Game {
             resources: vec![],
             units: vec![],
             targets: vec![],
-            tick_rate: 3000,
+            tick_rate: 50,
             last_tick_time: get_ms(),
             time_since_last_tick: 0,
         }
@@ -50,7 +48,7 @@ impl Game {
             {
                 Ok(_) => {}
                 Err(_) => {
-                    log(LogOptions::Error, "Error sending state to team");
+                    println!("Error sending state to team");
                 }
             }
         }
@@ -67,14 +65,11 @@ impl Game {
     async fn tick(&mut self) -> bool {
         for team in self.teams.iter_mut() {
             if team.is_disconnected() {
-                log(
-                    LogOptions::Info,
-                    format!("Team with id {:?} disconnected", team.id).as_str(),
-                );
+                println!("Team {:?} disconnected", team.id);
                 return true;
             }
         }
-        log(LogOptions::Info, "------ Tick ------");
+        println!("------ Tick ------");
         self.wait_till_next_tick().await;
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
@@ -84,16 +79,13 @@ impl Game {
             while let Ok(message) = team.receiver.as_mut().unwrap().try_recv() {
                 match message {
                     Message::VecAction(actions) => {
-                        log(
-                            LogOptions::Action,
-                            format!("TEAM ({:?}) send action: {:?}", team.id, actions).as_str(),
-                        );
+                        println!("TEAM send action: {:?}", actions);
                         for action in actions {
                             team_actions.push((team.id, action));
                         }
                     }
                     _ => {
-                        log(LogOptions::Error, "TEAM received unknown message");
+                        println!("TEAM received unknown message");
                     }
                 }
             }
@@ -107,7 +99,6 @@ impl Game {
         let state = State::from_game(self);
         for team in self.teams.iter_mut() {
             let state = state.clone();
-            log(LogOptions::State, &format!("{:?}", state));
             match team
                 .sender
                 .as_mut()
@@ -117,7 +108,7 @@ impl Game {
             {
                 Ok(_) => {}
                 Err(_) => {
-                    log(LogOptions::Error, "Error sending state to team");
+                    println!("Error sending state to team");
                 }
             }
         }
@@ -208,6 +199,7 @@ impl Game {
 
     pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
         for core in self.cores.iter() {
+            println!("Core: {:?}", core);
             if core.team_id == team_id {
                 return Some(core);
             }
@@ -228,20 +220,13 @@ impl Game {
     /// - reduce team balance
     ///
     pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
-        log(
-            LogOptions::Changes,
-            format!(
-                "Create unit of type {:?} for team with id {:?}",
-                type_id, team_id
-            )
-            .as_str(),
+        println!(
+            "Create unit of type {:?} for team with id {:?}",
+            type_id, team_id
         );
         let team_core = self.get_core_by_team_id(team_id);
         if team_core.is_none() {
-            log(
-                LogOptions::Error,
-                format!("Core of team with id {:?} not found", team_id).as_str(),
-            );
+            println!("Core of team with id {:?} not found", team_id);
             return;
         }
         let team_core = team_core.unwrap();
@@ -253,10 +238,7 @@ impl Game {
                     .unwrap()
                     .cost;
                 if team_balance < unit_cost {
-                    log(
-                        LogOptions::Error,
-                        format!("Team with id {:?} has not enough balance", team_id).as_str(),
-                    );
+                    println!("Team with id {:?} has not enough balance", team_id);
                     return;
                 }
                 let team = self.get_team_by_id_mut(team_id);
@@ -265,17 +247,14 @@ impl Game {
                         team.balance -= unit_cost;
                     }
                     None => {
-                        log(
-                            LogOptions::Error,
-                            format!("Team with id {:?} not found", team_id).as_str(),
-                        );
+                        println!("Team with id {:?} not found", team_id);
                         return;
                     }
                 }
                 self.units.push(unit);
             }
             None => {
-                log(LogOptions::Error, "Unit could not be created");
+                println!("Unit could not be created");
             }
         }
     }
@@ -292,10 +271,7 @@ impl Game {
     /// - remove target from targets
     ///
     pub fn handel_attack_action(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
-        log(
-            LogOptions::Changes,
-            format!("Attack: {:?} -> {:?}", attacker_id, target_id).as_str(),
-        );
+        println!("Attack: {:?} -> {:?}", attacker_id, target_id);
         let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
         let target = self.units.iter().find(|unit| unit.id == target_id);
         match (attacker, target) {
@@ -309,7 +285,7 @@ impl Game {
                 }
             }
             _ => {
-                log(LogOptions::Error, "Attacker or target not found");
+                println!("Attacker or target not found");
             }
         }
     }
@@ -406,68 +382,46 @@ impl Game {
     /// Get the damage of the attacker based on the type of the target from the config
     ///
     pub fn attack(&mut self, attacker_id: u64, target_id: u64) {
-        log(
-            LogOptions::Changes,
-            format!("Attack: {:?} -> {:?}", attacker_id, target_id).as_str(),
-        );
-
+        println!("Attack: {:?} -> {:?}", attacker_id, target_id);
         let attacker = self
             .units
             .iter()
             .find(|unit| unit.id == attacker_id)
             .cloned();
         let target = self.get_target_by_id(target_id);
-
         match (attacker, target) {
             (Some(attacker), target @ Target::Unit(_))
             | (Some(attacker), target @ Target::Resource(_))
             | (Some(attacker), target @ Target::Core(_)) => {
                 if self.is_target_in_range(attacker_id, &target) {
-                    let damage_per_second = match target {
-                        Target::Unit(_) => {
-                            GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_unit
-                        }
-                        Target::Resource(_) => {
-                            GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_resource
-                        }
-                        Target::Core(_) => {
-                            GameConfig::get_unit_config_by_type_id(attacker.type_id)
-                                .unwrap()
-                                .dmg_core
-                        }
-                        _ => 0, // Handle other cases if needed
-                    };
-
-                    let time_passed_seconds = self.tick_rate as f64 / 1000.0; // Convert milliseconds to seconds
-                    let damage = (damage_per_second as f64 * time_passed_seconds) as u64;
-
                     match target {
                         Target::Unit(unit) => {
-                            let unit_id = unit.id;
-                            let unit_hp = &mut self.get_unit_by_id_mut(unit_id).unwrap().hp;
-                            *unit_hp = unit_hp.saturating_sub(damage);
-                            if *unit_hp == 0 {
+                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+                                .unwrap()
+                                .dmg_unit;
+                            self.get_unit_by_id_mut(unit.id).unwrap().hp -=
+                                (damage / (1000 / self.tick_rate as u64)) as u64;
+                            if self.get_unit_by_id_mut(unit.id).unwrap().hp <= 0 {
                                 self.units.retain(|unit| unit.id != target_id);
                             }
                         }
                         Target::Resource(resource) => {
-                            let resource_id = resource.id;
-                            let resource_hp =
-                                &mut self.get_resource_by_id_mut(resource_id).unwrap().hp;
-                            *resource_hp = resource_hp.saturating_sub(damage);
-                            if *resource_hp == 0 {
+                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+                                .unwrap()
+                                .dmg_resource;
+                            self.get_resource_by_id_mut(resource.id).unwrap().hp -=
+                                (damage / (1000 / self.tick_rate as u64)) as u64;
+                            if self.get_resource_by_id_mut(resource.id).unwrap().hp <= 0 {
                                 self.resources.retain(|resource| resource.id != target_id);
                             }
                         }
                         Target::Core(core) => {
-                            let core_id = core.id;
-                            let core_hp = &mut self.get_core_by_id_mut(core_id).unwrap().hp;
-                            *core_hp = core_hp.saturating_sub(damage);
-                            if *core_hp == 0 {
+                            let damage = GameConfig::get_unit_config_by_type_id(attacker.type_id)
+                                .unwrap()
+                                .dmg_core;
+                            self.get_core_by_id_mut(core.id).unwrap().hp -=
+                                (damage / (1000 / self.tick_rate as u64)) as u64;
+                            if self.get_core_by_id_mut(core.id).unwrap().hp <= 0 {
                                 self.cores.retain(|core| core.id != target_id);
                             }
                         }
@@ -476,11 +430,11 @@ impl Game {
                         }
                     }
                 } else {
-                    log(LogOptions::Error, "Target not in range");
+                    println!("Target not in range");
                 }
             }
             _ => {
-                log(LogOptions::Error, "Attacker or target not found");
+                println!("Attacker or target not found");
             }
         }
     }
@@ -514,10 +468,7 @@ impl Game {
                     self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
                 }
                 Action::Travel(travel) => {
-                    log(
-                        LogOptions::Changes,
-                        format!("Travel: {:?}", travel).as_str(),
-                    );
+                    println!("Travel: {:?}", travel);
                 }
             }
         }
@@ -544,7 +495,7 @@ impl Game {
                     }
                 }
                 _ => {
-                    log(LogOptions::Error, "Attacker or target not found");
+                    println!("Attacker or target not found");
                 }
             }
         }
@@ -557,7 +508,7 @@ impl Game {
                 self.units.push(unit);
             }
             None => {
-                log(LogOptions::Error, "Unit could not be created");
+                println!("Unit could not be created");
             }
         }
     }
