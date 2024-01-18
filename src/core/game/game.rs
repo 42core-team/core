@@ -3,6 +3,7 @@ use std::time::Duration;
 use tokio::{net::TcpListener, sync::mpsc};
 
 use crate::game::action::Action;
+use crate::game::Spectator;
 
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
