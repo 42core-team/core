@@ -88,6 +88,8 @@ fn print_field(x: u64, y: u64, state: State) {
     // edit this as soon as ressource-ids are introduced!
     // !!!
     print!("{}", " ".on_grey());
+	// possible changes: black bg, border with specific chars
+    // print!("{}", " ");
 }
 
 fn show_map(state: State, width: u64, height: u64) {
