@@ -11,7 +11,8 @@ mod tests {
     fn get_fake_game() -> Game {
         let t1 = Team::get_fake_team(0, "Team 1".to_string());
         let t2 = Team::get_fake_team(1, "Team 2".to_string());
-        let game = Game::new(vec![t1, t2]);
+        let mut game = Game::new(vec![t1, t2]);
+        game.tick_rate = 50;
         game
     }
 
