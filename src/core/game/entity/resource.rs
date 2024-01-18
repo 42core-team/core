@@ -13,7 +13,7 @@ pub struct Resource {
 }
 
 impl Resource {
-    pub fn new(value: u64, x: u64, y: u64, hp: u64) -> Resource {
+    pub fn new(type_id: u64, value: u64, x: u64, y: u64, hp: u64) -> Resource {
         Resource {
             id: Game::generate_u64_id(),
             type_id,
