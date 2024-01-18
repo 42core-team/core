@@ -3,11 +3,10 @@ use std::time::Duration;
 use tokio::{net::TcpListener, sync::mpsc};
 
 use crate::game::action::Action;
-use crate::game::Spectator;
 
 use super::{
-    helper::Target, team, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State,
-    Team, Unit,
+    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State, Team,
+    Unit,
 };
 
 #[derive(Debug)]
@@ -605,7 +604,6 @@ impl Game {
     }
 
     pub fn create_fake_resource(&mut self, x: u64, y: u64) {
-        let resource = Resource::new(0, 100, x, y, 100);
         let resource = Resource::new(1, 100, x, y, 100);
         self.resources.push(resource);
     }
