@@ -29,7 +29,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
         loop {
             match reader.read(&mut buffer).await {
                 Ok(n) if n == 0 => {
-                    println!("Connection closed by client");
+                    log(LogOptions::Info, "Connection closed by client");
                     let _ = disconnect_sender.send(()).await;
                     break;
                 }
@@ -101,7 +101,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                     Message::State(state) => {
                         let json_string = serde_json::to_string(&state).unwrap().add("\n");
                         if let Err(_) = writer.write_all(json_string.as_bytes()).await {
-                            println!("Send Error in bridge");
+                            log(LogOptions::Error, "Send Error in bridge");
                             let _ = writer.shutdown().await;
                             break;
                         }
@@ -109,7 +109,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                     Message::GameConfig(game_config) => {
                         let json_string = serde_json::to_string(&game_config).unwrap().add("\n");
                         if let Err(_) = writer.write_all(json_string.as_bytes()).await {
-                            println!("Send Error in bridge");
+                            log(LogOptions::Error, "Send Error in bridge");
                             let _ = writer.shutdown().await;
                             break;
                         }
