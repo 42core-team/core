@@ -5,8 +5,7 @@ use tokio::{net::TcpListener, sync::mpsc};
 use crate::game::action::Action;
 
 use super::{
-    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State, Team,
-    Unit,
+    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
 
 #[derive(Debug)]
@@ -536,9 +535,6 @@ impl Game {
     ///
     /// {"actions":[{"Create":{"type_id":0}}]}
     /// {"actions":[{"Create":{"type_id":0}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]}
-    /// {"id": 10}
-    /// {"id": 20}
-    /// {"id": 42}
     ///
     /// To uns netcat:
     /// ```sh
@@ -603,8 +599,9 @@ impl Game {
         }
     }
 
+    // change type_id if definition changes!!!
     pub fn create_fake_resource(&mut self, x: u64, y: u64) {
-        let resource = Resource::new(0, 100, x, y, 100);
+        let resource = Resource::new(1, 1, 100, x, y, 100);
         self.resources.push(resource);
     }
 

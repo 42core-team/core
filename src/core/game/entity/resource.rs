@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Resource {
     pub id: u64,
+    pub type_id: u64,
     pub value: u64,
     pub x: u64,
     pub y: u64,
@@ -10,9 +11,10 @@ pub struct Resource {
 }
 
 impl Resource {
-    pub fn new(id: u64, value: u64, x: u64, y: u64, hp: u64) -> Resource {
+    pub fn new(id: u64, type_id: u64, value: u64, x: u64, y: u64, hp: u64) -> Resource {
         Resource {
             id,
+            type_id,
             value,
             x,
             y,
