@@ -7,7 +7,7 @@
 use super::{
     action::Request,
     log::{log::log, LogOptions},
-    GameConfig, Message, State,
+    GameConfig, Login, Message, State,
 };
 use serde_json;
 use std::ops::Add;
@@ -60,18 +60,25 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                                                 .send(Message::from_state(&state))
                                                 .await;
                                         }
-                                        Err(err) => {
-                                            let _ = socket_to_mscp_sender
-                                                .send(Message::from_vec_action(vec![]))
-                                                .await;
-                                            log(
-                                                LogOptions::Error,
-                                                &format!(
-                                                    "Parse Error in bridge: {:?} from {:?}",
-                                                    err, line
-                                                ),
-                                            );
-                                        }
+                                        Err(_) => match convert_to_login(line) {
+                                            Ok(login) => {
+                                                let _ = socket_to_mscp_sender
+                                                    .send(Message::from_login(&login))
+                                                    .await;
+                                            }
+                                            Err(err) => {
+                                                let _ = socket_to_mscp_sender
+                                                    .send(Message::from_vec_action(vec![]))
+                                                    .await;
+                                                log(
+                                                    LogOptions::Error,
+                                                    &format!(
+                                                        "Parse Error in bridge: {:?} from {:?}",
+                                                        err, line
+                                                    ),
+                                                );
+                                            }
+                                        },
                                     },
                                 },
                             }
@@ -108,6 +115,11 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                     }
                     Message::VecAction(vec_action) => {
                         let json_string = serde_json::to_string(&vec_action).unwrap().add("\n");
+                        let _ = writer.write_all(json_string.as_bytes()).await;
+                        let _ = writer.flush().await;
+                    }
+                    Message::Login(login) => {
+                        let json_string = serde_json::to_string(&login).unwrap().add("\n");
                         let _ = writer.write_all(json_string.as_bytes()).await;
                         let _ = writer.flush().await;
                     }
@@ -152,6 +164,11 @@ fn convert_to_config(buffer: &str) -> Result<GameConfig, serde_json::Error> {
 
 fn convert_to_state(buffer: &str) -> Result<State, serde_json::Error> {
     let result: Result<State, serde_json::Error> = serde_json::from_str(&buffer);
+    result
+}
+
+fn convert_to_login(buffer: &str) -> Result<Login, serde_json::Error> {
+    let result: Result<Login, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 
