@@ -3,6 +3,7 @@ use std::time::Duration;
 use tokio::{net::TcpListener, sync::mpsc};
 
 use crate::game::action::Action;
+use crate::game::Spectator;
 
 use super::{
     helper::Target, team, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State,
@@ -32,11 +33,8 @@ impl Game {
             status: 0, // OK
             teams: vec![],
             config: GameConfig::patch_0_1_0(),
-            cores: vec![Core::new(10, 2000, 2000), Core::new(20, 4000, 4000)],
-            resources: vec![
-                Resource::new(0, 100, 1000, 1000, 100),
-                Resource::new(1, 100, 6000, 7000, 100),
-            ],
+            cores: vec![Core::new(1, 2000, 2000), Core::new(2, 4000, 4000)],
+            resources: vec![],
             units: vec![],
             targets: vec![],
             tick_rate: 50,
@@ -56,18 +54,22 @@ impl Game {
 
         loop {
             if let Ok(team) = team_receiver.try_recv() {
-                println!("Team received");
-                // if self.required_team_ids.contains(&team.id) && !self.teams.iter().any(|team| team.id == team.id){
-                self.teams.push(team);
-                println!("Teams: {:?}", self.teams.len());
-                println!("Required: {:?}", self.required_team_ids.len());
-                // }
+                if self.required_team_ids.contains(&team.id)
+                    && !self.teams.iter().any(|iter_team| iter_team.id == team.id)
+                {
+                    self.teams.push(team);
+                    println!("Team received");
+                } else {
+                    println!("Team not allowed");
+                }
             }
             if let Ok(spectator) = spectator_receiver.try_recv() {
                 println!("Spectator received");
                 self.spectators.push(spectator);
             }
             tokio::time::sleep(Duration::from_millis(20)).await;
+            println!("Teams: {:?}", self.teams.len());
+            println!("Required: {:?}", self.required_team_ids.len());
             if self.teams.len() == self.required_team_ids.len() {
                 break;
             }
@@ -89,6 +91,7 @@ impl Game {
                             if login.id == 42 {
                                 let _ = spectator_sender.send(Spectator::from_team(team)).await;
                             } else {
+                                team.id = login.id;
                                 let _ = team_sender.send(team).await;
                             }
                         }
@@ -603,6 +606,7 @@ impl Game {
 
     pub fn create_fake_resource(&mut self, x: u64, y: u64) {
         let resource = Resource::new(0, 100, x, y, 100);
+        let resource = Resource::new(1, 100, x, y, 100);
         self.resources.push(resource);
     }
 
