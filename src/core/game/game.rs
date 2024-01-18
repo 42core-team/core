@@ -617,7 +617,7 @@ impl Game {
 
     // change type_id if definition changes!!!
     pub fn create_fake_resource(&mut self, x: u64, y: u64) {
-        let resource = Resource::new(1, 1, 100, x, y, 100);
+        let resource = Resource::new(1, 100, x, y, 100);
         self.resources.push(resource);
     }
 
