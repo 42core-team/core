@@ -7,13 +7,33 @@
 //! In this module you will find the basic visualizer that connects to the game and visualizes the game state.
 //!
 
-use lib::game::action::{Action, Create};
+use lib::game::bridge::bridge;
+use tokio::net::TcpStream;
 
-fn main() {
-    let a: Action = lib::game::action::Action::Create(Create { type_id: 4 });
+#[tokio::main]
+async fn main() {
+    let mut stream;
+    loop {
+        stream = TcpStream::connect("127.0.0.1:4242").await;
+        if stream.is_ok() {
+            break;
+        }
+    }
 
-    let mut aa: Vec<Action> = vec![];
-    aa.push(a);
-    let json_string = serde_json::to_string(&aa).unwrap();
-    println!("{}", json_string);
+    let stream = stream.unwrap();
+    let (_sender, mut receiver, _disconnect) = bridge(stream);
+    println!("Connected to server!");
+
+    loop {
+        let message = receiver.recv().await;
+        match message {
+            Some(actions) => {
+                println!("Actions: {:?}", actions);
+            }
+            None => {
+                println!("Connection closed by server");
+                break;
+            }
+        }
+    }
 }
