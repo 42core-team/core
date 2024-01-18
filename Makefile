@@ -7,7 +7,8 @@ visualizer:
 	cargo run --bin visualizer
 
 game:
-	cargo run --bin game
+	cargo build --bin game
+	./target/debug/game 10 20
 
 all: $(EXECUTABLE)
 	cargo build --bin visualizer

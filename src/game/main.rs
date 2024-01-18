@@ -7,38 +7,21 @@
 //! In this module the game itself gets created.
 //!
 
-use lib::game::{
-    log::{
-        log::{log, Logger},
-        LogOptions,
-    },
-    Game, Team,
-};
+use std::env;
 
-use tokio::net::TcpListener;
+use lib::game::Game;
 
 #[tokio::main]
-pub async fn main() {
-    let _: Logger = Logger::new();
-    let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
-
-    let mut queue: Vec<Team> = Vec::<Team>::new();
-
-    loop {
-        let (stream, _) = listener.accept().await.unwrap();
-
-        queue.push(Team::from_tcp_stream(stream));
-
-        if queue.len() >= 2 {
-            let t1 = queue.remove(0);
-            let t2 = queue.remove(0);
-            let mut game = Game::new(vec![t1, t2]);
-
-            tokio::spawn(async move {
-                log(LogOptions::Info, "Game start!");
-                game.start().await;
-                log(LogOptions::Info, "Game ended!");
-            });
+async fn main() {
+    let mut reqired_team_ids = Vec::new();
+    for argument in env::args() {
+        println!("Argument: {}", argument);
+        let n = argument.parse::<u64>();
+        if n.is_ok() {
+            reqired_team_ids.push(n.unwrap());
         }
     }
+
+    let game: Game = Game::new(reqired_team_ids);
+    game.init().await;
 }
