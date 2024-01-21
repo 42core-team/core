@@ -385,20 +385,22 @@ impl Game {
                 / self.tick_rate;
 
             // check if unit moves out of bounds and if yes just set the unit to the border
-            if (unit.x + dir[0] + speed >= self.config.map_size_x) {
+            if unit.x + dir[0] + speed >= self.config.map_size_x {
                 // set x to 0?
                 unit.x = self.config.map_size_x;
             }
-            if (unit.y + dir[1] + speed >= self.config.map_size_y) {
+            if unit.y + dir[1] + speed >= self.config.map_size_y {
                 // set y to 0?
                 unit.y = self.config.map_size_y;
             }
 
+            // check if unit is going to hit the core and/or resources then stop?
+        
             // move unit in direction
-            if (unit.x != self.config.map_size_x) {
+            if unit.x != self.config.map_size_x {
                 unit.x += dir[0] + speed;
             }
-            if (unit.y != self.config.map_size_y) {
+            if unit.y != self.config.map_size_y {
                 unit.y += dir[1] + speed;
             }
         }
@@ -421,19 +423,26 @@ impl Game {
         match unit {
             Some(unit) => {
                 if unit.team_id == team_id {
-                    if (!self.moves.contains(unit)) {
+                    if !self.moves.contains(unit) {
                         println!("Unit with id {:?} is not int the moving arr", unit.id);
                         return;
                     }
-                    if (travel.x == 0 && travel.y == 0) {
+                    if travel.x == 0 && travel.y == 0 {
                         // remove unit from moves list
-                        self.moves.retain(|unit| unit.0 != travel.id); // if this breaks because it removes all the instances change this
+                        let mut index = 0;
+                        while index < self.moves.len() {
+                            if self.moves[index].0 == travel.id {
+                                self.moves.remove(index);
+                                break;
+                            }
+                            index += 1;
+                        }
                         println!("Unit with id {:?} is stops moving", unit.id);
                         return;
                     }
 
                     let length = (travel.x * travel.x + travel.y * travel.y).sqrt();
-                    if (!sef.moves.contains(unit))
+                    if !self.moves.contains(unit)
                     // check if unit is already in the moves array and if not add it
                     {
                         self.moves
@@ -442,14 +451,14 @@ impl Game {
                     // if unit is already in the moves array just update the direction
                     {
                         for (id, dir) in self.moves {
-                            if (id == unit.id) {
+                            if id == unit.id {
                                 dir[0] = travel.x / length;
                                 dir[1] = travel.y / length;
                             }
                         }
                     }
                 } else {
-                    println!("Unable to move Unit with id {:?} because it doesnt belong to team {:?}", unit.id team_id);
+                    println!("Unable to move Unit with id {:?} because it doesnt belong to team {:?}", unit.id, team_id);
                 }
             }
             None => {
