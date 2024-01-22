@@ -62,7 +62,9 @@ mod tests {
         assert_eq!(game.units.len(), 1);
         assert_eq!(
             game.teams[0].balance,
-            100 - GameConfig::get_unit_config_by_type_id(1).unwrap().cost
+            100 - GameConfig::get_unit_config_by_type_id(&game.config, 1)
+                .unwrap()
+                .cost
         );
         // Create another unit for team 1
         game.create_unit(1, 1);
@@ -71,7 +73,9 @@ mod tests {
         // balance should not change
         assert_eq!(
             game.teams[0].balance,
-            100 - GameConfig::get_unit_config_by_type_id(1).unwrap().cost
+            100 - GameConfig::get_unit_config_by_type_id(&game.config, 1)
+                .unwrap()
+                .cost
         );
         //same for second team
         game.create_unit(2, 2);
@@ -209,7 +213,8 @@ mod tests {
 
     #[test]
     fn get_unit_config_by_type_id() {
-        let mut unit_config = GameConfig::get_unit_config_by_type_id(1).unwrap();
+        let mut unit_config =
+            GameConfig::get_unit_config_by_type_id(&GameConfig::patch_0_1_0(), 1).unwrap();
         assert_eq!(unit_config.cost, GameConfig::patch_0_1_0().units[0].cost);
         assert_eq!(unit_config.hp, GameConfig::patch_0_1_0().units[0].hp);
         assert_eq!(
@@ -234,7 +239,8 @@ mod tests {
         );
         assert_eq!(unit_config.speed, GameConfig::patch_0_1_0().units[0].speed);
 
-        unit_config = GameConfig::get_unit_config_by_type_id(2).unwrap();
+        unit_config =
+            GameConfig::get_unit_config_by_type_id(&GameConfig::patch_0_1_0(), 2).unwrap();
         assert_eq!(unit_config.cost, GameConfig::patch_0_1_0().units[1].cost);
         assert_eq!(unit_config.hp, GameConfig::patch_0_1_0().units[1].hp);
         assert_eq!(
@@ -259,7 +265,7 @@ mod tests {
         );
         assert_eq!(unit_config.speed, GameConfig::patch_0_1_0().units[1].speed);
 
-        let unit_config = GameConfig::get_unit_config_by_type_id(3);
+        let unit_config = GameConfig::get_unit_config_by_type_id(&GameConfig::patch_0_1_0(), 3);
         match unit_config {
             Some(_) => {
                 assert!(false);
@@ -548,7 +554,7 @@ mod tests {
         // hp of unit4 should not change -> be the same as in the GameConfig
         assert_eq!(
             game.units[3].hp,
-            GameConfig::get_unit_config_by_type_id(unit4.type_id)
+            GameConfig::get_unit_config_by_type_id(&game.config, unit4.type_id)
                 .unwrap()
                 .hp
         );
