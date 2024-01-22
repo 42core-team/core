@@ -11,9 +11,16 @@ mod tests {
     };
 
     fn get_fake_game() -> Game {
-        let t1 = Team::get_fake_team(0, "Team 1".to_string());
-        let t2 = Team::get_fake_team(1, "Team 2".to_string());
-        let game = Game::new(vec![t1, t2]);
+        let mut game = Game::new(vec![1, 2]);
+        game.teams = vec![
+            Team::get_fake_team(1, "Team 1".to_string()),
+            Team::get_fake_team(2, "Team 2".to_string()),
+        ];
+        game
+    }
+
+    fn get_fake_game_without_teams() -> Game {
+        let game = Game::new(vec![1, 2]);
         game
     }
 
@@ -24,8 +31,8 @@ mod tests {
     /// The fake team is used to test the game logic
     ///
     fn test_create_fake_team() {
-        let team = Team::get_fake_team(0, "asdf".to_string());
-        assert_eq!(team.id, 0);
+        let team = Team::get_fake_team(1, "asdf".to_string());
+        assert_eq!(team.id, 1);
         assert_eq!(team.name, "asdf");
         assert_eq!(team.balance, 100);
     }
@@ -59,25 +66,29 @@ mod tests {
         assert_eq!(game.units.len(), 1);
         assert_eq!(
             game.teams[0].balance,
-            100 - GameConfig::get_unit_config_by_type_id(1).unwrap().cost
+            100 - GameConfig::get_unit_config_by_type_id(&game.config, 1)
+                .unwrap()
+                .cost
         );
-        // Create another unit for team 0
-        game.create_unit(0, 1);
+        // Create another unit for team 1
+        game.create_unit(1, 1);
         // second create_unit call fails -> balance to low
         assert_eq!(game.units.len(), 1);
         // balance should not change
         assert_eq!(
             game.teams[0].balance,
-            100 - GameConfig::get_unit_config_by_type_id(1).unwrap().cost
+            100 - GameConfig::get_unit_config_by_type_id(&game.config, 1)
+                .unwrap()
+                .cost
         );
         //same for second team
-        game.create_unit(1, 2);
+        game.create_unit(2, 2);
         assert_eq!(game.units.len(), 2);
         assert_eq!(game.teams[1].balance, 50);
-        game.create_unit(1, 2);
+        game.create_unit(2, 2);
         assert_eq!(game.units.len(), 3);
         assert_eq!(game.teams[1].balance, 0);
-        game.create_unit(1, 2);
+        game.create_unit(2, 2);
         assert_eq!(game.units.len(), 3);
         assert_eq!(game.teams[1].balance, 0);
     }
@@ -95,31 +106,31 @@ mod tests {
         assert_eq!(game.teams[1].balance, 100);
 
         // invalid team id
-        game.create_unit(2, 1);
+        game.create_unit(3, 1);
         assert_eq!(game.units.len(), 0);
         assert_eq!(game.teams[0].balance, 100);
         assert_eq!(game.teams[1].balance, 100);
 
         // invalid unit type id
-        game.create_unit(0, 3);
+        game.create_unit(1, 3);
         assert_eq!(game.units.len(), 0);
         assert_eq!(game.teams[0].balance, 100);
         assert_eq!(game.teams[1].balance, 100);
 
         // invalid team id and unit type id
-        game.create_unit(2, 3);
+        game.create_unit(3, 3);
         assert_eq!(game.units.len(), 0);
         assert_eq!(game.teams[0].balance, 100);
         assert_eq!(game.teams[1].balance, 100);
 
         // invalid team id and valid unit type id
-        game.create_unit(2, 1);
+        game.create_unit(3, 1);
         assert_eq!(game.units.len(), 0);
         assert_eq!(game.teams[0].balance, 100);
         assert_eq!(game.teams[1].balance, 100);
 
         // valid team id and invalid unit type id
-        game.create_unit(0, 3);
+        game.create_unit(1, 3);
         assert_eq!(game.units.len(), 0);
         assert_eq!(game.teams[0].balance, 100);
         assert_eq!(game.teams[1].balance, 100);
@@ -136,23 +147,22 @@ mod tests {
     fn test_get_core_by_team_id() {
         let game = get_fake_game();
 
-        let core1 = game.get_core_by_team_id(0);
+        let core1 = game.get_core_by_team_id(1);
         assert_eq!(core1.unwrap().x, 2000);
         assert_eq!(core1.unwrap().y, 2000);
 
-        let core2 = game.get_core_by_team_id(1);
+        let core2 = game.get_core_by_team_id(2);
         assert_eq!(core2.unwrap().x, 4000);
         assert_eq!(core2.unwrap().y, 4000);
 
-        let core3 = game.get_core_by_team_id(2);
+        let core3 = game.get_core_by_team_id(3);
         assert_eq!(core3, None);
     }
 
     #[test]
     fn test_get_team_by_id() {
         let game = get_fake_game();
-
-        let team1 = game.get_team_by_id(0);
+        let team1 = game.get_team_by_id(1);
         match team1 {
             Some(team) => {
                 assert_eq!(team.name, "Team 1");
@@ -162,7 +172,7 @@ mod tests {
             }
         }
 
-        let team2 = game.get_team_by_id(1);
+        let team2 = game.get_team_by_id(2);
         match team2 {
             Some(team) => {
                 assert_eq!(team.name, "Team 2");
@@ -172,7 +182,7 @@ mod tests {
             }
         }
 
-        let team3 = game.get_team_by_id(2);
+        let team3 = game.get_team_by_id(3);
         match team3 {
             Some(_) => {
                 assert!(false);
@@ -187,13 +197,13 @@ mod tests {
     fn test_get_team_by_id_mut() {
         let mut game = get_fake_game();
 
-        let team1 = game.get_team_by_id_mut(0);
+        let team1 = game.get_team_by_id_mut(1);
         assert_eq!(team1.unwrap().name, "Team 1");
 
-        let team2 = game.get_team_by_id_mut(1);
+        let team2 = game.get_team_by_id_mut(2);
         assert_eq!(team2.unwrap().name, "Team 2");
 
-        let team3 = game.get_team_by_id_mut(2);
+        let team3 = game.get_team_by_id_mut(3);
         match team3 {
             Some(_) => {
                 assert!(false);
@@ -206,7 +216,8 @@ mod tests {
 
     #[test]
     fn get_unit_config_by_type_id() {
-        let mut unit_config = GameConfig::get_unit_config_by_type_id(1).unwrap();
+        let mut unit_config =
+            GameConfig::get_unit_config_by_type_id(&GameConfig::patch_0_1_0(), 1).unwrap();
         assert_eq!(unit_config.cost, GameConfig::patch_0_1_0().units[0].cost);
         assert_eq!(unit_config.hp, GameConfig::patch_0_1_0().units[0].hp);
         assert_eq!(
@@ -231,7 +242,8 @@ mod tests {
         );
         assert_eq!(unit_config.speed, GameConfig::patch_0_1_0().units[0].speed);
 
-        unit_config = GameConfig::get_unit_config_by_type_id(2).unwrap();
+        unit_config =
+            GameConfig::get_unit_config_by_type_id(&GameConfig::patch_0_1_0(), 2).unwrap();
         assert_eq!(unit_config.cost, GameConfig::patch_0_1_0().units[1].cost);
         assert_eq!(unit_config.hp, GameConfig::patch_0_1_0().units[1].hp);
         assert_eq!(
@@ -256,7 +268,7 @@ mod tests {
         );
         assert_eq!(unit_config.speed, GameConfig::patch_0_1_0().units[1].speed);
 
-        let unit_config = GameConfig::get_unit_config_by_type_id(3);
+        let unit_config = GameConfig::get_unit_config_by_type_id(&GameConfig::patch_0_1_0(), 3);
         match unit_config {
             Some(_) => {
                 assert!(false);
@@ -373,10 +385,10 @@ mod tests {
     fn is_target_in_range() {
         let mut game = get_fake_game();
         game.create_fake_resource(5000, 5000);
-        game.create_fake_unit(0, 1, 2000, 2000);
-        game.create_fake_unit(0, 2, 9000, 9000);
-        game.create_fake_unit(1, 1, 2100, 2100);
-        game.create_fake_unit(1, 2, 8000, 8000);
+        game.create_fake_unit(1, 1, 2000, 2000);
+        game.create_fake_unit(1, 2, 9000, 9000);
+        game.create_fake_unit(2, 1, 2100, 2100);
+        game.create_fake_unit(2, 2, 8000, 8000);
 
         let unit1 = game.units[0].clone();
         let unit2 = game.units[1].clone();
@@ -388,7 +400,7 @@ mod tests {
         let unit_id3 = unit3.id;
         let unit_id4 = unit4.id;
 
-        let u1 = game.get_target_by_id(unit_id1);
+        let _u1 = game.get_target_by_id(unit_id1);
         let u2 = game.get_target_by_id(unit_id2);
         let u3 = game.get_target_by_id(unit_id3);
         let u4 = game.get_target_by_id(unit_id4);
@@ -486,10 +498,10 @@ mod tests {
     fn attack() {
         let mut game = get_fake_game();
         game.create_fake_resource(5000, 5000);
-        game.create_fake_unit(0, 1, 2000, 2000);
-        game.create_fake_unit(0, 2, 9000, 9000);
-        game.create_fake_unit(1, 1, 2100, 2100);
-        game.create_fake_unit(1, 2, 8000, 8000);
+        game.create_fake_unit(1, 1, 2000, 2000);
+        game.create_fake_unit(1, 2, 9000, 9000);
+        game.create_fake_unit(2, 1, 2100, 2100);
+        game.create_fake_unit(2, 2, 8000, 8000);
 
         let unit1 = game.units[0].clone();
         let unit2 = game.units[1].clone();
@@ -545,7 +557,7 @@ mod tests {
         // hp of unit4 should not change -> be the same as in the GameConfig
         assert_eq!(
             game.units[3].hp,
-            GameConfig::get_unit_config_by_type_id(unit4.type_id)
+            GameConfig::get_unit_config_by_type_id(&game.config, unit4.type_id)
                 .unwrap()
                 .hp
         );
@@ -768,5 +780,224 @@ mod tests {
     #[tokio::test]
     async fn game_config() {
         core_test!(start, vec![Box::pin(team1()), Box::pin(team2())], spectator);
+
+    #[tokio::test]
+    async fn game_login_config() {
+        let (tx1, rx1) = oneshot::channel::<()>();
+        let (tx2, rx2) = oneshot::channel::<()>();
+        let (tx3, rx3) = oneshot::channel::<()>();
+        let (tx4, rx4) = oneshot::channel::<()>();
+        let mut _tick_rate: u64 = 50;
+
+        let game = get_fake_game_without_teams();
+        tokio::spawn(async move {
+            game.init().await;
+        });
+
+        tokio::spawn(async move {
+            let mut stream;
+            loop {
+                stream = TcpStream::connect("127.0.0.1:4242").await;
+                if stream.is_ok() {
+                    break;
+                }
+            }
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 1}".as_bytes()).await.unwrap();
+
+            let (_sender, mut receiver, _disconnect) = bridge(stream);
+
+            let mut result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(false);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(true);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(true);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(false);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            let _ = tx1.send(());
+        });
+
+        // Try to connect with an invalid id
+        tokio::spawn(async move {
+            let mut stream;
+            loop {
+                stream = TcpStream::connect("127.0.0.1:4242").await;
+                if stream.is_ok() {
+                    break;
+                }
+            }
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 3}".as_bytes()).await.unwrap();
+
+            let (_sender, mut receiver, _disconnect) = bridge(stream);
+
+            let result = timeout(Duration::from_millis(100), receiver.recv()).await;
+            assert!(!result.is_ok());
+            let _ = tx3.send(());
+        });
+
+        // Spawn the second secondary thread
+        tokio::spawn(async move {
+            let mut stream;
+            loop {
+                stream = TcpStream::connect("127.0.0.1:4242").await;
+                if stream.is_ok() {
+                    break;
+                }
+            }
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 2}".as_bytes()).await.unwrap();
+
+            let (_sender, mut receiver, _disconnect) = bridge(stream);
+
+            let mut result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(false);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(true);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(true);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(false);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            let _ = tx2.send(());
+        });
+
+        // Try to connect as spectator
+        tokio::spawn(async move {
+            let mut stream;
+            loop {
+                stream = TcpStream::connect("127.0.0.1:4242").await;
+                if stream.is_ok() {
+                    break;
+                }
+            }
+            let mut stream = stream.unwrap();
+
+            stream.write("{\"id\": 42}".as_bytes()).await.unwrap();
+
+            let (_sender, mut receiver, _disconnect) = bridge(stream);
+
+            let mut result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(false);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(true);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            result = receiver.recv().await;
+            assert!(result.is_some());
+            match result {
+                Some(message) => match message {
+                    Message::State(_) => {
+                        assert!(true);
+                    }
+                    Message::GameConfig(_) => {
+                        assert!(false);
+                    }
+                    Message::VecAction(_) => {
+                        assert!(false);
+                    }
+                    Message::Login(_) => {
+                        assert!(false);
+                    }
+                },
+                None => {
+                    assert!(false);
+                }
+            }
+            let _ = tx4.send(());
+        });
+
+        select! {
+            _ = rx1 => {}
+            _ = rx2 => {}
+            _ = rx3 => {}
+            _ = rx4 => {}
+        }
     }
 }

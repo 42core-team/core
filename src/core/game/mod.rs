@@ -24,6 +24,15 @@ pub mod config;
 pub use config::GameConfig;
 pub use config::UnitConfig;
 
+pub mod message;
+pub use message::Message;
+
+pub mod spectator;
+pub use spectator::Spectator;
+
+pub mod login;
+pub use login::Login;
+
 pub mod bridge;
 
 pub mod action;
@@ -31,3 +40,5 @@ pub mod action;
 pub mod helper;
 
 pub mod utils;
+
+pub mod log;

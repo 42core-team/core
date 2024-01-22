@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::game::{Game, GameConfig};
+use crate::game::Game;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Core {
@@ -12,13 +12,13 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn new(team_id: u64, x: u64, y: u64) -> Self {
+    pub fn new(team_id: u64, x: u64, y: u64, hp: u64) -> Self {
         Core {
             id: Game::generate_u64_id(),
             team_id,
             x,
             y,
-            hp: GameConfig::patch_0_1_0().core_hp,
+            hp,
         }
     }
 }

@@ -1,30 +1,22 @@
-use super::{action::Action, bridge::bridge, Game, State};
-use super::{bridge::bridge, Game, Message};
-use tokio::{net::TcpStream, sync::mpsc::Receiver, sync::mpsc::Sender};
+use tokio::{
+    net::TcpStream,
+    sync::mpsc::{Receiver, Sender},
+};
 
+use super::{bridge::bridge, Message, Team};
 #[derive(Debug)]
-pub struct Team {
-    pub id: u64,
-    pub uuid: String,
-    pub name: String,
 
-    pub balance: u64,
-
+pub struct Spectator {
     pub sender: Option<Sender<Message>>,
     pub receiver: Option<Receiver<Message>>,
     pub disconnect: Option<Receiver<()>>,
     pub is_disconnected: bool,
 }
 
-impl Team {
-    pub fn from_tcp_stream(stream: TcpStream) -> Self {
+impl Spectator {
+    pub fn new(stream: TcpStream) -> Self {
         let (sender, receiver, disconnect) = bridge(stream);
-
-        Team {
-            id: Game::generate_u64_id(),
-            uuid: String::from("Hello"),
-            name: String::from("asdf"),
-            balance: 100,
+        Self {
             sender: Some(sender),
             receiver: Some(receiver),
             disconnect: Some(disconnect),
@@ -32,15 +24,11 @@ impl Team {
         }
     }
 
-    pub fn get_fake_team(id: u64, name: String) -> Self {
-        Team {
-            id: id,
-            uuid: String::from("Hello"),
-            name: name,
-            balance: 100,
-            sender: None,
-            receiver: None,
-            disconnect: None,
+    pub fn from_team(team: Team) -> Self {
+        Self {
+            sender: team.sender,
+            receiver: team.receiver,
+            disconnect: team.disconnect,
             is_disconnected: false,
         }
     }

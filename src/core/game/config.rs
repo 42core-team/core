@@ -1,11 +1,15 @@
-#[allow(dead_code)] //@TODO remove if used
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+use super::Team;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct GameConfig {
     pub height: u64,
     pub width: u64,
     pub idle_income: u64,
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
+    pub teams: Vec<TeamConfig>,
 }
 
 impl GameConfig {
@@ -41,23 +45,32 @@ impl GameConfig {
                     speed: 2000,
                 },
             ],
+            teams: vec![],
         }
     }
 
-    /// Function to get the unit config by type id without the need of a game instance
-    pub fn get_unit_config_by_type_id(type_id: u64) -> Option<UnitConfig> {
-        let config = GameConfig::patch_0_1_0();
-        for unit in config.units {
+    pub fn fill_team_config(config: &mut GameConfig, teams: &Vec<Team>) {
+        let mut team_configs: Vec<TeamConfig> = Vec::new();
+        for team in teams {
+            team_configs.push(TeamConfig {
+                id: team.id,
+                name: team.name.clone(),
+            });
+        }
+        config.teams = team_configs;
+    }
+
+    pub fn get_unit_config_by_type_id(config: &GameConfig, type_id: u64) -> Option<UnitConfig> {
+        for unit in config.units.iter() {
             if unit.type_id == type_id {
-                return Some(unit);
+                return Some(unit.clone());
             }
         }
         None
     }
 }
 
-#[allow(dead_code)] //@TODO remove if used
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct UnitConfig {
     pub name: String,
     pub type_id: u64,
@@ -69,4 +82,10 @@ pub struct UnitConfig {
     pub max_range: u64,
     pub min_range: u64,
     pub speed: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TeamConfig {
+    pub id: u64,
+    pub name: String,
 }
