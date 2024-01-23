@@ -5,7 +5,6 @@ use chrono::Local;
 
 use super::LogOptions;
 
-#[cfg(not(test))]
 pub fn initialise_logger() {
     // Create logs folder if it doesn't exist
     fs::create_dir_all("logs").unwrap();
@@ -44,7 +43,6 @@ fn print_log(log_options: &LogOptions, message: &str) {
     }
 }
 
-#[cfg(not(test))]
 fn log(log_options: LogOptions, message: &str) {
     let log_file_path = match log_options {
         LogOptions::State => "logs/state.log",
@@ -68,10 +66,10 @@ fn log(log_options: LogOptions, message: &str) {
     writeln!(file, "{} - {}", current_time, message).unwrap();
 }
 
-#[cfg(test)]
-fn log(log_options: LogOptions, message: &str) {
-    print_log(&log_options, message);
-}
+// #[cfg(test)]
+// fn log(log_options: LogOptions, message: &str) {
+//     print_log(&log_options, message);
+// }
 
 pub fn state(message: &str) {
     log(LogOptions::State, message);
