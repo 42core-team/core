@@ -5,6 +5,7 @@ use chrono::Local;
 
 use super::LogOptions;
 
+#[cfg(not(test))]
 pub fn initialise_logger() {
     // Create logs folder if it doesn't exist
     fs::create_dir_all("logs").unwrap();
@@ -31,15 +32,7 @@ pub fn initialise_logger() {
     }
 }
 
-fn log(log_options: LogOptions, message: &str) {
-    let log_file_path = match log_options {
-        LogOptions::State => "logs/state.log",
-        LogOptions::Error => "logs/error.log",
-        LogOptions::Action => "logs/action.log",
-        LogOptions::Changes => "logs/changes.log",
-        LogOptions::Info => "logs/info.log",
-    };
-
+fn print_log(log_options: &LogOptions, message: &str) {
     match log_options {
         LogOptions::State => (),
         LogOptions::Error => println!("\x1b[31mError: \x1b[0m{}", message),
@@ -49,6 +42,19 @@ fn log(log_options: LogOptions, message: &str) {
         }
         LogOptions::Info => println!("\x1b[33mInfo: \x1b[0m{}", message),
     }
+}
+
+#[cfg(not(test))]
+fn log(log_options: LogOptions, message: &str) {
+    let log_file_path = match log_options {
+        LogOptions::State => "logs/state.log",
+        LogOptions::Error => "logs/error.log",
+        LogOptions::Action => "logs/action.log",
+        LogOptions::Changes => "logs/changes.log",
+        LogOptions::Info => "logs/info.log",
+    };
+
+    print_log(&log_options, message);
 
     // Get the current timestamp with milliseconds
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
@@ -60,6 +66,11 @@ fn log(log_options: LogOptions, message: &str) {
         .open(log_file_path)
         .unwrap();
     writeln!(file, "{} - {}", current_time, message).unwrap();
+}
+
+#[cfg(test)]
+fn log(log_options: LogOptions, message: &str) {
+    print_log(&log_options, message);
 }
 
 pub fn state(message: &str) {
