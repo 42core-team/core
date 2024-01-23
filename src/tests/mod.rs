@@ -3,14 +3,15 @@ mod tests {
 
     use std::time::Duration;
 
-    use lib::game::{bridge::bridge, helper::Target, Game, GameConfig, Message, Team};
+    use lib::game::{bridge::bridge, helper::Target, Core, Game, GameConfig, Message, Team};
     use tokio::{io::AsyncWriteExt, net::TcpStream, select, sync::oneshot, time::timeout};
 
     fn get_fake_game() -> Game {
         let mut game = Game::new(vec![1, 2]);
-        game.teams = vec![
-            Team::get_fake_team(1, "Team 1".to_string()),
-            Team::get_fake_team(2, "Team 2".to_string()),
+        game.teams = vec![Team::new_fake(1), Team::new_fake(2)];
+        game.cores = vec![
+            Core::new(1, 2000, 2000, GameConfig::patch_0_1_0().core_hp),
+            Core::new(2, 4000, 4000, GameConfig::patch_0_1_0().core_hp),
         ];
         game
     }
@@ -27,9 +28,9 @@ mod tests {
     /// The fake team is used to test the game logic
     ///
     fn test_create_fake_team() {
-        let team = Team::get_fake_team(1, "asdf".to_string());
+        let team = Team::new_fake(1);
         assert_eq!(team.id, 1);
-        assert_eq!(team.name, "asdf");
+        assert_eq!(team.start_id, 1);
         assert_eq!(team.balance, 100);
     }
 
@@ -45,6 +46,8 @@ mod tests {
         assert_eq!(game.units.len(), 0);
         assert_eq!(game.teams[0].balance, 100);
         assert_eq!(game.teams[1].balance, 100);
+        assert_eq!(game.teams[0].id, 1);
+        assert_eq!(game.teams[1].id, 2);
     }
 
     #[test]

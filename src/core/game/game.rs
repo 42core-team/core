@@ -5,6 +5,7 @@ use tokio::{net::TcpListener, sync::mpsc};
 use crate::game::Spectator;
 use crate::game::{action::Action, log::log};
 
+use super::bridge_con::BridgeCon;
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
@@ -33,10 +34,7 @@ impl Game {
         Game {
             status: 0, // OK
             teams: vec![],
-            cores: vec![
-                Core::new(1, 2000, 2000, game_config.core_hp),
-                Core::new(2, 4000, 4000, game_config.core_hp),
-            ],
+            cores: vec![],
             config: game_config,
             resources: vec![],
             units: vec![],
@@ -58,16 +56,19 @@ impl Game {
 
         loop {
             if let Ok(team) = team_receiver.try_recv() {
-                log::info(&format!("Team received: {:?}", team.id));
-                if self.required_team_ids.contains(&team.id)
-                    && !self.teams.iter().any(|iter_team| iter_team.id == team.id)
+                log::info(&format!("Team received: {:?}", team.start_id));
+                if self.required_team_ids.contains(&team.start_id)
+                    && !self
+                        .teams
+                        .iter()
+                        .any(|iter_team| iter_team.start_id == team.start_id)
                 {
-                    log::info(&format!("Team id {:?} accepted", team.id));
+                    log::info(&format!("Team id {:?} accepted", team.start_id));
                     self.teams.push(team);
                     log::info(&format!("Teams: {:?}", self.teams.len()));
                     log::info(&format!("Required: {:?}", self.required_team_ids.len()));
                 } else {
-                    log::error(&format!("Did not accept Team id {:?}", team.id));
+                    log::error(&format!("Did not accept Team id {:?}", team.start_id));
                 }
             }
             if let Ok(spectator) = spectator_receiver.try_recv() {
@@ -88,20 +89,19 @@ impl Game {
             loop {
                 let (stream, _) = listener.accept().await.unwrap();
 
-                let mut team = Team::from_tcp_stream(stream);
+                let mut bridge_con = BridgeCon::new(stream);
 
-                if let Some(message) = team.receiver.as_mut().unwrap().recv().await {
+                if let Some(message) = bridge_con.receiver.as_mut().unwrap().recv().await {
                     match message {
                         Message::Login(login) => {
                             if login.id == 42 {
-                                let _ = spectator_sender.send(Spectator::from_team(team)).await;
+                                let _ = spectator_sender.send(Spectator::new(bridge_con)).await;
                             } else {
-                                team.id = login.id;
-                                let _ = team_sender.send(team).await;
+                                let _ = team_sender.send(Team::new(login.id, bridge_con)).await;
                             }
                         }
                         _ => {
-                            log::error("Error: First message is not a login message");
+                            log::error("First message is not a login message");
                         }
                     }
                 }
@@ -115,6 +115,7 @@ impl Game {
         for team_index in 0..self.teams.len() {
             let team = &mut self.teams[team_index];
             match team
+                .con
                 .sender
                 .as_mut()
                 .unwrap()
@@ -144,7 +145,7 @@ impl Game {
 
     async fn tick(&mut self) -> bool {
         for team in self.teams.iter_mut() {
-            if team.is_disconnected() {
+            if team.con.is_disconnected() {
                 log::info(&format!("Team {:?} disconnected", team.id));
                 return true;
             }
@@ -156,7 +157,7 @@ impl Game {
 
         for team_index in 0..self.teams.len() {
             let team = &mut self.teams[team_index];
-            while let Ok(message) = team.receiver.as_mut().unwrap().try_recv() {
+            while let Ok(message) = team.con.receiver.as_mut().unwrap().try_recv() {
                 match message {
                     Message::VecAction(actions) => {
                         log::action(&format!("TEAM {:?}: {:?}", team.id, actions));
@@ -181,6 +182,7 @@ impl Game {
         for team in self.teams.iter_mut() {
             let state = state.clone();
             match team
+                .con
                 .sender
                 .as_mut()
                 .unwrap()
@@ -196,6 +198,7 @@ impl Game {
         for spectator in self.spectators.iter_mut() {
             let state = state.clone();
             match spectator
+                .con
                 .sender
                 .as_mut()
                 .unwrap()

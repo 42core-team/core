@@ -1,62 +1,39 @@
-use super::{bridge::bridge, Game, Message};
-use tokio::{net::TcpStream, sync::mpsc::Receiver, sync::mpsc::Sender};
+use super::{bridge_con::BridgeCon, Game};
 
 #[derive(Debug)]
 pub struct Team {
     pub id: u64,
+    pub start_id: u64,
     pub uuid: String,
     pub name: String,
 
     pub balance: u64,
 
-    pub sender: Option<Sender<Message>>,
-    pub receiver: Option<Receiver<Message>>,
-    pub disconnect: Option<Receiver<()>>,
-    pub is_disconnected: bool,
+    pub con: BridgeCon,
 }
 
 impl Team {
-    pub fn from_tcp_stream(stream: TcpStream) -> Self {
-        let (sender, receiver, disconnect) = bridge(stream);
+    pub fn new(start_id: u64, con: BridgeCon) -> Self {
+        let id = Game::generate_u64_id();
 
         Team {
-            id: Game::generate_u64_id(),
-            uuid: String::from("Hello"),
-            name: String::from("asdf"),
+            id,
+            start_id,
+            uuid: String::from("UUID"),
+            name: format!("Team {}", id),
             balance: 100,
-            sender: Some(sender),
-            receiver: Some(receiver),
-            disconnect: Some(disconnect),
-            is_disconnected: false,
+            con,
         }
     }
 
-    pub fn get_fake_team(id: u64, name: String) -> Self {
+    pub fn new_fake(id: u64) -> Self {
         Team {
-            id: id,
-            uuid: String::from("Hello"),
-            name: name,
+            id,
+            start_id: id,
+            uuid: String::from("UUID"),
+            name: format!("Team {}", id),
             balance: 100,
-            sender: None,
-            receiver: None,
-            disconnect: None,
-            is_disconnected: false,
+            con: BridgeCon::new_fake(),
         }
-    }
-
-    pub fn is_disconnected(&mut self) -> bool {
-        if self.is_disconnected {
-            return true;
-        }
-        // @TODO commented out for testing
-        // if let None = self.disconnect {
-        // 	return true;
-        // }
-
-        if let Ok(_) = self.disconnect.as_mut().unwrap().try_recv() {
-            self.is_disconnected = true;
-            return true;
-        }
-        return false;
     }
 }
