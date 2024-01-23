@@ -1,4 +1,4 @@
-pub mod log_options;
-pub use log_options::LogOptions;
+mod log_options;
+use log_options::LogOptions;
 
 pub mod log;
