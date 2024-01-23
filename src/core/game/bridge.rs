@@ -4,11 +4,7 @@
 //!
 //!
 
-use super::{
-    action::Request,
-    log::{log::log, LogOptions},
-    GameConfig, Login, Message, State,
-};
+use super::{action::Request, log::log, GameConfig, Login, Message, State};
 use serde_json;
 use std::ops::Add;
 use tokio::{
@@ -29,7 +25,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
         loop {
             match reader.read(&mut buffer).await {
                 Ok(n) if n == 0 => {
-                    log(LogOptions::Info, "Connection closed by client");
+                    log::info("Connection closed by client");
                     let _ = disconnect_sender.send(()).await;
                     break;
                 }
@@ -70,13 +66,10 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                                                 let _ = socket_to_mscp_sender
                                                     .send(Message::from_vec_action(vec![]))
                                                     .await;
-                                                log(
-                                                    LogOptions::Error,
-                                                    &format!(
-                                                        "Parse Error in bridge: {:?} from {:?}",
-                                                        err, line
-                                                    ),
-                                                );
+                                                log::error(&format!(
+                                                    "Parse Error in bridge: {:?} from {:?}",
+                                                    err, line
+                                                ));
                                             }
                                         },
                                     },
@@ -100,7 +93,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                     Message::State(state) => {
                         let json_string = serde_json::to_string(&state).unwrap().add("\n");
                         if let Err(_) = writer.write_all(json_string.as_bytes()).await {
-                            log(LogOptions::Error, "Send Error in bridge");
+                            log::error("Send State Error in bridge");
                             let _ = writer.shutdown().await;
                             break;
                         }
@@ -108,7 +101,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                     Message::GameConfig(game_config) => {
                         let json_string = serde_json::to_string(&game_config).unwrap().add("\n");
                         if let Err(_) = writer.write_all(json_string.as_bytes()).await {
-                            log(LogOptions::Error, "Send Error in bridge");
+                            log::error("Send Config Error in bridge");
                             let _ = writer.shutdown().await;
                             break;
                         }
