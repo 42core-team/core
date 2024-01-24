@@ -3,13 +3,12 @@ use std::time::Duration;
 use tokio::{net::TcpListener, sync::mpsc};
 
 use crate::game::action::Action;
+use crate::game::log::log;
 use crate::game::Spectator;
-use crate::game::{action::Action, log::log};
 
 use super::bridge_con::BridgeCon;
 use super::{
-    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State, Team,
-    Unit,
+    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
 
 #[derive(Debug)]
@@ -114,8 +113,7 @@ impl Game {
     pub async fn start(&mut self, mut spectator_receiver: mpsc::Receiver<Spectator>) {
         GameConfig::fill_team_config(&mut self.config, &self.teams);
 
-        for team_index in 0..self.teams.len() {
-            let team = &mut self.teams[team_index];
+        for team in self.teams.iter_mut() {
             match team
                 .con
                 .sender
@@ -130,11 +128,36 @@ impl Game {
                 }
             }
         }
+        for spectator in self.spectators.iter_mut() {
+            match spectator
+                .con
+                .sender
+                .as_mut()
+                .unwrap()
+                .send(Message::from_game_config(&self.config))
+                .await
+            {
+                Ok(_) => {}
+                Err(_) => {
+                    log::error("Error sending config to spectator");
+                }
+            }
+        }
 
         loop {
             if let Ok(spectator) = spectator_receiver.try_recv() {
                 log::info("Spectator received");
                 self.spectators.push(spectator);
+                self.spectators
+                    .last_mut()
+                    .unwrap()
+                    .con
+                    .sender
+                    .as_mut()
+                    .unwrap()
+                    .send(Message::from_game_config(&self.config))
+                    .await
+                    .unwrap();
             }
 
             if self.tick().await {
@@ -181,8 +204,8 @@ impl Game {
     async fn send_state(&mut self) {
         let state = State::from_game(self);
         log::state(&serde_json::to_string(&state).unwrap());
+
         for team in self.teams.iter_mut() {
-            let state = state.clone();
             match team
                 .con
                 .sender
@@ -198,7 +221,6 @@ impl Game {
             }
         }
         for spectator in self.spectators.iter_mut() {
-            let state = state.clone();
             match spectator
                 .con
                 .sender

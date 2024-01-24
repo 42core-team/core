@@ -88,7 +88,7 @@ fn print_field(x: u64, y: u64, state: State) {
     // edit this as soon as ressource-ids are introduced!
     // !!!
     print!("{}", " ".on_grey());
-	// possible changes: black bg, border with specific chars
+    // possible changes: black bg, border with specific chars
     // print!("{}", " ");
 }
 
@@ -122,13 +122,12 @@ async fn main() -> std::io::Result<()> {
     if let Ok(s) = stream {
         let (sender, mut reciever, _disconnect) = bridge(s);
         let mut game_config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
-        let _config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
         let _ = sender.send(Message::Login(Login { id: 42 })).await;
         if let Some(m) = reciever.recv().await {
             match m {
                 Message::GameConfig(_config) => {
                     game_config = _config;
-                    println!("message was game config");
+                    println!("gameconfig recieved");
                 }
                 _ => {
                     println!("First message was not a gameconfig!");
