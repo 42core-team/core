@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 pub enum Action {
     Attack(Attack),
     Create(Create),
-    Travel(Travel),
+    TravelTo(Travel),
+    TravelDir(Travel),
 }
 
 impl Action {
@@ -17,7 +18,11 @@ impl Action {
         Self::Create(create)
     }
 
-    pub fn new_travel(travel: Travel) -> Self {
-        Self::Travel(travel)
+    pub fn new_travel_to(travel_to: Travel) -> Self {
+        Self::TravelTo(travel_to)
+    }
+
+    pub fn new_travel_dir(travel_dir: Travel) -> Self {
+        Self::TravelDir(travel_dir)
     }
 }
