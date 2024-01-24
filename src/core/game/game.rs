@@ -7,6 +7,7 @@ use crate::game::log::log;
 use crate::game::Spectator;
 
 use super::bridge_con::BridgeCon;
+use super::generate;
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
@@ -112,6 +113,8 @@ impl Game {
 
     pub async fn start(&mut self, mut spectator_receiver: mpsc::Receiver<Spectator>) {
         GameConfig::fill_team_config(&mut self.config, &self.teams);
+        self.cores = generate::cores(self);
+        self.resources = generate::resources(self);
 
         for team in self.teams.iter_mut() {
             match team
