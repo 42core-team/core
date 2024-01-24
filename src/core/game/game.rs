@@ -549,7 +549,7 @@ impl Game {
                             .unwrap()
                             .dmg_unit;
                             self.get_unit_by_id_mut(unit.id).unwrap().hp -=
-                                (damage / (1000 / self.tick_rate as u64)) as u64;
+                                damage * self.time_since_last_tick as u64 / 1000;
                             if self.get_unit_by_id_mut(unit.id).unwrap().hp <= 0 {
                                 self.units.retain(|unit| unit.id != target_id);
                             }
@@ -562,7 +562,7 @@ impl Game {
                             .unwrap()
                             .dmg_resource;
                             self.get_resource_by_id_mut(resource.id).unwrap().hp -=
-                                (damage / (1000 / self.tick_rate as u64)) as u64;
+                                damage * self.time_since_last_tick as u64 / 1000;
                             if self.get_resource_by_id_mut(resource.id).unwrap().hp <= 0 {
                                 self.resources.retain(|resource| resource.id != target_id);
                             }
@@ -575,7 +575,7 @@ impl Game {
                             .unwrap()
                             .dmg_core;
                             self.get_core_by_id_mut(core.id).unwrap().hp -=
-                                (damage / (1000 / self.tick_rate as u64)) as u64;
+                                damage * self.time_since_last_tick as u64 / 1000;
                             if self.get_core_by_id_mut(core.id).unwrap().hp <= 0 {
                                 self.cores.retain(|core| core.id != target_id);
                             }

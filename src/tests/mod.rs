@@ -3,11 +3,14 @@ mod tests {
 
     use std::time::Duration;
 
-    use lib::game::{bridge::bridge, helper::Target, Core, Game, GameConfig, Message, Team};
+    use lib::game::{
+        bridge::bridge, helper::Target, log::log, Core, Game, GameConfig, Message, Team,
+    };
     use tokio::{io::AsyncWriteExt, net::TcpStream, select, sync::oneshot, time::timeout};
 
     fn get_fake_game() -> Game {
         let mut game = Game::new(vec![1, 2]);
+        game.time_since_last_tick = game.tick_rate;
         game.teams = vec![Team::new_fake(1), Team::new_fake(2)];
         game.cores = vec![
             Core::new(1, 2000, 2000, GameConfig::patch_0_1_0().core_hp),
@@ -497,6 +500,7 @@ mod tests {
     ///
     fn attack() {
         let mut game = get_fake_game();
+
         game.create_fake_resource(5000, 5000);
         game.create_fake_unit(1, 1, 2000, 2000);
         game.create_fake_unit(1, 2, 9000, 9000);
@@ -526,6 +530,10 @@ mod tests {
         before_hp = game.units[2].hp;
         game.attack(unit_id1, unit_id3);
         // hp of unit3 should change -> be lower than in the GameConfig
+        log::info(&format!(
+            "unit3 hp: {}",
+            game.get_unit_by_id(unit_id3).unwrap().hp
+        ));
         assert!(game.get_unit_by_id(unit_id3).unwrap().hp < before_hp);
         // 0 -> 3: false
         before_hp = game.units[3].hp;
