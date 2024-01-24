@@ -3,7 +3,10 @@ use std::time::Duration;
 use tokio::{net::TcpListener, sync::mpsc};
 
 use crate::game::action::Action;
+use crate::game::Spectator;
+use crate::game::{action::Action, log::log};
 
+use super::bridge_con::BridgeCon;
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, Spectator, State, Team,
     Unit,
@@ -33,10 +36,7 @@ impl Game {
         Game {
             status: 0, // OK
             teams: vec![],
-            cores: vec![
-                Core::new(1, 2000, 2000, game_config.core_hp),
-                Core::new(2, 4000, 4000, game_config.core_hp),
-            ],
+            cores: vec![],
             config: game_config,
             resources: vec![],
             units: vec![],
@@ -58,15 +58,23 @@ impl Game {
 
         loop {
             if let Ok(team) = team_receiver.try_recv() {
-                println!("Team received");
-                // if self.required_team_ids.contains(&team.id) && !self.teams.iter().any(|team| team.id == team.id){
-                self.teams.push(team);
-                println!("Teams: {:?}", self.teams.len());
-                println!("Required: {:?}", self.required_team_ids.len());
-                // }
+                log::info(&format!("Team received: {:?}", team.start_id));
+                if self.required_team_ids.contains(&team.start_id)
+                    && !self
+                        .teams
+                        .iter()
+                        .any(|iter_team| iter_team.start_id == team.start_id)
+                {
+                    log::info(&format!("Team id {:?} accepted", team.start_id));
+                    self.teams.push(team);
+                    log::info(&format!("Teams: {:?}", self.teams.len()));
+                    log::info(&format!("Required: {:?}", self.required_team_ids.len()));
+                } else {
+                    log::error(&format!("Did not accept Team id {:?}", team.start_id));
+                }
             }
             if let Ok(spectator) = spectator_receiver.try_recv() {
-                println!("Spectator received");
+                log::info("Spectator received");
                 self.spectators.push(spectator);
             }
             tokio::time::sleep(Duration::from_millis(20)).await;
@@ -83,20 +91,19 @@ impl Game {
             loop {
                 let (stream, _) = listener.accept().await.unwrap();
 
-                let mut team = Team::from_tcp_stream(stream);
+                let mut bridge_con = BridgeCon::new(stream);
 
-                if let Some(message) = team.receiver.as_mut().unwrap().recv().await {
+                if let Some(message) = bridge_con.receiver.as_mut().unwrap().recv().await {
                     match message {
                         Message::Login(login) => {
                             if login.id == 42 {
-                                let _ = spectator_sender.send(Spectator::from_team(team)).await;
+                                let _ = spectator_sender.send(Spectator::new(bridge_con)).await;
                             } else {
-                                team.id = login.id;
-                                let _ = team_sender.send(team).await;
+                                let _ = team_sender.send(Team::new(login.id, bridge_con)).await;
                             }
                         }
                         _ => {
-                            println!("Error: First message is not a login message");
+                            log::error("First message is not a login message");
                         }
                     }
                 }
@@ -110,6 +117,7 @@ impl Game {
         for team_index in 0..self.teams.len() {
             let team = &mut self.teams[team_index];
             match team
+                .con
                 .sender
                 .as_mut()
                 .unwrap()
@@ -118,14 +126,14 @@ impl Game {
             {
                 Ok(_) => {}
                 Err(_) => {
-                    println!("Error sending config to team");
+                    log::error("Error sending config to team");
                 }
             }
         }
 
         loop {
             if let Ok(spectator) = spectator_receiver.try_recv() {
-                println!("Spectator received");
+                log::info("Spectator received");
                 self.spectators.push(spectator);
             }
 
@@ -139,28 +147,28 @@ impl Game {
 
     async fn tick(&mut self) -> bool {
         for team in self.teams.iter_mut() {
-            if team.is_disconnected() {
-                println!("Team {:?} disconnected", team.id);
+            if team.con.is_disconnected() {
+                log::info(&format!("Team {:?} disconnected", team.id));
                 return true;
             }
         }
-        println!("------ Tick ------");
+        log::info(&format!("Tick: {:?}", self.time_since_last_tick));
         self.wait_till_next_tick().await;
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
 
         for team_index in 0..self.teams.len() {
             let team = &mut self.teams[team_index];
-            while let Ok(message) = team.receiver.as_mut().unwrap().try_recv() {
+            while let Ok(message) = team.con.receiver.as_mut().unwrap().try_recv() {
                 match message {
                     Message::VecAction(actions) => {
-                        println!("TEAM send action: {:?}", actions);
+                        log::action(&format!("TEAM {:?}: {:?}", team.id, actions));
                         for action in actions {
                             team_actions.push((team.id, action));
                         }
                     }
                     _ => {
-                        println!("TEAM received unknown message");
+                        log::error(&format!("TEAM {:?} received unknown message", team.id));
                     }
                 }
             }
@@ -172,9 +180,11 @@ impl Game {
 
     async fn send_state(&mut self) {
         let state = State::from_game(self);
+        log::state(&serde_json::to_string(&state).unwrap());
         for team in self.teams.iter_mut() {
             let state = state.clone();
             match team
+                .con
                 .sender
                 .as_mut()
                 .unwrap()
@@ -183,13 +193,14 @@ impl Game {
             {
                 Ok(_) => {}
                 Err(_) => {
-                    println!("Error sending state to team");
+                    log::error(&format!("Error sending state to team {:?}", team.id));
                 }
             }
         }
         for spectator in self.spectators.iter_mut() {
             let state = state.clone();
             match spectator
+                .con
                 .sender
                 .as_mut()
                 .unwrap()
@@ -198,7 +209,7 @@ impl Game {
             {
                 Ok(_) => {}
                 Err(_) => {
-                    println!("Error sending state to spectator");
+                    log::error("Error sending state to spectator");
                 }
             }
         }
@@ -289,7 +300,6 @@ impl Game {
 
     pub fn get_core_by_team_id(&self, team_id: u64) -> Option<&Core> {
         for core in self.cores.iter() {
-            println!("Core: {:?}", core);
             if core.team_id == team_id {
                 return Some(core);
             }
@@ -310,13 +320,13 @@ impl Game {
     /// - reduce team balance
     ///
     pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
-        println!(
+        log::changes(&format!(
             "Create unit of type {:?} for team with id {:?}",
             type_id, team_id
-        );
+        ));
         let team_core = self.get_core_by_team_id(team_id);
         if team_core.is_none() {
-            println!("Core of team with id {:?} not found", team_id);
+            log::error(&format!("Core of team with id {:?} not found", team_id));
             return;
         }
         let team_core = team_core.unwrap();
@@ -328,7 +338,10 @@ impl Game {
                     .unwrap()
                     .cost;
                 if team_balance < unit_cost {
-                    println!("Team with id {:?} has not enough balance", team_id);
+                    log::error(&format!(
+                        "Team with id {:?} has not enough balance",
+                        team_id
+                    ));
                     return;
                 }
                 let team = self.get_team_by_id_mut(team_id);
@@ -337,14 +350,14 @@ impl Game {
                         team.balance -= unit_cost;
                     }
                     None => {
-                        println!("Team with id {:?} not found", team_id);
+                        log::error(&format!("Team with id {:?} not found", team_id));
                         return;
                     }
                 }
                 self.units.push(unit);
             }
             None => {
-                println!("Unit could not be created");
+                log::error("Unit could not be created");
             }
         }
     }
@@ -361,7 +374,10 @@ impl Game {
     /// - remove target from targets
     ///
     pub fn handel_attack_action(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
-        println!("Attack: {:?} -> {:?}", attacker_id, target_id);
+        log::changes(&format!(
+            "handel_attack_action: {:?} -> {:?} from team with id {:?}",
+            attacker_id, target_id, team_id
+        ));
         let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
         let target = self.units.iter().find(|unit| unit.id == target_id);
         match (attacker, target) {
@@ -375,7 +391,7 @@ impl Game {
                 }
             }
             _ => {
-                println!("Attacker or target not found");
+                log::error("Attacker or target not found");
             }
         }
     }
@@ -475,7 +491,7 @@ impl Game {
     /// Get the damage of the attacker based on the type of the target from the config
     ///
     pub fn attack(&mut self, attacker_id: u64, target_id: u64) {
-        println!("Attack: {:?} -> {:?}", attacker_id, target_id);
+        log::changes(&format!("attack: {:?} -> {:?}", attacker_id, target_id));
         let attacker = self
             .units
             .iter()
@@ -532,11 +548,11 @@ impl Game {
                         }
                     }
                 } else {
-                    println!("Target not in range");
+                    log::error("Target not in range");
                 }
             }
             _ => {
-                println!("Attacker or target not found");
+                log::error("Attacker or target not found");
             }
         }
     }
@@ -573,7 +589,7 @@ impl Game {
                     self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
                 }
                 Action::Travel(travel) => {
-                    println!("Travel: {:?}", travel);
+                    log::changes(&format!("Travel: {:?}", travel));
                 }
             }
         }
@@ -600,7 +616,10 @@ impl Game {
                     }
                 }
                 _ => {
-                    println!("Attacker or target not found");
+                    log::error(&format!(
+                        "Attacker or target not found: {:?} -> {:?}",
+                        attacker_id, target_id
+                    ));
                 }
             }
         }
@@ -613,7 +632,7 @@ impl Game {
                 self.units.push(unit);
             }
             None => {
-                println!("Unit could not be created");
+                log::error("Unit could not be created");
             }
         }
     }

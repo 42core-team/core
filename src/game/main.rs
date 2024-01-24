@@ -9,13 +9,15 @@
 
 use std::env;
 
-use lib::game::Game;
+use lib::game::{log::log, Game};
 
 #[tokio::main]
 async fn main() {
+    log::initialise_logger();
+
     let mut reqired_team_ids = Vec::new();
     for argument in env::args() {
-        println!("Argument: {}", argument);
+        log::info(&format!("Argument: {}", argument));
         let n = argument.parse::<u64>();
         if n.is_ok() {
             reqired_team_ids.push(n.unwrap());
