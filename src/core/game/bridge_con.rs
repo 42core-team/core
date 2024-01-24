@@ -7,6 +7,7 @@ use super::{bridge::bridge, Message};
 
 #[derive(Debug)]
 pub struct BridgeCon {
+    pub id: u64,
     pub sender: Option<Sender<Message>>,
     pub receiver: Option<Receiver<Message>>,
     pub disconnect: Option<Receiver<()>>,
@@ -17,6 +18,7 @@ impl BridgeCon {
     pub fn new(stream: TcpStream) -> Self {
         let (sender, receiver, disconnect) = bridge(stream);
         Self {
+            id: 0,
             sender: Some(sender),
             receiver: Some(receiver),
             disconnect: Some(disconnect),
@@ -26,6 +28,7 @@ impl BridgeCon {
 
     pub fn new_fake() -> Self {
         Self {
+            id: 0,
             sender: None,
             receiver: None,
             disconnect: None,

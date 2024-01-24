@@ -9,8 +9,9 @@ pub fn cores(game: &Game) -> Vec<Core> {
     let mut cores: Vec<Core> = Vec::new();
 
     if team_count == 2 {
-        cores.push(Core::new(game.teams[0].id, 0, 0, game.config.core_hp));
+        cores.push(Core::new(game, game.teams[0].id, 0, 0, game.config.core_hp));
         cores.push(Core::new(
+            game,
             game.teams[1].id,
             game.config.width,
             game.config.height,
@@ -26,7 +27,13 @@ pub fn cores(game: &Game) -> Vec<Core> {
             let angle = angle_step * i as f64;
             let x = center_x + radius * angle.cos();
             let y = center_y + radius * angle.sin();
-            cores.push(Core::new(team.id, x as u64, y as u64, game.config.core_hp));
+            cores.push(Core::new(
+                game,
+                team.id,
+                x as u64,
+                y as u64,
+                game.config.core_hp,
+            ));
         }
     }
     cores
@@ -40,7 +47,7 @@ pub fn resources(game: &Game) -> Vec<Resource> {
         let x = rng.gen_range(0..game.config.width);
         let y = rng.gen_range(0..game.config.height);
 
-        resources.push(Resource::new(1, 0, x, y, 500));
+        resources.push(Resource::new(game, 1, 0, x, y, 500));
     }
 
     resources
