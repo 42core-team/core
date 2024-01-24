@@ -359,9 +359,12 @@ impl Game {
         }
 
         // check if team has enough balance and subtract amount
-        let unit_cost = GameConfig::get_unit_config_by_type_id(&self.config, type_id)
-            .unwrap()
-            .cost;
+        let unit_config = GameConfig::get_unit_config_by_type_id(&self.config, type_id);
+        if unit_config.is_none() {
+            log::error(&format!("Unit type with id {:?} not found", type_id));
+            return;
+        }
+        let unit_cost = unit_config.unwrap().cost;
         let team = self.get_team_by_id_mut(team_id);
         match team {
             None => {
