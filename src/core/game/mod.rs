@@ -46,3 +46,5 @@ pub mod log;
 pub mod bridge_con;
 
 pub mod generate;
+
+pub mod passive_income;

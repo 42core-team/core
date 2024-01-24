@@ -6,7 +6,7 @@ use crate::game::Spectator;
 use crate::game::{action::Action, log::log};
 
 use super::bridge_con::BridgeCon;
-use super::generate;
+use super::{generate, passive_income};
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
@@ -158,8 +158,9 @@ impl Game {
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
 
-        for team_index in 0..self.teams.len() {
-            let team = &mut self.teams[team_index];
+        passive_income::grant_passive_income(self);
+
+        for team in self.teams.iter_mut() {
             while let Ok(message) = team.con.receiver.as_mut().unwrap().try_recv() {
                 match message {
                     Message::VecAction(actions) => {
@@ -322,39 +323,47 @@ impl Game {
     ///
     pub fn create_unit(&mut self, team_id: u64, type_id: u64) {
         log::changes(&format!(
-            "Create unit of type {:?} for team with id {:?}",
+            "Try to create unit of type {:?} for team with id {:?}",
             type_id, team_id
         ));
-        let team_core = self.get_core_by_team_id(team_id);
+
+        // check if core exists
+        let team_core = self.cores.iter().find(|core| core.team_id == team_id);
         if team_core.is_none() {
             log::error(&format!("Core of team with id {:?} not found", team_id));
             return;
         }
-        let team_core = team_core.unwrap();
-        let unit = Unit::new(self, team_id, type_id, team_core.x, team_core.y);
-        match unit {
-            Some(unit) => {
-                let team_balance = self.get_team_by_id(team_id).unwrap().balance;
-                let unit_cost = GameConfig::get_unit_config_by_type_id(&self.config, type_id)
-                    .unwrap()
-                    .cost;
-                if team_balance < unit_cost {
+
+        // check if team has enough balance and subtract amount
+        let unit_cost = GameConfig::get_unit_config_by_type_id(&self.config, type_id)
+            .unwrap()
+            .cost;
+        let team = self.get_team_by_id_mut(team_id);
+        match team {
+            None => {
+                log::error(&format!("Team with id {:?} not found", team_id));
+                return;
+            }
+            Some(team) => {
+                if team.balance < unit_cost {
                     log::error(&format!(
                         "Team with id {:?} has not enough balance",
                         team_id
                     ));
                     return;
                 }
-                let team = self.get_team_by_id_mut(team_id);
-                match team {
-                    Some(team) => {
-                        team.balance -= unit_cost;
-                    }
-                    None => {
-                        log::error(&format!("Team with id {:?} not found", team_id));
-                        return;
-                    }
-                }
+                team.balance -= unit_cost;
+            }
+        }
+
+        let team_core = self
+            .cores
+            .iter()
+            .find(|core| core.team_id == team_id)
+            .unwrap();
+        let unit = Unit::new(self, team_id, type_id, team_core.x, team_core.y);
+        match unit {
+            Some(unit) => {
                 self.units.push(unit);
             }
             None => {
