@@ -44,3 +44,5 @@ pub mod utils;
 pub mod log;
 
 pub mod bridge_con;
+
+pub mod generate;
