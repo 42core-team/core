@@ -201,6 +201,9 @@ impl Game {
             }
         }
         self.update(team_actions);
+        if self.check_game_over() {
+            return true;
+        }
         self.send_state().await;
         false
     }
@@ -260,6 +263,10 @@ impl Game {
 
             tokio::time::sleep(Duration::from_millis(((min_ms_per_tick / 2) + 1) as u64)).await;
         }
+    }
+
+    pub fn check_game_over(&self) -> bool {
+        self.cores.len() <= 1
     }
 
     pub fn generate_u64_id() -> u64 {
