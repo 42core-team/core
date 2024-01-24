@@ -2,8 +2,9 @@ use std::time::Duration;
 
 use tokio::{net::TcpListener, sync::mpsc};
 
+use crate::game::action::Action;
+use crate::game::log::log;
 use crate::game::Spectator;
-use crate::game::{action::Action, log::log};
 
 use super::bridge_con::BridgeCon;
 use super::generate;
@@ -115,8 +116,7 @@ impl Game {
         self.cores = generate::cores(self);
         self.resources = generate::resources(self);
 
-        for team_index in 0..self.teams.len() {
-            let team = &mut self.teams[team_index];
+        for team in self.teams.iter_mut() {
             match team
                 .con
                 .sender
@@ -131,11 +131,36 @@ impl Game {
                 }
             }
         }
+        for spectator in self.spectators.iter_mut() {
+            match spectator
+                .con
+                .sender
+                .as_mut()
+                .unwrap()
+                .send(Message::from_game_config(&self.config))
+                .await
+            {
+                Ok(_) => {}
+                Err(_) => {
+                    log::error("Error sending config to spectator");
+                }
+            }
+        }
 
         loop {
             if let Ok(spectator) = spectator_receiver.try_recv() {
                 log::info("Spectator received");
                 self.spectators.push(spectator);
+                self.spectators
+                    .last_mut()
+                    .unwrap()
+                    .con
+                    .sender
+                    .as_mut()
+                    .unwrap()
+                    .send(Message::from_game_config(&self.config))
+                    .await
+                    .unwrap();
             }
 
             if self.tick().await {
@@ -182,8 +207,8 @@ impl Game {
     async fn send_state(&mut self) {
         let state = State::from_game(self);
         log::state(&serde_json::to_string(&state).unwrap());
+
         for team in self.teams.iter_mut() {
-            let state = state.clone();
             match team
                 .con
                 .sender
@@ -199,7 +224,6 @@ impl Game {
             }
         }
         for spectator in self.spectators.iter_mut() {
-            let state = state.clone();
             match spectator
                 .con
                 .sender
@@ -568,6 +592,9 @@ impl Game {
     ///
     /// {"actions":[{"Create":{"type_id":0}}]}
     /// {"actions":[{"Create":{"type_id":0}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]}
+    /// {"id": 10}
+    /// {"id": 20}
+    /// {"id": 42}
     ///
     /// To uns netcat:
     /// ```sh
@@ -635,7 +662,6 @@ impl Game {
         }
     }
 
-    // change type_id if definition changes!!!
     pub fn create_fake_resource(&mut self, x: u64, y: u64) {
         let resource = Resource::new(1, 100, x, y, 100);
         self.resources.push(resource);

@@ -34,6 +34,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                         let msg = s.to_string();
                         let lines: Vec<&str> = msg.split('\n').collect();
                         for line in lines {
+                            // println!("LINE {:?}", line);
                             if line.len() == 0 {
                                 continue;
                             }
