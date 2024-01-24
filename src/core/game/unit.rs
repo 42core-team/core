@@ -28,7 +28,7 @@ impl Unit {
         match unit_config {
             Some(unit_config) => {
                 return Some(Unit {
-                    id: Game::generate_u64_id(),
+                    id: Game::generate_u64_id(game),
                     type_id,
                     hp: unit_config.hp,
                     x,

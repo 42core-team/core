@@ -13,8 +13,8 @@ mod tests {
         game.time_since_last_tick = game.tick_rate;
         game.teams = vec![Team::new_fake(1), Team::new_fake(2)];
         game.cores = vec![
-            Core::new(1, 2000, 2000, GameConfig::patch_0_1_0().core_hp),
-            Core::new(2, 4000, 4000, GameConfig::patch_0_1_0().core_hp),
+            Core::new(&game, 1, 2000, 2000, GameConfig::patch_0_1_0().core_hp),
+            Core::new(&game, 2, 4000, 4000, GameConfig::patch_0_1_0().core_hp),
         ];
         game
     }
@@ -33,7 +33,6 @@ mod tests {
     fn test_create_fake_team() {
         let team = Team::new_fake(1);
         assert_eq!(team.id, 1);
-        assert_eq!(team.start_id, 1);
         assert_eq!(team.balance, 100);
     }
 
@@ -287,9 +286,10 @@ mod tests {
     /// Generate 10000 ids and check that they are unique
     ///
     fn generate_u64_id() {
+        let game = get_fake_game();
         let mut ids: Vec<u64> = Vec::new();
         for _ in 0..10000 {
-            let id = Game::generate_u64_id();
+            let id = Game::generate_u64_id(&game);
             assert!(!ids.contains(&id));
             ids.push(id);
         }

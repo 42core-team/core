@@ -12,9 +12,9 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn new(team_id: u64, x: u64, y: u64, hp: u64) -> Self {
+    pub fn new(game: &Game, team_id: u64, x: u64, y: u64, hp: u64) -> Self {
         Core {
-            id: Game::generate_u64_id(),
+            id: Game::generate_u64_id(game),
             team_id,
             x,
             y,

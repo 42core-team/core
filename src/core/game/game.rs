@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use std::time::Duration;
 
 use tokio::{net::TcpListener, sync::mpsc};
@@ -24,6 +25,7 @@ pub struct Game {
     pub tick_rate: u128,
     pub last_tick_time: u128,
     pub time_since_last_tick: u128,
+    game_id_counter: Mutex<u64>,
 
     pub spectators: Vec<Spectator>,
     pub required_team_ids: Vec<u64>,
@@ -44,6 +46,7 @@ impl Game {
             tick_rate: 50,
             last_tick_time: get_ms(),
             time_since_last_tick: 0,
+            game_id_counter: Mutex::new(0),
 
             spectators: vec![],
             required_team_ids,
@@ -51,29 +54,31 @@ impl Game {
     }
 
     pub async fn init(mut self) {
-        let (team_sender, mut team_receiver) = mpsc::channel::<Team>(100);
-        let (spectator_sender, mut spectator_receiver) = mpsc::channel::<Spectator>(100);
+        let (team_sender, mut team_receiver) = mpsc::channel::<BridgeCon>(100);
+        let (spectator_sender, mut spectator_receiver) = mpsc::channel::<BridgeCon>(100);
 
         Self::open(team_sender, spectator_sender);
 
         loop {
-            if let Ok(team) = team_receiver.try_recv() {
-                log::info(&format!("Team received: {:?}", team.start_id));
-                if self.required_team_ids.contains(&team.start_id)
+            if let Ok(bridge_con) = team_receiver.try_recv() {
+                let team = Team::new(&self, bridge_con);
+                log::info(&format!("Team received: {:?}", team.con.id));
+                if self.required_team_ids.contains(&team.con.id)
                     && !self
                         .teams
                         .iter()
-                        .any(|iter_team| iter_team.start_id == team.start_id)
+                        .any(|iter_team| iter_team.con.id == team.con.id)
                 {
-                    log::info(&format!("Team id {:?} accepted", team.start_id));
+                    log::info(&format!("Team id {:?} accepted", team.con.id));
                     self.teams.push(team);
                     log::info(&format!("Teams: {:?}", self.teams.len()));
                     log::info(&format!("Required: {:?}", self.required_team_ids.len()));
                 } else {
-                    log::error(&format!("Did not accept Team id {:?}", team.start_id));
+                    log::error(&format!("Did not accept Team id {:?}", team.con.id));
                 }
             }
-            if let Ok(spectator) = spectator_receiver.try_recv() {
+            if let Ok(bridge_con) = spectator_receiver.try_recv() {
+                let spectator = Spectator::new(bridge_con);
                 log::info("Spectator received");
                 self.spectators.push(spectator);
             }
@@ -85,7 +90,7 @@ impl Game {
         self.start(spectator_receiver).await;
     }
 
-    pub fn open(team_sender: mpsc::Sender<Team>, spectator_sender: mpsc::Sender<Spectator>) {
+    pub fn open(team_sender: mpsc::Sender<BridgeCon>, spectator_sender: mpsc::Sender<BridgeCon>) {
         tokio::spawn(async move {
             let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
             loop {
@@ -96,10 +101,11 @@ impl Game {
                 if let Some(message) = bridge_con.receiver.as_mut().unwrap().recv().await {
                     match message {
                         Message::Login(login) => {
+                            bridge_con.id = login.id;
                             if login.id == 42 {
-                                let _ = spectator_sender.send(Spectator::new(bridge_con)).await;
+                                let _ = spectator_sender.send(bridge_con).await;
                             } else {
-                                let _ = team_sender.send(Team::new(login.id, bridge_con)).await;
+                                let _ = team_sender.send(bridge_con).await;
                             }
                         }
                         _ => {
@@ -111,7 +117,7 @@ impl Game {
         });
     }
 
-    pub async fn start(&mut self, mut spectator_receiver: mpsc::Receiver<Spectator>) {
+    pub async fn start(&mut self, mut spectator_receiver: mpsc::Receiver<BridgeCon>) {
         GameConfig::fill_team_config(&mut self.config, &self.teams);
         self.cores = generate::cores(self);
         self.resources = generate::resources(self);
@@ -148,7 +154,8 @@ impl Game {
         }
 
         loop {
-            if let Ok(spectator) = spectator_receiver.try_recv() {
+            if let Ok(bridge_con) = spectator_receiver.try_recv() {
+                let spectator = Spectator::new(bridge_con);
                 log::info("Spectator received");
                 self.spectators.push(spectator);
                 self.spectators
@@ -269,13 +276,10 @@ impl Game {
         self.cores.len() <= 1
     }
 
-    pub fn generate_u64_id() -> u64 {
-        static mut COUNTER: u64 = 1;
-
-        unsafe {
-            COUNTER += 1;
-            COUNTER
-        }
+    pub fn generate_u64_id(&self) -> u64 {
+        let mut counter = self.game_id_counter.lock().unwrap();
+        *counter += 1;
+        *counter
     }
 
     pub fn get_team_by_id(&self, id: u64) -> Option<&Team> {
@@ -685,12 +689,12 @@ impl Game {
     }
 
     pub fn create_fake_resource(&mut self, x: u64, y: u64) {
-        let resource = Resource::new(1, 100, x, y, 100);
+        let resource = Resource::new(self, 1, 100, x, y, 100);
         self.resources.push(resource);
     }
 
     pub fn create_fake_core(&mut self, team_id: u64, x: u64, y: u64, hp: u64) {
-        let core = Core::new(team_id, x, y, hp);
+        let core = Core::new(self, team_id, x, y, hp);
         self.cores.push(core);
     }
 }
