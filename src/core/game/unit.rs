@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Game, GameConfig};
+use super::{action::Travel, Game, GameConfig, Position, Vector};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -10,6 +10,8 @@ pub struct Unit {
     pub hp: u64,
     pub x: u64,
     pub y: u64,
+    #[serde(skip)]
+    travel: Option<Travel>,
 }
 
 ///
@@ -34,9 +36,37 @@ impl Unit {
                     x,
                     y,
                     team_id,
+                    travel: None,
                 });
             }
             None => return None,
+        }
+    }
+
+    /**
+     * Give the travel command to the unit
+     */
+    pub fn travel(&mut self, game: &mut Game, travel: Travel) {
+        match travel.travel_type {
+            Vector(vec) => {
+                if vec.x == 0 && vec.y == 0 {
+                    return;
+                }
+            }
+            Position(pos) => {
+                if pos.x == self.x && pos.y == self.y {
+                    return;
+                }
+            }
+        }
+        self.travel = Some(travel);
+    }
+
+    pub fn update_position(&mut self, game: &mut Game) {
+        match &self.travel {
+            Some(pos) => {}
+            Some(vec) => {}
+            None => {}
         }
     }
 }

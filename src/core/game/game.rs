@@ -636,11 +636,8 @@ impl Game {
                 Action::Attack(attack) => {
                     self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
                 }
-                Action::TravelTo(travel) => {
-                    log::changes(&format!("TravelTo: {:?}", travel));
-                }
-                Action::TravelDir(travel) => {
-                    log::changes(&format!("TravelDir: {:?}", travel));
+                Action::Travel(travel) => {
+                    log::changes(&format!("Travel: {:?}", travel));
                 }
             }
         }

@@ -48,3 +48,7 @@ pub mod bridge_con;
 pub mod generate;
 
 pub mod passive_income;
+
+pub mod position;
+pub use position::Position;
+pub use position::Vector;
