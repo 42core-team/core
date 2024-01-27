@@ -12,4 +12,6 @@ pub enum TravelType {
 pub struct Travel {
     pub id: u64,
     pub travel_type: TravelType,
+    #[serde(skip)]
+    pub last_pos: Option<Position>,
 }
