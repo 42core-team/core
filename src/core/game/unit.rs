@@ -3,9 +3,10 @@ use std::borrow::BorrowMut;
 
 use serde::{Deserialize, Serialize};
 
+use super::Vector;
 use super::{action::Travel, Game, GameConfig};
-use crate::game::action::TravelType::Position;
-use crate::game::action::TravelType::Vector;
+use crate::game::action::TravelType::Position as PositionEnum;
+use crate::game::action::TravelType::Vector as VectorEnum;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -53,14 +54,14 @@ impl Unit {
      */
     pub fn travel(&mut self, mut travel: Travel) {
         match travel.travel_type.borrow_mut() {
-            Vector(vec) => {
+            VectorEnum(vec) => {
                 if vec.x == 0.0 && vec.y == 0.0 {
                     self.travel = None;
                     return;
                 }
                 vec.normalize();
             }
-            Position(pos) => {
+            PositionEnum(pos) => {
                 if pos.x == self.x && pos.y == self.y {
                     self.travel = None;
                     return;
@@ -82,7 +83,7 @@ impl Unit {
         let unit_speed = unit_speed.unwrap().speed;
 
         match travel.travel_type.borrow() {
-            Vector(vec) => {
+            VectorEnum(vec) => {
                 let new_x = self.x as f64
                     + vec.x * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
                 let new_y = self.y as f64
@@ -100,12 +101,18 @@ impl Unit {
                     self.travel = None;
                 }
             }
-            Position(pos) => {
+            PositionEnum(pos) => {
                 if pos.x == self.x && pos.y == self.y {
                     return;
                 }
-                self.x = pos.x;
-                self.y = pos.y;
+                let mut vec = Vector::from_points(
+                    &super::Position {
+                        x: self.x,
+                        y: self.y,
+                    },
+                    pos,
+                );
+                vec.normalize();
             }
         }
     }
