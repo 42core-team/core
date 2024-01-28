@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use super::{action::Travel, Game, GameConfig};
 use crate::game::action::TravelType::Position;
 use crate::game::action::TravelType::Vector;
-use crate::game::log::log;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -55,13 +54,11 @@ impl Unit {
     pub fn travel(&mut self, mut travel: Travel) {
         match travel.travel_type.borrow_mut() {
             Vector(vec) => {
-                if vec.x == 0 && vec.y == 0 {
+                if vec.x == 0.0 && vec.y == 0.0 {
                     self.travel = None;
                     return;
                 }
-                let vec_magnitude = ((vec.x.pow(2) + vec.y.pow(2)) as f64).sqrt();
-                vec.x = (vec.x as f64 * 10.0 / vec_magnitude) as i64;
-                vec.y = (vec.y as f64 * 10.0 / vec_magnitude) as i64;
+                vec.normalize();
             }
             Position(pos) => {
                 if pos.x == self.x && pos.y == self.y {
@@ -86,16 +83,17 @@ impl Unit {
 
         match travel.travel_type.borrow() {
             Vector(vec) => {
-                let new_x =
-                    self.x as i64 + vec.x * time_since_last_tick as i64 * unit_speed as i64 / 1000;
-                let new_y =
-                    self.y as i64 + vec.y * time_since_last_tick as i64 * unit_speed as i64 / 1000;
+                let new_x = self.x as f64
+                    + vec.x * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
+                let new_y = self.y as f64
+                    + vec.y * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
+                let new_x = new_x as i64;
+                let new_y = new_y as i64;
                 if new_x >= 0
                     && new_y >= 0
                     && new_x <= game_config.width as i64
                     && new_y <= game_config.height as i64
                 {
-                    log::info(&format!("Unit {} moved to {}, {}", self.id, new_x, new_y));
                     self.x = new_x as u64;
                     self.y = new_y as u64;
                 } else {
