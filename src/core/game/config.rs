@@ -30,7 +30,7 @@ impl GameConfig {
                     dmg_resource: 500,
                     max_range: 1000,
                     min_range: 0,
-                    speed: 1000,
+                    speed: 10,
                 },
                 UnitConfig {
                     name: String::from("Worker"),
@@ -42,7 +42,7 @@ impl GameConfig {
                     dmg_resource: 2000,
                     max_range: 200,
                     min_range: 0,
-                    speed: 2000,
+                    speed: 20,
                 },
             ],
             teams: vec![],

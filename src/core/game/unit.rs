@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use super::{action::Travel, Game, GameConfig};
 use crate::game::action::TravelType::Position;
 use crate::game::action::TravelType::Vector;
+use crate::game::log::log;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -51,7 +52,7 @@ impl Unit {
     /**
      * Give the travel command to the unit
      */
-    pub fn travel(&mut self, game: &mut Game, mut travel: Travel) {
+    pub fn travel(&mut self, mut travel: Travel) {
         match travel.travel_type.borrow_mut() {
             Vector(vec) => {
                 if vec.x == 0 && vec.y == 0 {
@@ -59,8 +60,8 @@ impl Unit {
                     return;
                 }
                 let vec_magnitude = ((vec.x.pow(2) + vec.y.pow(2)) as f64).sqrt();
-                vec.x = (vec.x as f64 * 10.0 / vec_magnitude) as u64;
-                vec.y = (vec.y as f64 * 10.0 / vec_magnitude) as u64;
+                vec.x = (vec.x as f64 * 10.0 / vec_magnitude) as i64;
+                vec.y = (vec.y as f64 * 10.0 / vec_magnitude) as i64;
             }
             Position(pos) => {
                 if pos.x == self.x && pos.y == self.y {
@@ -72,15 +73,34 @@ impl Unit {
         self.travel = Some(travel);
     }
 
-    pub fn update_position(&mut self, game: &mut Game) {
+    pub fn update_position(&mut self, time_since_last_tick: u128, game_config: &GameConfig) {
         if self.travel.is_none() {
             return;
         }
         let travel = self.travel.as_mut().unwrap();
+        let unit_speed = GameConfig::get_unit_config_by_type_id(game_config, self.type_id);
+        if unit_speed.is_none() {
+            return;
+        }
+        let unit_speed = unit_speed.unwrap().speed;
+
         match travel.travel_type.borrow() {
             Vector(vec) => {
-                self.x += vec.x * game.time_since_last_tick as u64 / 1000;
-                self.y += vec.y * game.time_since_last_tick as u64 / 1000;
+                let new_x =
+                    self.x as i64 + vec.x * time_since_last_tick as i64 * unit_speed as i64 / 1000;
+                let new_y =
+                    self.y as i64 + vec.y * time_since_last_tick as i64 * unit_speed as i64 / 1000;
+                if new_x >= 0
+                    && new_y >= 0
+                    && new_x <= game_config.width as i64
+                    && new_y <= game_config.height as i64
+                {
+                    log::info(&format!("Unit {} moved to {}, {}", self.id, new_x, new_y));
+                    self.x = new_x as u64;
+                    self.y = new_y as u64;
+                } else {
+                    self.travel = None;
+                }
             }
             Position(pos) => {
                 if pos.x == self.x && pos.y == self.y {

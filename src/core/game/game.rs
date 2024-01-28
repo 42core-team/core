@@ -7,6 +7,7 @@ use crate::game::action::Action;
 use crate::game::log::log;
 use crate::game::Spectator;
 
+use super::action::Travel;
 use super::bridge_con::BridgeCon;
 use super::{generate, passive_income};
 use super::{
@@ -606,6 +607,39 @@ impl Game {
     }
 
     ///
+    /// Handel the travel action
+    ///
+    /// Security:
+    /// - check if unit exists
+    /// - check if action is for the right team
+    ///
+    pub fn handel_travel(&mut self, team_id: u64, travel: Travel) {
+        log::changes(&format!("Travel: {:?}", travel));
+        let unit = self
+            .units
+            .iter_mut()
+            .find(|unit: &&mut Unit| unit.id == travel.id);
+        if unit.is_none() {
+            log::error(&format!("Unit with id {:?} not found", travel.id));
+            return;
+        }
+        let unit = unit.unwrap();
+        if unit.team_id != team_id {
+            log::error(&format!(
+                "Team id {:?} for travel action for Unit id {:?} does not match",
+                team_id, unit.id
+            ));
+        }
+        unit.travel(travel);
+    }
+
+    pub fn handel_travel_update(&mut self) {
+        self.units.iter_mut().for_each(|unit| {
+            unit.update_position(self.time_since_last_tick, &self.config);
+        });
+    }
+
+    ///
     /// Handel the update of the game
     ///
     /// a valid json to send with netcat is:
@@ -637,10 +671,13 @@ impl Game {
                     self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
                 }
                 Action::Travel(travel) => {
-                    log::changes(&format!("Travel: {:?}", travel));
+                    self.handel_travel(team_id, travel);
                 }
             }
         }
+
+        self.handel_travel_update();
+
         let targets: Vec<_> = self.targets.iter().cloned().collect();
         for (attacker_id, target_id) in targets {
             let attacker = self
