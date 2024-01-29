@@ -19,7 +19,7 @@ pub struct Game {
     pub cores: Vec<Core>,
     pub units: Vec<Unit>,
     targets: Vec<(u64, u64)>,
-    moves: Vec<(u64, Vec<u64, u64>)>,
+    moves: Vec<(u64, Vec<u64, u64>, bool)>,
     pub tick_rate: u128,
     pub last_tick_time: u128,
     pub time_since_last_tick: u128,
@@ -35,6 +35,7 @@ impl Game {
             units: vec![],
             targets: vec![],
             tick_rate: 3000,
+            moves: vec![],
             last_tick_time: get_ms(),
             time_since_last_tick: 0,
         }
@@ -375,15 +376,52 @@ impl Game {
     ///
     /// Gets the unit from the moves array and moves it.
     ///
-    fn handle_moves(&self) {
-        for (id, dir) in self.moves {
+    pub fn handle_moves(&self) {
+        for (id, dir, travel_to) in self.moves {
             let unit = self.get_unit_by_id(id).unwrap();
             let speed = GameConfig::get_unit_config_by_type_id(unit.type_id)
                 .unwrap()
                 .speed
                 * 1000
                 / self.tick_rate;
+            if travel_to { // also calculate the map boarder point when target is out of bounds
+                // check if unit is at target
+                if unit.x == dir[0] && unit.y == dir[1] {
+                    // remove unit from moves array
+                    let mut index = 0;
+                    while index < self.moves.len() {
+                        if self.moves[index].0 == id {
+                            self.moves.remove(index);
+                            break;
+                        }
+                        index += 1;
+                    }
+                    continue;
+                }
+                // get direction to target (still calculate the map boarder point) -> dont need that i think but leaving this here as a reminder
+                let dir_to_target = vec![dir[0] - unit.x, dir[1] - unit.y];
+                let length = ((dir_to_target[0].powi(2) + dir_to_target[1].powi(2)) as f64).sqrt();
+                let normalized_dir = vec![dir_to_target[0] as f64 / length, dir_to_target[1] as f64 / length];
 
+                // check if unit moves out of bounds and if yes just set the unit to the border
+                if unit.x + normalized_dir[0] + speed >= self.config.map_size_x {
+                    // set x to 0?
+                    unit.x = self.config.map_size_x;
+                }
+                if unit.y + normalized_dir[1] + speed >= self.config.map_size_y {
+                    // set y to 0?
+                    unit.y = self.config.map_size_y;
+                }
+
+                // move unit in direction
+                if unit.x != self.config.map_size_x {
+                    unit.x += normalized_dir[0] + speed;
+                }
+                if unit.y != self.config.map_size_y {
+                    unit.y += normalized_dir[1] + speed;
+                }
+                continue;
+            }
             // check if unit moves out of bounds and if yes just set the unit to the border
             if unit.x + dir[0] + speed >= self.config.map_size_x {
                 // set x to 0?
@@ -394,8 +432,6 @@ impl Game {
                 unit.y = self.config.map_size_y;
             }
 
-            // check if unit is going to hit the core and/or resources then stop?
-        
             // move unit in direction
             if unit.x != self.config.map_size_x {
                 unit.x += dir[0] + speed;
@@ -441,12 +477,13 @@ impl Game {
                         return;
                     }
 
+                    // here add a check wether its a travel to or just a travel into a direction
                     let length = (travel.x * travel.x + travel.y * travel.y).sqrt();
                     if !self.moves.contains(unit)
                     // check if unit is already in the moves array and if not add it
                     {
                         self.moves
-                            .push((unit.id, !vec![travel.x / length, travel.y / length]));
+                            .push((unit.id, !vec![travel.x / length, travel.y / length], false));
                     } else
                     // if unit is already in the moves array just update the direction
                     {
