@@ -29,7 +29,7 @@ fn print_field(x: u64, y: u64, state: State) {
 
     for core in &state.cores {
         // debug
-        coord = get_coordinates(core.x, core.y);
+        coord = get_coordinates(core.pos.x, core.pos.y);
         if (coord.0 == x && coord.1 == y) && core.team_id == team1 {
             print!("{}", "C".white().on_red());
             return;
@@ -46,7 +46,7 @@ fn print_field(x: u64, y: u64, state: State) {
     let warrior: u64 = GameConfig::patch_0_1_0().units[0].type_id;
     let worker: u64 = GameConfig::patch_0_1_0().units[1].type_id;
     for unit in &state.units {
-        coord = get_coordinates(unit.x, unit.y);
+        coord = get_coordinates(unit.pos.x, unit.pos.y);
         if (coord.0 == x && coord.1 == y) && unit.team_id == team1 {
             if unit.type_id == warrior {
                 print!("{}", "w".white().on_red());
@@ -73,7 +73,7 @@ fn print_field(x: u64, y: u64, state: State) {
     // edit this as soon as ressource-ids are introduced!
     // vvvvvvvvvvvvvvvv
     for resource in &state.resources {
-        coord = get_coordinates(resource.x, resource.y);
+        coord = get_coordinates(resource.pos.x, resource.pos.y);
         // if coord.0 == x && coord.1 == y && resource.type_id == 1 {
         if coord.0 == x && coord.1 == y {
             print!("{}", "R".white().on_black());
