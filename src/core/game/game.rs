@@ -9,7 +9,7 @@ use crate::game::Spectator;
 
 use super::action::Travel;
 use super::bridge_con::BridgeCon;
-use super::{generate, passive_income};
+use super::{generate, passive_income, Position};
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
@@ -400,7 +400,7 @@ impl Game {
             .iter()
             .find(|core| core.team_id == team_id)
             .unwrap();
-        let unit = Unit::new(self, team_id, type_id, team_core.x, team_core.y);
+        let unit = Unit::new(self, team_id, type_id, team_core.pos.clone());
         match unit {
             Some(unit) => {
                 self.units.push(unit);
@@ -495,7 +495,7 @@ impl Game {
         {
             match target {
                 Target::Unit(target) => {
-                    let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+                    let dist = attacker.pos.distance_to(&target.pos) as u64;
                     let max_range =
                         GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
                             .map(|config| config.max_range)
@@ -503,7 +503,7 @@ impl Game {
                     return dist <= max_range;
                 }
                 Target::Resource(target) => {
-                    let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+                    let dist = attacker.pos.distance_to(&target.pos) as u64;
                     let max_range =
                         GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
                             .map(|config| config.max_range)
@@ -511,7 +511,7 @@ impl Game {
                     return dist <= max_range;
                 }
                 Target::Core(target) => {
-                    let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+                    let dist = attacker.pos.distance_to(&target.pos) as u64;
                     let max_range =
                         GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
                             .map(|config| config.max_range)
@@ -710,8 +710,8 @@ impl Game {
         }
     }
 
-    pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, x: u64, y: u64) {
-        let unit = Unit::new(self, team_id, type_id, x, y);
+    pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, pos: Position) {
+        let unit = Unit::new(self, team_id, type_id, pos);
         match unit {
             Some(unit) => {
                 self.units.push(unit);
@@ -722,13 +722,13 @@ impl Game {
         }
     }
 
-    pub fn create_fake_resource(&mut self, x: u64, y: u64) {
-        let resource = Resource::new(self, 1, 100, x, y, 100);
+    pub fn create_fake_resource(&mut self, pos: Position) {
+        let resource = Resource::new(self, 1, 100, pos, 100);
         self.resources.push(resource);
     }
 
-    pub fn create_fake_core(&mut self, team_id: u64, x: u64, y: u64, hp: u64) {
-        let core = Core::new(self, team_id, x, y, hp);
+    pub fn create_fake_core(&mut self, team_id: u64, pos: Position, hp: u64) {
+        let core = Core::new(self, team_id, pos, hp);
         self.cores.push(core);
     }
 }
