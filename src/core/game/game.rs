@@ -1,4 +1,4 @@
-use std::borrow::BorrowMut;
+use std::borrow::Borrow;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -180,13 +180,22 @@ impl Game {
     }
 
     async fn tick(&mut self) -> bool {
+        let mut disconnected_teams: Vec<u64> = vec![];
+        let mut disconnected = 0;
+
         for team in self.teams.iter_mut() {
             if team.con.is_disconnected() {
-                self.cores.retain(|iter_core| iter_core.team_id != team.id);
-                self.teams.retain(|iter_team| iter_team.id != team.id);
+                disconnected_teams.push(team.id);
+                disconnected += 1;
                 log::info(&format!("Team {:?} disconnected", team.id));
-                return true;
             }
+        }
+        for id in disconnected_teams {
+            self.cores.retain(|iter_core| iter_core.team_id != id);
+            self.teams.retain(|iter_team| iter_team.id != id);
+        }
+        if disconnected > 0 {
+            return true;
         }
         log::info(&format!("Tick: {:?}", self.time_since_last_tick));
         self.wait_till_next_tick().await;

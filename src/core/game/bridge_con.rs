@@ -11,7 +11,7 @@ pub struct BridgeCon {
     pub sender: Option<Sender<Message>>,
     pub receiver: Option<Receiver<Message>>,
     pub disconnect: Option<Receiver<()>>,
-    pub is_disconnected: bool,
+    is_disconnected: bool,
 }
 
 impl BridgeCon {
