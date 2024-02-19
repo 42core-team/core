@@ -588,6 +588,7 @@ impl Game {
                             self.get_core_by_id_mut(core.id).unwrap().hp -=
                                 damage * self.time_since_last_tick as u64 / 1000;
                             if self.get_core_by_id_mut(core.id).unwrap().hp <= 0 {
+                                self.teams.retain(|team| team.id != core.team_id);
                                 self.cores.retain(|core| core.id != target_id);
                             }
                         }
