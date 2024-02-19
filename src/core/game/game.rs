@@ -209,6 +209,7 @@ impl Game {
         }
         self.update(team_actions);
         if self.check_game_over() {
+            log::info("Game is over");
             return true;
         }
         self.send_state().await;
