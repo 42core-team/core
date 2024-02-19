@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -181,6 +182,8 @@ impl Game {
     async fn tick(&mut self) -> bool {
         for team in self.teams.iter_mut() {
             if team.con.is_disconnected() {
+                self.cores.retain(|iter_core| iter_core.team_id != team.id);
+                self.teams.retain(|iter_team| iter_team.id != team.id);
                 log::info(&format!("Team {:?} disconnected", team.id));
                 return true;
             }
