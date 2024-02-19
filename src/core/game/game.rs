@@ -591,6 +591,14 @@ impl Game {
                                 self.teams.retain(|team| team.id != core.team_id);
                                 self.cores.retain(|core| core.id != target_id);
                             }
+                            if self.cores.len() == 1 {
+                                log::info(&format!(
+                                    "{:?} wins",
+                                    self.get_team_by_id(self.cores[0].team_id).unwrap().name
+                                ));
+                                // end game
+                                self.status = 2;
+                            }
                         }
                         _ => {
                             // Handle other cases if needed
