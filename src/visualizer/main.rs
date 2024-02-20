@@ -9,7 +9,7 @@
 
 // use lib::game::{bridge::bridge, state, Game, GameConfig, Login, Message, State};
 use crossterm::style::Stylize;
-use lib::game::{bridge::bridge, GameConfig, Login, Message, State};
+use lib::game::{bridge::bridge, config::GameConfigWithId, GameConfig, Login, Message, State};
 use tokio::net::TcpStream;
 
 const SCALE: u64 = 1000;
@@ -121,11 +121,12 @@ async fn main() -> std::io::Result<()> {
 
     if let Ok(s) = stream {
         let (sender, mut reciever, _disconnect) = bridge(s);
-        let mut game_config: GameConfig = GameConfig::patch_0_1_0(); //needs to be made dynamic after all important shit is done!!!
+        let mut game_config: GameConfigWithId =
+            GameConfigWithId::from_game_config(&GameConfig::patch_0_1_0(), 42); //needs to be made dynamic after all important shit is done!!!
         let _ = sender.send(Message::Login(Login { id: 42 })).await;
         if let Some(m) = reciever.recv().await {
             match m {
-                Message::GameConfig(_config) => {
+                Message::GameConfigWithId(_config) => {
                     game_config = _config;
                     println!("gameconfig recieved");
                 }
