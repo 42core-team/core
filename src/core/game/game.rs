@@ -9,6 +9,7 @@ use crate::game::Spectator;
 
 use super::action::Travel;
 use super::bridge_con::BridgeCon;
+use super::config::GameConfigWithId;
 use super::{generate, passive_income, Position};
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
@@ -129,7 +130,9 @@ impl Game {
                 .sender
                 .as_mut()
                 .unwrap()
-                .send(Message::from_game_config(&self.config))
+                .send(Message::from_game_config(
+                    &GameConfigWithId::from_game_config(&self.config, team.id),
+                ))
                 .await
             {
                 Ok(_) => {}
@@ -144,7 +147,9 @@ impl Game {
                 .sender
                 .as_mut()
                 .unwrap()
-                .send(Message::from_game_config(&self.config))
+                .send(Message::from_game_config(
+                    &GameConfigWithId::from_game_config(&self.config, 42),
+                ))
                 .await
             {
                 Ok(_) => {}
@@ -166,7 +171,9 @@ impl Game {
                     .sender
                     .as_mut()
                     .unwrap()
-                    .send(Message::from_game_config(&self.config))
+                    .send(Message::from_game_config(
+                        &GameConfigWithId::from_game_config(&self.config, 42),
+                    ))
                     .await
                     .unwrap();
             }
