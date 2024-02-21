@@ -4,7 +4,7 @@
 //!
 //!
 
-use super::{action::Request, log::log, GameConfig, Login, Message, State};
+use super::{action::Request, config::GameConfigWithId, log::log, Login, Message, State};
 use serde_json;
 use std::ops::Add;
 use tokio::{
@@ -99,7 +99,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
                             break;
                         }
                     }
-                    Message::GameConfig(game_config) => {
+                    Message::GameConfigWithId(game_config) => {
                         let json_string = serde_json::to_string(&game_config).unwrap().add("\n");
                         if let Err(_) = writer.write_all(json_string.as_bytes()).await {
                             log::error("Send Config Error in bridge");
@@ -151,8 +151,8 @@ fn convert_to_actions(buffer: &str) -> Result<Request, serde_json::Error> {
     result
 }
 
-fn convert_to_config(buffer: &str) -> Result<GameConfig, serde_json::Error> {
-    let result: Result<GameConfig, serde_json::Error> = serde_json::from_str(&buffer);
+fn convert_to_config(buffer: &str) -> Result<GameConfigWithId, serde_json::Error> {
+    let result: Result<GameConfigWithId, serde_json::Error> = serde_json::from_str(&buffer);
     result
 }
 

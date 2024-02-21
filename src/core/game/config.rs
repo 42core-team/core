@@ -12,6 +12,31 @@ pub struct GameConfig {
     pub teams: Vec<TeamConfig>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct GameConfigWithId {
+    pub id: u64,
+    pub height: u64,
+    pub width: u64,
+    pub idle_income: u64,
+    pub core_hp: u64,
+    pub units: Vec<UnitConfig>,
+    pub teams: Vec<TeamConfig>,
+}
+
+impl GameConfigWithId {
+    pub fn from_game_config(game_config: &GameConfig, id: u64) -> Self {
+        GameConfigWithId {
+            id,
+            height: game_config.height,
+            width: game_config.width,
+            idle_income: game_config.idle_income,
+            core_hp: game_config.core_hp,
+            units: game_config.units.clone(),
+            teams: game_config.teams.clone(),
+        }
+    }
+}
+
 impl GameConfig {
     pub fn patch_0_1_0() -> Self {
         GameConfig {
@@ -30,7 +55,7 @@ impl GameConfig {
                     dmg_resource: 500,
                     max_range: 1000,
                     min_range: 0,
-                    speed: 1000,
+                    speed: 100,
                 },
                 UnitConfig {
                     name: String::from("Worker"),
@@ -42,7 +67,7 @@ impl GameConfig {
                     dmg_resource: 2000,
                     max_range: 200,
                     min_range: 0,
-                    speed: 2000,
+                    speed: 200,
                 },
             ],
             teams: vec![],

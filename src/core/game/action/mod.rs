@@ -12,6 +12,7 @@ pub use request::Request;
 
 pub mod travel;
 pub use travel::Travel;
+pub use travel::TravelType;
 
 pub mod create;
 pub use create::Create;
