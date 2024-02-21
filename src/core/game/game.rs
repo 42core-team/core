@@ -8,8 +8,10 @@ use crate::game::action::Action;
 use crate::game::log::log;
 use crate::game::Spectator;
 
+use super::action::Travel;
 use super::bridge_con::BridgeCon;
-use super::{generate, passive_income};
+use super::config::GameConfigWithId;
+use super::{generate, passive_income, Position};
 use super::{
     helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
 };
@@ -129,7 +131,9 @@ impl Game {
                 .sender
                 .as_mut()
                 .unwrap()
-                .send(Message::from_game_config(&self.config))
+                .send(Message::from_game_config(
+                    &GameConfigWithId::from_game_config(&self.config, team.id),
+                ))
                 .await
             {
                 Ok(_) => {}
@@ -144,7 +148,9 @@ impl Game {
                 .sender
                 .as_mut()
                 .unwrap()
-                .send(Message::from_game_config(&self.config))
+                .send(Message::from_game_config(
+                    &GameConfigWithId::from_game_config(&self.config, 42),
+                ))
                 .await
             {
                 Ok(_) => {}
@@ -166,7 +172,9 @@ impl Game {
                     .sender
                     .as_mut()
                     .unwrap()
-                    .send(Message::from_game_config(&self.config))
+                    .send(Message::from_game_config(
+                        &GameConfigWithId::from_game_config(&self.config, 42),
+                    ))
                     .await
                     .unwrap();
             }
@@ -411,7 +419,7 @@ impl Game {
             .iter()
             .find(|core| core.team_id == team_id)
             .unwrap();
-        let unit = Unit::new(self, team_id, type_id, team_core.x, team_core.y);
+        let unit = Unit::new(self, team_id, type_id, team_core.pos.clone());
         match unit {
             Some(unit) => {
                 self.units.push(unit);
@@ -506,7 +514,7 @@ impl Game {
         {
             match target {
                 Target::Unit(target) => {
-                    let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+                    let dist = attacker.pos.distance_to(&target.pos) as u64;
                     let max_range =
                         GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
                             .map(|config| config.max_range)
@@ -514,7 +522,7 @@ impl Game {
                     return dist <= max_range;
                 }
                 Target::Resource(target) => {
-                    let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+                    let dist = attacker.pos.distance_to(&target.pos) as u64;
                     let max_range =
                         GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
                             .map(|config| config.max_range)
@@ -522,7 +530,7 @@ impl Game {
                     return dist <= max_range;
                 }
                 Target::Core(target) => {
-                    let dist = self.get_dist(attacker.x, attacker.y, target.x, target.y);
+                    let dist = attacker.pos.distance_to(&target.pos) as u64;
                     let max_range =
                         GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
                             .map(|config| config.max_range)
@@ -618,6 +626,39 @@ impl Game {
     }
 
     ///
+    /// Handel the travel action
+    ///
+    /// Security:
+    /// - check if unit exists
+    /// - check if action is for the right team
+    ///
+    pub fn handel_travel(&mut self, team_id: u64, travel: Travel) {
+        log::changes(&format!("Travel: {:?}", travel));
+        let unit = self
+            .units
+            .iter_mut()
+            .find(|unit: &&mut Unit| unit.id == travel.id);
+        if unit.is_none() {
+            log::error(&format!("Unit with id {:?} not found", travel.id));
+            return;
+        }
+        let unit = unit.unwrap();
+        if unit.team_id != team_id {
+            log::error(&format!(
+                "Team id {:?} for travel action for Unit id {:?} does not match",
+                team_id, unit.id
+            ));
+        }
+        unit.travel(travel);
+    }
+
+    pub fn handel_travel_update(&mut self) {
+        self.units.iter_mut().for_each(|unit| {
+            unit.update_position(self.time_since_last_tick, &self.config);
+        });
+    }
+
+    ///
     /// Handel the update of the game
     ///
     /// a valid json to send with netcat is:
@@ -648,14 +689,14 @@ impl Game {
                 Action::Attack(attack) => {
                     self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
                 }
-                Action::TravelTo(travel) => {
-                    log::changes(&format!("TravelTo: {:?}", travel));
-                }
-                Action::TravelDir(travel) => {
-                    log::changes(&format!("TravelDir: {:?}", travel));
+                Action::Travel(travel) => {
+                    self.handel_travel(team_id, travel);
                 }
             }
         }
+
+        self.handel_travel_update();
+
         let targets: Vec<_> = self.targets.iter().cloned().collect();
         for (attacker_id, target_id) in targets {
             let attacker = self
@@ -688,8 +729,8 @@ impl Game {
         }
     }
 
-    pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, x: u64, y: u64) {
-        let unit = Unit::new(self, team_id, type_id, x, y);
+    pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, pos: Position) {
+        let unit = Unit::new(self, team_id, type_id, pos);
         match unit {
             Some(unit) => {
                 self.units.push(unit);
@@ -700,13 +741,13 @@ impl Game {
         }
     }
 
-    pub fn create_fake_resource(&mut self, x: u64, y: u64) {
-        let resource = Resource::new(self, 1, 100, x, y, 100);
+    pub fn create_fake_resource(&mut self, pos: Position) {
+        let resource = Resource::new(self, 1, 100, pos, 100);
         self.resources.push(resource);
     }
 
-    pub fn create_fake_core(&mut self, team_id: u64, x: u64, y: u64, hp: u64) {
-        let core = Core::new(self, team_id, x, y, hp);
+    pub fn create_fake_core(&mut self, team_id: u64, pos: Position, hp: u64) {
+        let core = Core::new(self, team_id, pos, hp);
         self.cores.push(core);
     }
 }

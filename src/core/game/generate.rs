@@ -2,19 +2,23 @@ use std::{cmp, f64::consts::PI};
 
 use rand::Rng;
 
-use super::{Core, Game, Resource};
+use super::{Core, Game, Position, Resource};
 
 pub fn cores(game: &Game) -> Vec<Core> {
     let team_count = game.teams.len();
     let mut cores: Vec<Core> = Vec::new();
 
     if team_count == 2 {
-        cores.push(Core::new(game, game.teams[0].id, 0, 0, game.config.core_hp));
+        cores.push(Core::new(
+            game,
+            game.teams[0].id,
+            Position::new(0, 0),
+            game.config.core_hp,
+        ));
         cores.push(Core::new(
             game,
             game.teams[1].id,
-            game.config.width,
-            game.config.height,
+            Position::new(game.config.width, game.config.height),
             game.config.core_hp,
         ));
     } else if team_count > 2 {
@@ -30,8 +34,7 @@ pub fn cores(game: &Game) -> Vec<Core> {
             cores.push(Core::new(
                 game,
                 team.id,
-                x as u64,
-                y as u64,
+                Position::new(x as u64, y as u64),
                 game.config.core_hp,
             ));
         }
@@ -44,10 +47,12 @@ pub fn resources(game: &Game) -> Vec<Resource> {
     let mut rng = rand::thread_rng();
 
     for _ in 0..game.config.width * game.config.height / 10000000 {
-        let x = rng.gen_range(0..game.config.width);
-        let y = rng.gen_range(0..game.config.height);
+        let pos = Position::new(
+            rng.gen_range(0..game.config.width),
+            rng.gen_range(0..game.config.height),
+        );
 
-        resources.push(Resource::new(game, 1, 0, x, y, 500));
+        resources.push(Resource::new(game, 1, 0, pos, 500));
     }
 
     resources

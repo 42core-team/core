@@ -4,7 +4,7 @@ mod tests {
     use std::time::Duration;
 
     use lib::game::{
-        bridge::bridge, helper::Target, log::log, Core, Game, GameConfig, Message, Team,
+        bridge::bridge, helper::Target, log::log, Core, Game, GameConfig, Message, Position, Team,
     };
     use tokio::{io::AsyncWriteExt, net::TcpStream, select, sync::oneshot, time::timeout};
 
@@ -13,8 +13,18 @@ mod tests {
         game.time_since_last_tick = game.tick_rate;
         game.teams = vec![Team::new_fake(1), Team::new_fake(2)];
         game.cores = vec![
-            Core::new(&game, 1, 2000, 2000, GameConfig::patch_0_1_0().core_hp),
-            Core::new(&game, 2, 4000, 4000, GameConfig::patch_0_1_0().core_hp),
+            Core::new(
+                &game,
+                1,
+                Position::new(2000, 2000),
+                GameConfig::patch_0_1_0().core_hp,
+            ),
+            Core::new(
+                &game,
+                2,
+                Position::new(4000, 4000),
+                GameConfig::patch_0_1_0().core_hp,
+            ),
         ];
         game
     }
@@ -149,12 +159,12 @@ mod tests {
         let game = get_fake_game();
 
         let core1 = game.get_core_by_team_id(1);
-        assert_eq!(core1.unwrap().x, 2000);
-        assert_eq!(core1.unwrap().y, 2000);
+        assert_eq!(core1.unwrap().pos.x, 2000);
+        assert_eq!(core1.unwrap().pos.y, 2000);
 
         let core2 = game.get_core_by_team_id(2);
-        assert_eq!(core2.unwrap().x, 4000);
-        assert_eq!(core2.unwrap().y, 4000);
+        assert_eq!(core2.unwrap().pos.x, 4000);
+        assert_eq!(core2.unwrap().pos.y, 4000);
 
         let core3 = game.get_core_by_team_id(3);
         assert_eq!(core3, None);
@@ -387,11 +397,11 @@ mod tests {
     ///
     fn is_target_in_range() {
         let mut game = get_fake_game();
-        game.create_fake_resource(5000, 5000);
-        game.create_fake_unit(1, 1, 2000, 2000);
-        game.create_fake_unit(1, 2, 9000, 9000);
-        game.create_fake_unit(2, 1, 2100, 2100);
-        game.create_fake_unit(2, 2, 8000, 8000);
+        game.create_fake_resource(Position::new(5000, 5000));
+        game.create_fake_unit(1, 1, Position::new(2000, 2000));
+        game.create_fake_unit(1, 2, Position::new(9000, 9000));
+        game.create_fake_unit(2, 1, Position::new(2100, 2100));
+        game.create_fake_unit(2, 2, Position::new(8000, 8000));
 
         let unit1 = game.units[0].clone();
         let unit2 = game.units[1].clone();
@@ -501,11 +511,11 @@ mod tests {
     fn attack() {
         let mut game = get_fake_game();
 
-        game.create_fake_resource(5000, 5000);
-        game.create_fake_unit(1, 1, 2000, 2000);
-        game.create_fake_unit(1, 2, 9000, 9000);
-        game.create_fake_unit(2, 1, 2100, 2100);
-        game.create_fake_unit(2, 2, 8000, 8000);
+        game.create_fake_resource(Position::new(5000, 5000));
+        game.create_fake_unit(1, 1, Position::new(2000, 2000));
+        game.create_fake_unit(1, 2, Position::new(9000, 9000));
+        game.create_fake_unit(2, 1, Position::new(2100, 2100));
+        game.create_fake_unit(2, 2, Position::new(8000, 8000));
 
         let unit1 = game.units[0].clone();
         let unit2 = game.units[1].clone();
