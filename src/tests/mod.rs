@@ -663,7 +663,7 @@ mod tests {
                     Message::State(_) => {
                         assert!(false);
                     }
-                    Message::GameConfig(_) => {
+                    Message::GameConfigWithId(_) => {
                         assert!(true);
                     }
                     Message::VecAction(_) => {
@@ -684,7 +684,7 @@ mod tests {
                     Message::State(_) => {
                         assert!(true);
                     }
-                    Message::GameConfig(_) => {
+                    Message::GameConfigWithId(_) => {
                         assert!(false);
                     }
                     Message::VecAction(_) => {
@@ -743,7 +743,7 @@ mod tests {
                     Message::State(_) => {
                         assert!(false);
                     }
-                    Message::GameConfig(_) => {
+                    Message::GameConfigWithId(_) => {
                         assert!(true);
                     }
                     Message::VecAction(_) => {
@@ -764,7 +764,7 @@ mod tests {
                     Message::State(_) => {
                         assert!(true);
                     }
-                    Message::GameConfig(_) => {
+                    Message::GameConfigWithId(_) => {
                         assert!(false);
                     }
                     Message::VecAction(_) => {
@@ -803,7 +803,7 @@ mod tests {
                     Message::State(_) => {
                         assert!(false);
                     }
-                    Message::GameConfig(_) => {
+                    Message::GameConfigWithId(_) => {
                         assert!(true);
                     }
                     Message::VecAction(_) => {
@@ -824,7 +824,7 @@ mod tests {
                     Message::State(_) => {
                         assert!(true);
                     }
-                    Message::GameConfig(_) => {
+                    Message::GameConfigWithId(_) => {
                         assert!(false);
                     }
                     Message::VecAction(_) => {
