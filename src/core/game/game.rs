@@ -26,6 +26,7 @@ pub struct Game {
     targets: Vec<(u64, u64)>,
     pub tick_rate: u128,
     pub last_tick_time: u128,
+    pub tick_calculation_time: u128,
     pub time_since_last_tick: u128,
     game_id_counter: Mutex<u64>,
 
@@ -47,6 +48,7 @@ impl Game {
             targets: vec![],
             tick_rate: 50,
             last_tick_time: get_ms(),
+            tick_calculation_time: 0,
             time_since_last_tick: 0,
             game_id_counter: Mutex::new(0),
 
@@ -193,8 +195,11 @@ impl Game {
                 return true;
             }
         }
-        log::info(&format!("Tick: {:?}", self.time_since_last_tick));
         self.wait_till_next_tick().await;
+        log::info(&format!(
+            "Tick: {:?}, {:?}",
+            self.time_since_last_tick, self.tick_calculation_time
+        ));
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
 
@@ -260,24 +265,19 @@ impl Game {
     }
 
     pub async fn wait_till_next_tick(&mut self) {
-        let min_ms_per_tick: u128 = self.tick_rate;
+        let new_tick_start_time = self.last_tick_time + self.tick_rate;
+        self.tick_calculation_time = get_ms() - self.last_tick_time;
 
-        loop {
-            // This is so that it always takes 1ms steps minimum
-            if get_ms() <= self.last_tick_time {
-                tokio::time::sleep(Duration::from_millis(1)).await;
-                continue;
-            }
-
-            self.time_since_last_tick = get_ms() - self.last_tick_time;
-
-            if self.time_since_last_tick > min_ms_per_tick {
-                self.last_tick_time = self.last_tick_time + self.time_since_last_tick;
-                break;
-            }
-
-            tokio::time::sleep(Duration::from_millis(((min_ms_per_tick / 2) + 1) as u64)).await;
+        if new_tick_start_time > get_ms() {
+            tokio::time::sleep(Duration::from_millis(
+                (new_tick_start_time - get_ms()) as u64,
+            ))
+            .await;
         }
+
+        let current_millis = get_ms();
+        self.time_since_last_tick = current_millis - self.last_tick_time;
+        self.last_tick_time = current_millis;
     }
 
     pub fn check_game_over(&self) -> bool {
