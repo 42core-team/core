@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use crate::game::action::Travel;
 use crate::game::action::TravelType::Position as PositionEnum;
 use crate::game::action::TravelType::Vector as VectorEnum;
+use crate::game::helper::Target;
+use crate::game::log::log;
 use crate::game::Game;
 use crate::game::GameConfig;
 use crate::game::Position;
@@ -23,6 +25,8 @@ pub struct Unit {
     pub pos: Position,
     #[serde(skip)]
     travel: Option<Travel>,
+    #[serde(skip)]
+    target_id: Option<u64>,
 }
 
 impl Entity for Unit {
@@ -59,15 +63,26 @@ impl Unit {
                     pos,
                     team_id,
                     travel: None,
+                    target_id: None,
                 });
             }
             None => return None,
         }
     }
 
-    /**
-     * Give the travel command to the unit
-     */
+    pub fn attack(&mut self, target: Target) {
+        if self.team_id == target.team_id() {
+            log::error("Unit can't attack it's own team");
+            return;
+        }
+        if self.id == target.id() {
+            self.target_id = None;
+            return;
+        }
+
+        self.target_id = Some(target.id());
+    }
+
     pub fn travel(&mut self, mut travel: Travel) {
         match travel.travel_type.borrow_mut() {
             VectorEnum(vec) => {

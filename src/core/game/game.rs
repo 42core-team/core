@@ -11,7 +11,7 @@ use super::action::Travel;
 use super::bridge_con::BridgeCon;
 use super::config::GameConfigWithId;
 use super::entity::Unit;
-use super::{generate, passive_income, Position};
+use super::{generate, passive_income, Entity, Position};
 use super::{helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team};
 
 #[derive(Debug)]
@@ -429,58 +429,35 @@ impl Game {
     /// if target is equal to attacker:
     /// - remove target from targets
     ///
-    pub fn handel_attack_action(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
+    pub fn handel_attack(&mut self, attacker_id: u64, target_id: u64, team_id: u64) {
         log::changes(&format!(
             "handel_attack_action: {:?} -> {:?} from team with id {:?}",
             attacker_id, target_id, team_id
         ));
-        let attacker = self.get_target_by_id(attacker_id);
-        if attacker == Target::None {
+        let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
+        if attacker.is_none() {
             log::error("Attacker not found");
+            return;
         }
         let target = self.get_target_by_id(target_id);
-        if target == Target::None {
+        if target.is_none() {
             log::error("Target not found");
+            return;
         }
-        // match (attacker, target) {
-        //     (Some(attacker), Some(_)) => {
-        //         if attacker.team_id == team_id {
-        //             if attacker_id == target_id {
-        //                 self.targets.retain(|target| target.0 != attacker_id);
-        //             } else if target_id != team_id {
-        //                 self.targets.push((attacker_id, target_id));
-        //             }
-        //         }
-        //     }
-        //     _ => {
-        //         log::error("Attacker or target not found");
-        //     }
-        // }
+        attacker.unwrap().attack(target.unwrap());
     }
 
-    ///
-    /// Find a target by id
-    ///
-    /// Security:
-    /// - check if target exists
-    ///
-    /// Features:
-    /// - return target in the following types:
-    /// 	- Unit
-    /// 	- Resource
-    /// 	- Core
-    /// 	- None
-    ///
-    pub fn get_target_by_id(&self, id: u64) -> Target {
-        let unit = self.units.iter().find(|unit| unit.id == id);
-        let resource = self.resources.iter().find(|resource| resource.id == id);
-        let core = self.cores.iter().find(|core| core.id == id);
-        match (unit, resource, core) {
-            (Some(unit), _, _) => Target::Unit(unit.clone()),
-            (_, Some(resource), _) => Target::Resource(resource.clone()),
-            (_, _, Some(core)) => Target::Core(core.clone()),
-            _ => Target::None,
+    pub fn get_target_by_id(&self, id: u64) -> Option<Target> {
+        if let Some(unit) = self.units.iter().find(|unit| unit.id == id) {
+            return Some(Target::Unit(unit.clone()));
         }
+        if let Some(resource) = self.resources.iter().find(|resource| resource.id == id) {
+            return Some(Target::Resource(resource.clone()));
+        }
+        if let Some(core) = self.cores.iter().find(|core| core.id == id) {
+            return Some(Target::Core(core.clone()));
+        }
+        None
     }
 
     pub fn get_dist(&self, x1: u64, y1: u64, x2: u64, y2: u64) -> u64 {
@@ -530,9 +507,6 @@ impl Game {
                             .map(|config| config.max_range)
                             .unwrap_or_default();
                     return dist <= max_range;
-                }
-                Target::None => {
-                    return false;
                 }
             }
         }
@@ -681,7 +655,7 @@ impl Game {
                     self.create_unit(team_id, create.type_id);
                 }
                 Action::Attack(attack) => {
-                    self.handel_attack_action(attack.attacker_id, attack.target_id, team_id);
+                    self.handel_attack(attack.attacker_id, attack.target_id, team_id);
                 }
                 Action::Travel(travel) => {
                     self.handel_travel(team_id, travel);
