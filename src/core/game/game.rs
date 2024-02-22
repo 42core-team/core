@@ -10,10 +10,9 @@ use crate::game::Spectator;
 use super::action::Travel;
 use super::bridge_con::BridgeCon;
 use super::config::GameConfigWithId;
+use super::entity::Unit;
 use super::{generate, passive_income, Position};
-use super::{
-    helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team, Unit,
-};
+use super::{helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team};
 
 #[derive(Debug)]
 pub struct Game {
@@ -203,8 +202,6 @@ impl Game {
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
 
-        passive_income::grant_passive_income(self);
-
         for team in self.teams.iter_mut() {
             while let Ok(message) = team.con.receiver.as_mut().unwrap().try_recv() {
                 match message {
@@ -224,6 +221,9 @@ impl Game {
         if self.check_game_over() {
             return true;
         }
+
+        passive_income::grant_passive_income(self);
+
         self.send_state().await;
         false
     }
@@ -434,22 +434,28 @@ impl Game {
             "handel_attack_action: {:?} -> {:?} from team with id {:?}",
             attacker_id, target_id, team_id
         ));
-        let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
-        let target = self.units.iter().find(|unit| unit.id == target_id);
-        match (attacker, target) {
-            (Some(attacker), Some(_)) => {
-                if attacker.team_id == team_id {
-                    if attacker_id == target_id {
-                        self.targets.retain(|target| target.0 != attacker_id);
-                    } else if target_id != team_id {
-                        self.targets.push((attacker_id, target_id));
-                    }
-                }
-            }
-            _ => {
-                log::error("Attacker or target not found");
-            }
+        let attacker = self.get_target_by_id(attacker_id);
+        if attacker == Target::None {
+            log::error("Attacker not found");
         }
+        let target = self.get_target_by_id(target_id);
+        if target == Target::None {
+            log::error("Target not found");
+        }
+        // match (attacker, target) {
+        //     (Some(attacker), Some(_)) => {
+        //         if attacker.team_id == team_id {
+        //             if attacker_id == target_id {
+        //                 self.targets.retain(|target| target.0 != attacker_id);
+        //             } else if target_id != team_id {
+        //                 self.targets.push((attacker_id, target_id));
+        //             }
+        //         }
+        //     }
+        //     _ => {
+        //         log::error("Attacker or target not found");
+        //     }
+        // }
     }
 
     ///

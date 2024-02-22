@@ -3,11 +3,16 @@ use std::borrow::BorrowMut;
 
 use serde::{Deserialize, Serialize};
 
-use super::Position;
-use super::Vector;
-use super::{action::Travel, Game, GameConfig};
+use crate::game::action::Travel;
 use crate::game::action::TravelType::Position as PositionEnum;
 use crate::game::action::TravelType::Vector as VectorEnum;
+use crate::game::Game;
+use crate::game::GameConfig;
+use crate::game::Position;
+use crate::game::Vector;
+
+use super::Entity;
+use super::EntityTeam;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -20,13 +25,25 @@ pub struct Unit {
     travel: Option<Travel>,
 }
 
-///
-/// Unit implementation
-///
+impl Entity for Unit {
+    fn id(&self) -> u64 {
+        self.id
+    }
+    fn pos(&self) -> &Position {
+        &self.pos
+    }
+    fn hp(&self) -> u64 {
+        self.hp
+    }
+}
+
+impl EntityTeam for Unit {
+    fn team_id(&self) -> u64 {
+        self.team_id
+    }
+}
+
 impl Unit {
-    ///
-    /// Function to create a new unit
-    ///
     pub fn new(game: &mut Game, team_id: u64, type_id: u64, pos: Position) -> Option<Self> {
         let unit_config = GameConfig::get_unit_config_by_type_id(&game.config, type_id);
         let team = game.get_team_by_id(team_id);

@@ -9,10 +9,10 @@ pub use game::Game;
 
 pub mod entity;
 pub use entity::Core;
+pub use entity::Entity;
+pub use entity::EntityTeam;
 pub use entity::Resource;
-
-pub mod unit;
-pub use unit::Unit;
+pub use entity::Unit;
 
 pub mod state;
 pub use state::State;
