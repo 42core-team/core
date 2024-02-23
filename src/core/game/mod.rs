@@ -10,7 +10,7 @@ pub use game::Game;
 pub mod entity;
 pub use entity::Core;
 pub use entity::Entity;
-pub use entity::EntityTeam;
+pub use entity::EntityConfig;
 pub use entity::Resource;
 pub use entity::Unit;
 

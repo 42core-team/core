@@ -6,16 +6,15 @@ use serde::{Deserialize, Serialize};
 use crate::game::action::Travel;
 use crate::game::action::TravelType::Position as PositionEnum;
 use crate::game::action::TravelType::Vector as VectorEnum;
-use crate::game::helper::Target;
 use crate::game::log::log;
 use crate::game::Game;
 use crate::game::GameConfig;
 use crate::game::Position;
+use crate::game::UnitConfig;
 use crate::game::Vector;
 
-use super::entity_traits::EntityDamage;
+use super::entity_traits::EntityConfig;
 use super::Entity;
-use super::EntityTeam;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -27,12 +26,15 @@ pub struct Unit {
     #[serde(skip)]
     travel: Option<Travel>,
     #[serde(skip)]
-    target_id: Option<u64>,
+    pub target_id: Option<u64>,
 }
 
 impl Entity for Unit {
     fn id(&self) -> u64 {
         self.id
+    }
+    fn team_id(&self) -> u64 {
+        self.team_id
     }
     fn pos(&self) -> &Position {
         &self.pos
@@ -42,20 +44,9 @@ impl Entity for Unit {
     }
 }
 
-impl EntityTeam for Unit {
-    fn team_id(&self) -> u64 {
-        self.team_id
-    }
-}
-
-impl EntityDamage for Unit {
-    fn damage(&mut self, damage: u64) -> bool {
-        if self.hp <= damage {
-            self.hp = 0;
-            return true;
-        }
-        self.hp -= damage;
-        return false;
+impl EntityConfig for Unit {
+    fn damage(&self, config: UnitConfig) -> u64 {
+        return config.dmg_unit;
     }
 }
 
@@ -82,7 +73,7 @@ impl Unit {
         }
     }
 
-    pub fn attack(&mut self, target: Target) {
+    pub fn attack(&mut self, target: impl Entity) {
         if self.team_id == target.team_id() {
             log::error("Unit can't attack it's own team");
             return;
@@ -95,26 +86,18 @@ impl Unit {
         self.target_id = Some(target.id());
     }
 
-    pub fn deal_damage(&mut self, game: &mut Game) {
+    pub fn calc_damage(&self, config: &GameConfig, target: &(impl Entity + EntityConfig)) -> u64 {
         if self.target_id.is_none() {
-            return;
+            return 0;
         }
-        let target = game.get_target_by_id(self.target_id.unwrap());
-        if target.is_none() {
-            self.target_id = None;
-            return;
-        }
-        let target = target.unwrap();
-        let unit_config = game
-            .config
-            .get_unit_config_by_type_id(self.type_id)
-            .unwrap();
+        let unit_config = config.get_unit_config_by_type_id(self.type_id).unwrap();
 
         let distance = self.pos.distance_to(target.pos());
         if distance > unit_config.max_range as f64 || distance < unit_config.min_range as f64 {
-            return;
+            return 0;
         }
 
+        return target.damage(unit_config);
     }
 
     pub fn travel(&mut self, mut travel: Travel) {

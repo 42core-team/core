@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::game::{Game, Position};
+use crate::game::{Game, Position, UnitConfig};
 
-use super::{entity_traits::EntityDamage, Entity};
+use super::{entity_traits::EntityConfig, Entity};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Resource {
@@ -17,6 +17,9 @@ impl Entity for Resource {
     fn id(&self) -> u64 {
         self.id
     }
+    fn team_id(&self) -> u64 {
+        0
+    }
     fn pos(&self) -> &Position {
         &self.pos
     }
@@ -25,14 +28,9 @@ impl Entity for Resource {
     }
 }
 
-impl EntityDamage for Resource {
-    fn damage(&mut self, damage: u64) -> bool {
-        if self.hp <= damage {
-            self.hp = 0;
-            return true;
-        }
-        self.hp -= damage;
-        return false;
+impl EntityConfig for Resource {
+    fn damage(&self, config: UnitConfig) -> u64 {
+        return config.dmg_resource;
     }
 }
 

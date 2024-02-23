@@ -1,6 +1,6 @@
 use crate::game::{
-    entity::{entity_traits::EntityDamage, Unit},
-    Core, Entity, EntityTeam, Resource,
+    entity::{EntityConfig, Unit},
+    Core, Entity, Resource, UnitConfig,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -16,6 +16,13 @@ impl Entity for Target {
             Target::Unit(u) => u.id(),
             Target::Resource(r) => r.id(),
             Target::Core(c) => c.id(),
+        }
+    }
+    fn team_id(&self) -> u64 {
+        match self {
+            Target::Unit(u) => u.team_id(),
+            Target::Resource(_) => 0,
+            Target::Core(c) => c.team_id(),
         }
     }
     fn pos(&self) -> &crate::game::Position {
@@ -34,22 +41,12 @@ impl Entity for Target {
     }
 }
 
-impl EntityTeam for Target {
-    fn team_id(&self) -> u64 {
+impl EntityConfig for Target {
+    fn damage(&self, config: UnitConfig) -> u64 {
         match self {
-            Target::Unit(u) => u.team_id(),
-            Target::Resource(_) => 0,
-            Target::Core(c) => c.team_id(),
-        }
-    }
-}
-
-impl Target {
-    fn damage(&mut self, dmg_unit: u64, dmg_resource: u64, dmg_core: u64) -> bool {
-        match self {
-            Target::Unit(u) => u.damage(dmg_unit),
-            Target::Resource(r) => r.damage(dmg_resource),
-            Target::Core(c) => c.damage(dmg_core),
+            Target::Unit(u) => u.damage(config),
+            Target::Resource(r) => r.damage(config),
+            Target::Core(c) => c.damage(config),
         }
     }
 }

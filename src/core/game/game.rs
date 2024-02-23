@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -432,17 +433,58 @@ impl Game {
             "handel_attack_action: {:?} -> {:?} from team with id {:?}",
             attacker_id, target_id, team_id
         ));
-        let attacker = self.units.iter().find(|unit| unit.id == attacker_id);
-        if attacker.is_none() {
-            log::error("Attacker not found");
-            return;
-        }
         let target = self.get_target_by_id(target_id);
         if target.is_none() {
             log::error("Target not found");
             return;
         }
+        let attacker = self.units.iter_mut().find(|unit| unit.id == attacker_id);
+        if attacker.is_none() {
+            log::error("Attacker not found");
+            return;
+        }
         attacker.unwrap().attack(target.unwrap());
+    }
+
+    pub fn deal_damage(&mut self) {
+        let mut damage_to_deal: HashMap<u64, u64> = HashMap::new();
+        self.units.clone().iter().for_each(|unit| {
+            if unit.target_id.is_none() {
+                return;
+            }
+            let target = self.get_target_by_id(unit.target_id.unwrap());
+            if target.is_none() {
+                return;
+            }
+            let target = target.unwrap();
+
+            let damage = unit.calc_damage(&self.config, &target);
+            if damage > 0 {
+                damage_to_deal
+                    .entry(target.id())
+                    .and_modify(|e| *e += damage)
+                    .or_insert(damage);
+            }
+        });
+
+        let mut ids_to_remove: Vec<u64> = vec![];
+        damage_to_deal.iter().for_each(|(id, damage)| {
+            for unit in self.units.iter_mut() {
+                if unit.id == *id {
+                    if unit.hp <= *damage {
+                        unit.hp = 0;
+                        ids_to_remove.push(unit.id);
+                        break;
+                    }
+                    unit.hp -= *damage;
+                }
+            }
+        });
+
+        self.units.retain(|unit| !ids_to_remove.contains(&unit.id));
+        self.resources
+            .retain(|resource| !ids_to_remove.contains(&resource.id));
+        self.cores.retain(|core| !ids_to_remove.contains(&core.id));
     }
 
     pub fn get_target_by_id(&self, id: u64) -> Option<Target> {
@@ -456,139 +498,6 @@ impl Game {
             return Some(Target::Core(core.clone()));
         }
         None
-    }
-
-    pub fn get_dist(&self, x1: u64, y1: u64, x2: u64, y2: u64) -> u64 {
-        let xdif;
-        let ydif;
-        if x1 > x2 {
-            xdif = x1 - x2;
-        } else {
-            xdif = x2 - x1;
-        }
-        if y1 > y2 {
-            ydif = y1 - y2;
-        } else {
-            ydif = y2 - y1;
-        }
-        (((xdif).pow(2) + (ydif).pow(2)) as f64).sqrt() as u64
-    }
-
-    pub fn is_target_in_range(&self, attacker_id: u64, target: &Target) -> bool {
-        if let Some(attacker) = self
-            .units
-            .iter()
-            .find(|unit| unit.id == attacker_id)
-            .cloned()
-        {
-            match target {
-                Target::Unit(target) => {
-                    let dist = attacker.pos.distance_to(&target.pos) as u64;
-                    let max_range =
-                        GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
-                            .map(|config| config.max_range)
-                            .unwrap_or_default();
-                    return dist <= max_range;
-                }
-                Target::Resource(target) => {
-                    let dist = attacker.pos.distance_to(&target.pos) as u64;
-                    let max_range =
-                        GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
-                            .map(|config| config.max_range)
-                            .unwrap_or_default();
-                    return dist <= max_range;
-                }
-                Target::Core(target) => {
-                    let dist = attacker.pos.distance_to(&target.pos) as u64;
-                    let max_range =
-                        GameConfig::get_unit_config_by_type_id(&self.config, attacker.type_id)
-                            .map(|config| config.max_range)
-                            .unwrap_or_default();
-                    return dist <= max_range;
-                }
-            }
-        }
-        false
-    }
-
-    ///
-    /// Fulfill the attack action
-    ///
-    /// Security:
-    /// - check if attacker exists
-    /// - check if target exists
-    ///
-    /// Features:
-    /// - attack target
-    /// - calculate damage per tick
-    ///
-    /// Get the damage of the attacker based on the type of the target from the config
-    ///
-    pub fn attack(&mut self, attacker_id: u64, target_id: u64) {
-        log::changes(&format!("attack: {:?} -> {:?}", attacker_id, target_id));
-        let attacker = self
-            .units
-            .iter()
-            .find(|unit| unit.id == attacker_id)
-            .cloned();
-        let target = self.get_target_by_id(target_id);
-        match (attacker, target) {
-            (Some(attacker), target @ Target::Unit(_))
-            | (Some(attacker), target @ Target::Resource(_))
-            | (Some(attacker), target @ Target::Core(_)) => {
-                if self.is_target_in_range(attacker_id, &target) {
-                    match target {
-                        Target::Unit(unit) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(
-                                &self.config,
-                                attacker.type_id,
-                            )
-                            .unwrap()
-                            .dmg_unit;
-                            self.get_unit_by_id_mut(unit.id).unwrap().hp -=
-                                damage * self.time_since_last_tick as u64 / 1000;
-                            if self.get_unit_by_id_mut(unit.id).unwrap().hp <= 0 {
-                                self.units.retain(|unit| unit.id != target_id);
-                            }
-                        }
-                        Target::Resource(resource) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(
-                                &self.config,
-                                attacker.type_id,
-                            )
-                            .unwrap()
-                            .dmg_resource;
-                            self.get_resource_by_id_mut(resource.id).unwrap().hp -=
-                                damage * self.time_since_last_tick as u64 / 1000;
-                            if self.get_resource_by_id_mut(resource.id).unwrap().hp <= 0 {
-                                self.resources.retain(|resource| resource.id != target_id);
-                            }
-                        }
-                        Target::Core(core) => {
-                            let damage = GameConfig::get_unit_config_by_type_id(
-                                &self.config,
-                                attacker.type_id,
-                            )
-                            .unwrap()
-                            .dmg_core;
-                            self.get_core_by_id_mut(core.id).unwrap().hp -=
-                                damage * self.time_since_last_tick as u64 / 1000;
-                            if self.get_core_by_id_mut(core.id).unwrap().hp <= 0 {
-                                self.cores.retain(|core| core.id != target_id);
-                            }
-                        }
-                        _ => {
-                            // Handle other cases if needed
-                        }
-                    }
-                } else {
-                    log::error("Target not in range");
-                }
-            }
-            _ => {
-                log::error("Attacker or target not found");
-            }
-        }
     }
 
     ///
@@ -662,37 +571,7 @@ impl Game {
         }
 
         self.handel_travel_update();
-
-        let targets: Vec<_> = self.targets.iter().cloned().collect();
-        for (attacker_id, target_id) in targets {
-            let attacker = self
-                .units
-                .iter()
-                .find(|unit| unit.id == attacker_id)
-                .cloned();
-            let target = self.get_target_by_id(target_id.clone());
-            match (attacker, target) {
-                (Some(attacker), Target::Unit(target)) => {
-                    if attacker.team_id != target.team_id {
-                        self.attack(attacker.id, target.id);
-                    }
-                }
-                (Some(attacker), Target::Resource(target)) => {
-                    self.attack(attacker.id, target.id);
-                }
-                (Some(attacker), Target::Core(target)) => {
-                    if attacker.team_id != target.team_id {
-                        self.attack(attacker.id, target.id);
-                    }
-                }
-                _ => {
-                    log::error(&format!(
-                        "Attacker or target not found: {:?} -> {:?}",
-                        attacker_id, target_id
-                    ));
-                }
-            }
-        }
+        self.deal_damage();
     }
 
     pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, pos: Position) {

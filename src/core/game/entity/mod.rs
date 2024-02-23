@@ -1,6 +1,6 @@
 pub mod entity_traits;
 pub use entity_traits::Entity;
-pub use entity_traits::EntityTeam;
+pub use entity_traits::EntityConfig;
 
 pub mod core;
 pub use core::Core;
