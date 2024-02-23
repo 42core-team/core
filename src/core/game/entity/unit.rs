@@ -86,7 +86,12 @@ impl Unit {
         self.target_id = Some(target.id());
     }
 
-    pub fn calc_damage(&self, config: &GameConfig, target: &(impl Entity + EntityConfig)) -> u64 {
+    pub fn calc_damage(
+        &self,
+        config: &GameConfig,
+        target: &(impl Entity + EntityConfig),
+        time_since_last_tick: u128,
+    ) -> u64 {
         if self.target_id.is_none() {
             return 0;
         }
@@ -97,7 +102,8 @@ impl Unit {
             return 0;
         }
 
-        return target.damage(unit_config);
+        let damage = target.damage(unit_config) * time_since_last_tick as u64 / 1000;
+        damage
     }
 
     pub fn travel(&mut self, mut travel: Travel) {

@@ -52,7 +52,7 @@ pub fn resources(game: &Game) -> Vec<Resource> {
             rng.gen_range(0..game.config.height),
         );
 
-        resources.push(Resource::new(game, 1, 0, pos, 500));
+        resources.push(Resource::new(game, 1, 0, pos, 4000));
     }
 
     resources

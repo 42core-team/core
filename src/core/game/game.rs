@@ -44,7 +44,7 @@ impl Game {
             config: game_config,
             resources: vec![],
             units: vec![],
-            tick_rate: 300,
+            tick_rate: 500,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             time_since_last_tick: 0,
@@ -458,7 +458,7 @@ impl Game {
             }
             let target = target.unwrap();
 
-            let damage = unit.calc_damage(&self.config, &target);
+            let damage = unit.calc_damage(&self.config, &target, self.time_since_last_tick);
             if damage > 0 {
                 damage_to_deal
                     .entry(target.id())
