@@ -67,7 +67,7 @@ impl GameConfig {
                     dmg_resource: 2000,
                     max_range: 200,
                     min_range: 0,
-                    speed: 200,
+                    speed: 2000,
                 },
             ],
             teams: vec![],

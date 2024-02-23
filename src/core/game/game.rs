@@ -44,7 +44,7 @@ impl Game {
             config: game_config,
             resources: vec![],
             units: vec![],
-            tick_rate: 50,
+            tick_rate: 300,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             time_since_last_tick: 0,
@@ -479,6 +479,26 @@ impl Game {
                     unit.hp -= *damage;
                 }
             }
+            for resource in self.resources.iter_mut() {
+                if resource.id == *id {
+                    if resource.hp <= *damage {
+                        resource.hp = 0;
+                        ids_to_remove.push(resource.id);
+                        break;
+                    }
+                    resource.hp -= *damage;
+                }
+            }
+            for core in self.cores.iter_mut() {
+                if core.id == *id {
+                    if core.hp <= *damage {
+                        core.hp = 0;
+                        ids_to_remove.push(core.id);
+                        break;
+                    }
+                    core.hp -= *damage;
+                }
+            }
         });
 
         self.units.retain(|unit| !ids_to_remove.contains(&unit.id));
@@ -488,14 +508,22 @@ impl Game {
     }
 
     pub fn get_target_by_id(&self, id: u64) -> Option<Target> {
-        if let Some(unit) = self.units.iter().find(|unit| unit.id == id) {
-            return Some(Target::Unit(unit.clone()));
+        let unit = self.units.iter().find(|unit: &&Unit| unit.id == id);
+        if unit.is_some() {
+            return Some(Target::Unit(unit.unwrap().clone()));
         }
-        if let Some(resource) = self.resources.iter().find(|resource| resource.id == id) {
-            return Some(Target::Resource(resource.clone()));
+
+        let resource = self
+            .resources
+            .iter()
+            .find(|resource: &&Resource| resource.id == id);
+        if resource.is_some() {
+            return Some(Target::Resource(resource.unwrap().clone()));
         }
-        if let Some(core) = self.cores.iter().find(|core| core.id == id) {
-            return Some(Target::Core(core.clone()));
+
+        let core = self.cores.iter().find(|core: &&Core| core.id == id);
+        if core.is_some() {
+            return Some(Target::Core(core.unwrap().clone()));
         }
         None
     }
