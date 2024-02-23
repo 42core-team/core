@@ -2,7 +2,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::game::{Game, Position};
 
-use super::{entity_traits::EntityTeam, Entity};
+use super::{
+    entity_traits::{EntityDamage, EntityTeam},
+    Entity,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Core {
@@ -27,6 +30,17 @@ impl Entity for Core {
 impl EntityTeam for Core {
     fn team_id(&self) -> u64 {
         self.team_id
+    }
+}
+
+impl EntityDamage for Core {
+    fn damage(&mut self, damage: u64) -> bool {
+        if self.hp <= damage {
+            self.hp = 0;
+            return true;
+        }
+        self.hp -= damage;
+        return false;
     }
 }
 

@@ -13,6 +13,7 @@ use crate::game::GameConfig;
 use crate::game::Position;
 use crate::game::Vector;
 
+use super::entity_traits::EntityDamage;
 use super::Entity;
 use super::EntityTeam;
 
@@ -44,6 +45,17 @@ impl Entity for Unit {
 impl EntityTeam for Unit {
     fn team_id(&self) -> u64 {
         self.team_id
+    }
+}
+
+impl EntityDamage for Unit {
+    fn damage(&mut self, damage: u64) -> bool {
+        if self.hp <= damage {
+            self.hp = 0;
+            return true;
+        }
+        self.hp -= damage;
+        return false;
     }
 }
 
@@ -81,6 +93,28 @@ impl Unit {
         }
 
         self.target_id = Some(target.id());
+    }
+
+    pub fn deal_damage(&mut self, game: &mut Game) {
+        if self.target_id.is_none() {
+            return;
+        }
+        let target = game.get_target_by_id(self.target_id.unwrap());
+        if target.is_none() {
+            self.target_id = None;
+            return;
+        }
+        let target = target.unwrap();
+        let unit_config = game
+            .config
+            .get_unit_config_by_type_id(self.type_id)
+            .unwrap();
+
+        let distance = self.pos.distance_to(target.pos());
+        if distance > unit_config.max_range as f64 || distance < unit_config.min_range as f64 {
+            return;
+        }
+
     }
 
     pub fn travel(&mut self, mut travel: Travel) {

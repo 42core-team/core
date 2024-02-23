@@ -9,3 +9,7 @@ pub trait Entity {
 pub trait EntityTeam {
     fn team_id(&self) -> u64;
 }
+
+pub trait EntityDamage {
+    fn damage(&mut self, damage: u64) -> bool;
+}

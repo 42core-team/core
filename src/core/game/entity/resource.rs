@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::game::{Game, Position};
 
-use super::Entity;
+use super::{entity_traits::EntityDamage, Entity};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Resource {
@@ -22,6 +22,17 @@ impl Entity for Resource {
     }
     fn hp(&self) -> u64 {
         self.hp
+    }
+}
+
+impl EntityDamage for Resource {
+    fn damage(&mut self, damage: u64) -> bool {
+        if self.hp <= damage {
+            self.hp = 0;
+            return true;
+        }
+        self.hp -= damage;
+        return false;
     }
 }
 

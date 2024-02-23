@@ -1,4 +1,7 @@
-use crate::game::{entity::Unit, Core, Entity, EntityTeam, Resource};
+use crate::game::{
+    entity::{entity_traits::EntityDamage, Unit},
+    Core, Entity, EntityTeam, Resource,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Target {
@@ -37,6 +40,16 @@ impl EntityTeam for Target {
             Target::Unit(u) => u.team_id(),
             Target::Resource(_) => 0,
             Target::Core(c) => c.team_id(),
+        }
+    }
+}
+
+impl Target {
+    fn damage(&mut self, dmg_unit: u64, dmg_resource: u64, dmg_core: u64) -> bool {
+        match self {
+            Target::Unit(u) => u.damage(dmg_unit),
+            Target::Resource(r) => r.damage(dmg_resource),
+            Target::Core(c) => c.damage(dmg_core),
         }
     }
 }
