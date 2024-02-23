@@ -3,11 +3,18 @@ use std::borrow::BorrowMut;
 
 use serde::{Deserialize, Serialize};
 
-use super::Position;
-use super::Vector;
-use super::{action::Travel, Game, GameConfig};
+use crate::game::action::Travel;
 use crate::game::action::TravelType::Position as PositionEnum;
 use crate::game::action::TravelType::Vector as VectorEnum;
+use crate::game::log::log;
+use crate::game::Game;
+use crate::game::GameConfig;
+use crate::game::Position;
+use crate::game::UnitConfig;
+use crate::game::Vector;
+
+use super::entity_traits::EntityConfig;
+use super::Entity;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
@@ -18,15 +25,32 @@ pub struct Unit {
     pub pos: Position,
     #[serde(skip)]
     travel: Option<Travel>,
+    #[serde(skip)]
+    pub target_id: Option<u64>,
 }
 
-///
-/// Unit implementation
-///
+impl Entity for Unit {
+    fn id(&self) -> u64 {
+        self.id
+    }
+    fn team_id(&self) -> u64 {
+        self.team_id
+    }
+    fn pos(&self) -> &Position {
+        &self.pos
+    }
+    fn hp(&self) -> u64 {
+        self.hp
+    }
+}
+
+impl EntityConfig for Unit {
+    fn damage(&self, config: UnitConfig) -> u64 {
+        return config.dmg_unit;
+    }
+}
+
 impl Unit {
-    ///
-    /// Function to create a new unit
-    ///
     pub fn new(game: &mut Game, team_id: u64, type_id: u64, pos: Position) -> Option<Self> {
         let unit_config = GameConfig::get_unit_config_by_type_id(&game.config, type_id);
         let team = game.get_team_by_id(team_id);
@@ -42,15 +66,46 @@ impl Unit {
                     pos,
                     team_id,
                     travel: None,
+                    target_id: None,
                 });
             }
             None => return None,
         }
     }
 
-    /**
-     * Give the travel command to the unit
-     */
+    pub fn attack(&mut self, target: impl Entity) {
+        if self.team_id == target.team_id() {
+            log::error("Unit can't attack it's own team");
+            return;
+        }
+        if self.id == target.id() {
+            self.target_id = None;
+            return;
+        }
+
+        self.target_id = Some(target.id());
+    }
+
+    pub fn calc_damage(
+        &self,
+        config: &GameConfig,
+        target: &(impl Entity + EntityConfig),
+        time_since_last_tick: u128,
+    ) -> u64 {
+        if self.target_id.is_none() {
+            return 0;
+        }
+        let unit_config = config.get_unit_config_by_type_id(self.type_id).unwrap();
+
+        let distance = self.pos.distance_to(target.pos());
+        if distance > unit_config.max_range as f64 || distance < unit_config.min_range as f64 {
+            return 0;
+        }
+
+        let damage = target.damage(unit_config) * time_since_last_tick as u64 / 1000;
+        damage
+    }
+
     pub fn travel(&mut self, mut travel: Travel) {
         match travel.travel_type.borrow_mut() {
             VectorEnum(vec) => {

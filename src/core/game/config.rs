@@ -67,7 +67,7 @@ impl GameConfig {
                     dmg_resource: 2000,
                     max_range: 200,
                     min_range: 0,
-                    speed: 200,
+                    speed: 2000,
                 },
             ],
             teams: vec![],
@@ -85,8 +85,8 @@ impl GameConfig {
         config.teams = team_configs;
     }
 
-    pub fn get_unit_config_by_type_id(config: &GameConfig, type_id: u64) -> Option<UnitConfig> {
-        for unit in config.units.iter() {
+    pub fn get_unit_config_by_type_id(&self, type_id: u64) -> Option<UnitConfig> {
+        for unit in self.units.iter() {
             if unit.type_id == type_id {
                 return Some(unit.clone());
             }
