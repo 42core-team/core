@@ -552,7 +552,7 @@ impl Game {
                 team_id, unit.id
             ));
         }
-        unit.travel(travel);
+        unit.travel(&self.config, travel);
     }
 
     pub fn handel_travel_update(&mut self) {

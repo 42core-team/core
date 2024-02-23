@@ -106,7 +106,7 @@ impl Unit {
         damage
     }
 
-    pub fn travel(&mut self, mut travel: Travel) {
+    pub fn travel(&mut self, config: &GameConfig, mut travel: Travel) {
         match travel.travel_type.borrow_mut() {
             VectorEnum(vec) => {
                 if vec.x == 0.0 && vec.y == 0.0 {
@@ -116,7 +116,7 @@ impl Unit {
                 vec.normalize();
             }
             PositionEnum(pos) => {
-                if self.pos.is_equal(pos) {
+                if self.pos.is_equal(pos) || !self.pos.is_in_map(config) {
                     self.travel = None;
                     return;
                 }
@@ -163,13 +163,13 @@ impl Unit {
                     + vec.y * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
                 let new_pos = Position::new(new_x as u64, new_y as u64);
 
-                if !new_pos.is_in_map(game_config) {
+                if self.pos.distance_to(&new_pos) > self.pos.distance_to(pos) {
+                    self.pos = pos.clone();
                     self.travel = None;
                     return;
                 }
 
-                if self.pos.distance_to(&new_pos) > self.pos.distance_to(pos) {
-                    self.pos = pos.clone();
+                if !new_pos.is_in_map(game_config) {
                     self.travel = None;
                     return;
                 }
