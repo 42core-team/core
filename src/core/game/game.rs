@@ -615,7 +615,7 @@ impl Game {
     }
 
     pub fn create_fake_resource(&mut self, pos: Position) {
-        let resource = Resource::new(self, 1, 100, pos, 100);
+        let resource = Resource::new(self, 1, pos, 100);
         self.resources.push(resource);
     }
 

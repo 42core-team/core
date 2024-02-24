@@ -10,6 +10,7 @@ pub struct GameConfig {
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
+    pub resources: Vec<ResourceConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -21,6 +22,7 @@ pub struct GameConfigWithId {
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
+    pub resources: Vec<ResourceConfig>,
 }
 
 impl GameConfigWithId {
@@ -33,6 +35,7 @@ impl GameConfigWithId {
             core_hp: game_config.core_hp,
             units: game_config.units.clone(),
             teams: game_config.teams.clone(),
+            resources: game_config.resources.clone(),
         }
     }
 }
@@ -71,6 +74,10 @@ impl GameConfig {
                 },
             ],
             teams: vec![],
+            resources: vec![ResourceConfig {
+                type_id: 1,
+                hp: 4000,
+            }],
         }
     }
 
@@ -113,4 +120,10 @@ pub struct UnitConfig {
 pub struct TeamConfig {
     pub id: u64,
     pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ResourceConfig {
+    pub type_id: u64,
+    pub hp: u64,
 }
