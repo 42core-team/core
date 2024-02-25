@@ -42,10 +42,18 @@ impl Entity for Unit {
     fn hp(&self) -> u64 {
         self.hp
     }
+    fn deal_dmg(&mut self, dmg: u64) -> bool {
+        if self.hp <= dmg {
+            self.hp = 0;
+            return true;
+        }
+        self.hp -= dmg;
+        false
+    }
 }
 
 impl EntityConfig for Unit {
-    fn damage(&self, config: UnitConfig) -> u64 {
+    fn config_dmg(&self, config: UnitConfig) -> u64 {
         return config.dmg_unit;
     }
 }
@@ -86,7 +94,7 @@ impl Unit {
         self.target_id = Some(target.id());
     }
 
-    pub fn calc_damage(
+    pub fn calc_dmg(
         &self,
         config: &GameConfig,
         target: &(impl Entity + EntityConfig),
@@ -102,8 +110,7 @@ impl Unit {
             return 0;
         }
 
-        let damage = target.damage(unit_config) * time_since_last_tick as u64 / 1000;
-        damage
+        target.config_dmg(unit_config) * time_since_last_tick as u64 / 1000
     }
 
     pub fn travel(&mut self, config: &GameConfig, mut travel: Travel) {

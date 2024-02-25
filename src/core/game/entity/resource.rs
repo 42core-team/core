@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::game::{Game, Position, UnitConfig};
+use crate::game::{Game, GameConfig, Position, UnitConfig};
 
 use super::{entity_traits::EntityConfig, Entity};
 
@@ -25,10 +25,18 @@ impl Entity for Resource {
     fn hp(&self) -> u64 {
         self.hp
     }
+    fn deal_dmg(&mut self, dmg: u64) -> bool {
+        if self.hp <= dmg {
+            self.hp = 0;
+            return true;
+        }
+        self.hp -= dmg;
+        false
+    }
 }
 
 impl EntityConfig for Resource {
-    fn damage(&self, config: UnitConfig) -> u64 {
+    fn config_dmg(&self, config: UnitConfig) -> u64 {
         return config.dmg_resource;
     }
 }
@@ -41,5 +49,14 @@ impl Resource {
             pos,
             hp,
         }
+    }
+
+    pub fn balance_from_dmg(&self, game_config: &GameConfig, dmg: u64) -> u64 {
+        let resource_config = game_config
+            .resources
+            .iter()
+            .find(|r| r.type_id == self.type_id)
+            .expect("Resource config not found");
+        dmg * resource_config.balance_value / resource_config.hp
     }
 }

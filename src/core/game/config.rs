@@ -77,6 +77,7 @@ impl GameConfig {
             resources: vec![ResourceConfig {
                 type_id: 1,
                 hp: 4000,
+                balance_value: 200,
             }],
         }
     }
@@ -126,4 +127,5 @@ pub struct TeamConfig {
 pub struct ResourceConfig {
     pub type_id: u64,
     pub hp: u64,
+    pub balance_value: u64,
 }
