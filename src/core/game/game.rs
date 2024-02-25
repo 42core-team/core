@@ -12,6 +12,7 @@ use super::action::Travel;
 use super::bridge_con::BridgeCon;
 use super::config::GameConfigWithId;
 use super::entity::Unit;
+use super::helper::Damage;
 use super::{generate, passive_income, Entity, Position};
 use super::{helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team};
 
@@ -44,7 +45,7 @@ impl Game {
             config: game_config,
             resources: vec![],
             units: vec![],
-            tick_rate: 500,
+            tick_rate: 50,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             time_since_last_tick: 0,
@@ -447,7 +448,7 @@ impl Game {
     }
 
     pub fn deal_damage(&mut self) {
-        let mut damage_to_deal: HashMap<u64, u64> = HashMap::new();
+        let mut damage_to_deal: Vec<Damage> = vec![];
         self.units.clone().iter().for_each(|unit| {
             if unit.target_id.is_none() {
                 return;
@@ -460,43 +461,54 @@ impl Game {
 
             let damage = unit.calc_damage(&self.config, &target, self.time_since_last_tick);
             if damage > 0 {
-                damage_to_deal
-                    .entry(target.id())
-                    .and_modify(|e| *e += damage)
-                    .or_insert(damage);
+                damage_to_deal.push(Damage::new(unit.id, target.id(), damage));
             }
         });
 
         let mut ids_to_remove: Vec<u64> = vec![];
-        damage_to_deal.iter().for_each(|(id, damage)| {
+        let mut balance_to_add: HashMap<u64, u64> = HashMap::new();
+        damage_to_deal.iter().for_each(|damage| {
             for unit in self.units.iter_mut() {
-                if unit.id == *id {
-                    if unit.hp <= *damage {
+                if unit.id == damage.target_id {
+                    if unit.hp <= damage.damage {
                         unit.hp = 0;
                         ids_to_remove.push(unit.id);
                         break;
                     }
-                    unit.hp -= *damage;
+                    unit.hp -= damage.damage;
                 }
             }
             for resource in self.resources.iter_mut() {
-                if resource.id == *id {
-                    if resource.hp <= *damage {
+                if resource.id == damage.target_id {
+                    let balance = resource.balance_from_damage(&self.config, damage.damage);
+                    balance_to_add
+                        .entry(damage.attacker_id)
+                        .and_modify(|e| *e += balance)
+                        .or_insert(balance);
+                    if resource.hp <= damage.damage {
                         resource.hp = 0;
                         ids_to_remove.push(resource.id);
                         break;
                     }
-                    resource.hp -= *damage;
+                    resource.hp -= damage.damage;
                 }
             }
             for core in self.cores.iter_mut() {
-                if core.id == *id {
-                    if core.hp <= *damage {
+                if core.id == damage.target_id {
+                    if core.hp <= damage.damage {
                         core.hp = 0;
                         ids_to_remove.push(core.id);
                         break;
                     }
-                    core.hp -= *damage;
+                    core.hp -= damage.damage;
+                }
+            }
+        });
+
+        self.units.iter().for_each(|unit| {
+            if let Some(balance) = balance_to_add.get(&unit.id) {
+                if let Some(team) = self.teams.iter_mut().find(|team| team.id == unit.team_id) {
+                    team.balance += balance;
                 }
             }
         });

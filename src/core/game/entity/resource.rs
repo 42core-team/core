@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::game::{Game, Position, UnitConfig};
+use crate::game::{Game, GameConfig, Position, UnitConfig};
 
 use super::{entity_traits::EntityConfig, Entity};
 
@@ -41,5 +41,14 @@ impl Resource {
             pos,
             hp,
         }
+    }
+
+    pub fn balance_from_damage(&self, game_config: &GameConfig, damage: u64) -> u64 {
+        let resource_config = game_config
+            .resources
+            .iter()
+            .find(|r| r.type_id == self.type_id)
+            .expect("Resource config not found");
+        damage * resource_config.balance_value / resource_config.hp
     }
 }
