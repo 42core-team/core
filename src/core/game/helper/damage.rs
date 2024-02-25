@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Damage {
+    pub amount: u64,
     pub attacker_id: u64,
     pub target_id: u64,
-    pub damage: u64,
 }
 
 impl Damage {
@@ -12,7 +12,7 @@ impl Damage {
         Self {
             attacker_id,
             target_id,
-            damage,
+            amount: damage,
         }
     }
 }

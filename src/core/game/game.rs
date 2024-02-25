@@ -468,39 +468,39 @@ impl Game {
         let mut ids_to_remove: Vec<u64> = vec![];
         let mut balance_to_add: HashMap<u64, u64> = HashMap::new();
         damage_to_deal.iter().for_each(|damage| {
-            for unit in self.units.iter_mut() {
-                if unit.id == damage.target_id {
-                    if unit.hp <= damage.damage {
-                        unit.hp = 0;
-                        ids_to_remove.push(unit.id);
-                        break;
-                    }
-                    unit.hp -= damage.damage;
+            if let Some(unit) = self
+                .units
+                .iter_mut()
+                .find(|unit| unit.id == damage.target_id)
+            {
+                if unit.deal_damage(damage.amount) {
+                    ids_to_remove.push(unit.id);
                 }
             }
-            for resource in self.resources.iter_mut() {
-                if resource.id == damage.target_id {
-                    let balance = resource.balance_from_damage(&self.config, damage.damage);
-                    balance_to_add
-                        .entry(damage.attacker_id)
-                        .and_modify(|e| *e += balance)
-                        .or_insert(balance);
-                    if resource.hp <= damage.damage {
-                        resource.hp = 0;
-                        ids_to_remove.push(resource.id);
-                        break;
-                    }
-                    resource.hp -= damage.damage;
+
+            if let Some(resource) = self
+                .resources
+                .iter_mut()
+                .find(|resource| resource.id == damage.target_id)
+            {
+                let balance = resource.balance_from_damage(&self.config, damage.amount);
+                balance_to_add
+                    .entry(damage.attacker_id)
+                    .and_modify(|e| *e += balance)
+                    .or_insert(balance);
+
+                if resource.deal_damage(damage.amount) {
+                    ids_to_remove.push(resource.id);
                 }
             }
-            for core in self.cores.iter_mut() {
-                if core.id == damage.target_id {
-                    if core.hp <= damage.damage {
-                        core.hp = 0;
-                        ids_to_remove.push(core.id);
-                        break;
-                    }
-                    core.hp -= damage.damage;
+
+            if let Some(core) = self
+                .cores
+                .iter_mut()
+                .find(|core| core.id == damage.target_id)
+            {
+                if core.deal_damage(damage.amount) {
+                    ids_to_remove.push(core.id);
                 }
             }
         });

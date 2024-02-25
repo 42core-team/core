@@ -5,6 +5,7 @@ pub trait Entity {
     fn team_id(&self) -> u64;
     fn pos(&self) -> &Position;
     fn hp(&self) -> u64;
+    fn deal_damage(&mut self, damage: u64) -> bool;
 }
 
 pub trait EntityConfig {

@@ -42,6 +42,14 @@ impl Entity for Unit {
     fn hp(&self) -> u64 {
         self.hp
     }
+    fn deal_damage(&mut self, damage: u64) -> bool {
+        if self.hp <= damage {
+            self.hp = 0;
+            return true;
+        }
+        self.hp -= damage;
+        false
+    }
 }
 
 impl EntityConfig for Unit {

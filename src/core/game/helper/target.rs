@@ -39,6 +39,13 @@ impl Entity for Target {
             Target::Core(c) => c.hp(),
         }
     }
+    fn deal_damage(&mut self, damage: u64) -> bool {
+        match self {
+            Target::Unit(u) => u.deal_damage(damage),
+            Target::Resource(r) => r.deal_damage(damage),
+            Target::Core(c) => c.deal_damage(damage),
+        }
+    }
 }
 
 impl EntityConfig for Target {
