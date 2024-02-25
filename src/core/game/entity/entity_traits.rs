@@ -5,9 +5,9 @@ pub trait Entity {
     fn team_id(&self) -> u64;
     fn pos(&self) -> &Position;
     fn hp(&self) -> u64;
-    fn deal_damage(&mut self, damage: u64) -> bool;
+    fn deal_dmg(&mut self, dmg: u64) -> bool;
 }
 
 pub trait EntityConfig {
-    fn damage(&self, config: UnitConfig) -> u64;
+    fn config_dmg(&self, config: UnitConfig) -> u64;
 }

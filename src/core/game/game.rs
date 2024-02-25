@@ -12,7 +12,7 @@ use super::action::Travel;
 use super::bridge_con::BridgeCon;
 use super::config::GameConfigWithId;
 use super::entity::Unit;
-use super::helper::Damage;
+use super::helper::Dmg;
 use super::{generate, passive_income, Entity, Position};
 use super::{helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team};
 
@@ -447,8 +447,8 @@ impl Game {
         attacker.unwrap().attack(target.unwrap());
     }
 
-    pub fn deal_damage(&mut self) {
-        let mut damage_to_deal: Vec<Damage> = vec![];
+    pub fn deal_dmg(&mut self) {
+        let mut dmg_to_deal: Vec<Dmg> = vec![];
         self.units.clone().iter().for_each(|unit| {
             if unit.target_id.is_none() {
                 return;
@@ -459,21 +459,17 @@ impl Game {
             }
             let target = target.unwrap();
 
-            let damage = unit.calc_damage(&self.config, &target, self.time_since_last_tick);
-            if damage > 0 {
-                damage_to_deal.push(Damage::new(unit.id, target.id(), damage));
+            let dmg = unit.calc_dmg(&self.config, &target, self.time_since_last_tick);
+            if dmg > 0 {
+                dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
             }
         });
 
         let mut ids_to_remove: Vec<u64> = vec![];
         let mut balance_to_add: HashMap<u64, u64> = HashMap::new();
-        damage_to_deal.iter().for_each(|damage| {
-            if let Some(unit) = self
-                .units
-                .iter_mut()
-                .find(|unit| unit.id == damage.target_id)
-            {
-                if unit.deal_damage(damage.amount) {
+        dmg_to_deal.iter().for_each(|dmg| {
+            if let Some(unit) = self.units.iter_mut().find(|unit| unit.id == dmg.target_id) {
+                if unit.deal_dmg(dmg.amount) {
                     ids_to_remove.push(unit.id);
                 }
             }
@@ -481,25 +477,21 @@ impl Game {
             if let Some(resource) = self
                 .resources
                 .iter_mut()
-                .find(|resource| resource.id == damage.target_id)
+                .find(|resource| resource.id == dmg.target_id)
             {
-                let balance = resource.balance_from_damage(&self.config, damage.amount);
+                let balance = resource.balance_from_dmg(&self.config, dmg.amount);
                 balance_to_add
-                    .entry(damage.attacker_id)
+                    .entry(dmg.attacker_id)
                     .and_modify(|e| *e += balance)
                     .or_insert(balance);
 
-                if resource.deal_damage(damage.amount) {
+                if resource.deal_dmg(dmg.amount) {
                     ids_to_remove.push(resource.id);
                 }
             }
 
-            if let Some(core) = self
-                .cores
-                .iter_mut()
-                .find(|core| core.id == damage.target_id)
-            {
-                if core.deal_damage(damage.amount) {
+            if let Some(core) = self.cores.iter_mut().find(|core| core.id == dmg.target_id) {
+                if core.deal_dmg(dmg.amount) {
                     ids_to_remove.push(core.id);
                 }
             }
@@ -508,7 +500,7 @@ impl Game {
         self.units.iter().for_each(|unit| {
             if let Some(balance) = balance_to_add.get(&unit.id) {
                 if let Some(team) = self.teams.iter_mut().find(|team| team.id == unit.team_id) {
-                    team.balance += balance;
+                    team.balance += *balance;
                 }
             }
         });
@@ -611,7 +603,7 @@ impl Game {
         }
 
         self.handel_travel_update();
-        self.deal_damage();
+        self.deal_dmg();
     }
 
     pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, pos: Position) {

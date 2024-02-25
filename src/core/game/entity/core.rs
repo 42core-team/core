@@ -25,18 +25,18 @@ impl Entity for Core {
     fn hp(&self) -> u64 {
         self.hp
     }
-    fn deal_damage(&mut self, damage: u64) -> bool {
-        if self.hp <= damage {
+    fn deal_dmg(&mut self, dmg: u64) -> bool {
+        if self.hp <= dmg {
             self.hp = 0;
             return true;
         }
-        self.hp -= damage;
+        self.hp -= dmg;
         false
     }
 }
 
 impl EntityConfig for Core {
-    fn damage(&self, config: UnitConfig) -> u64 {
+    fn config_dmg(&self, config: UnitConfig) -> u64 {
         return config.dmg_core;
     }
 }
