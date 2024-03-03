@@ -45,6 +45,7 @@ pub fn cores(game: &Game) -> Vec<Core> {
 pub fn resources(game: &Game) -> Vec<Resource> {
     let mut resources: Vec<Resource> = Vec::new();
     let mut rng = rand::thread_rng();
+    let resource_config = &game.config.resources[0];
 
     for _ in 0..game.config.width * game.config.height / 10000000 {
         let pos = Position::new(
@@ -52,7 +53,12 @@ pub fn resources(game: &Game) -> Vec<Resource> {
             rng.gen_range(0..game.config.height),
         );
 
-        resources.push(Resource::new(game, 1, 0, pos, 500));
+        resources.push(Resource::new(
+            game,
+            resource_config.type_id,
+            pos,
+            resource_config.hp,
+        ));
     }
 
     resources
