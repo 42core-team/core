@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::game::{Game, Position};
+use crate::game::{Game, Position, UnitConfig};
+
+use super::{entity_traits::EntityConfig, Entity};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Core {
@@ -8,6 +10,35 @@ pub struct Core {
     pub team_id: u64,
     pub pos: Position,
     pub hp: u64,
+}
+
+impl Entity for Core {
+    fn id(&self) -> u64 {
+        self.id
+    }
+    fn team_id(&self) -> u64 {
+        self.team_id
+    }
+    fn pos(&self) -> &Position {
+        &self.pos
+    }
+    fn hp(&self) -> u64 {
+        self.hp
+    }
+    fn deal_dmg(&mut self, dmg: u64) -> bool {
+        if self.hp <= dmg {
+            self.hp = 0;
+            return true;
+        }
+        self.hp -= dmg;
+        false
+    }
+}
+
+impl EntityConfig for Core {
+    fn config_dmg(&self, config: UnitConfig) -> u64 {
+        return config.dmg_core;
+    }
 }
 
 impl Core {

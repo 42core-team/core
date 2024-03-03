@@ -10,6 +10,7 @@ pub struct GameConfig {
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
+    pub resources: Vec<ResourceConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -21,6 +22,7 @@ pub struct GameConfigWithId {
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
+    pub resources: Vec<ResourceConfig>,
 }
 
 impl GameConfigWithId {
@@ -33,6 +35,7 @@ impl GameConfigWithId {
             core_hp: game_config.core_hp,
             units: game_config.units.clone(),
             teams: game_config.teams.clone(),
+            resources: game_config.resources.clone(),
         }
     }
 }
@@ -43,19 +46,19 @@ impl GameConfig {
             height: 10000,
             width: 10000,
             idle_income: 25,
-            core_hp: 5000,
+            core_hp: 20000,
             units: vec![
                 UnitConfig {
                     name: String::from("Warrior"),
                     type_id: 1,
                     cost: 100,
                     hp: 3000,
-                    dmg_core: 2000,
-                    dmg_unit: 1500,
+                    dmg_core: 1000,
+                    dmg_unit: 500,
                     dmg_resource: 500,
-                    max_range: 1000,
+                    max_range: 500,
                     min_range: 0,
-                    speed: 100,
+                    speed: 500,
                 },
                 UnitConfig {
                     name: String::from("Worker"),
@@ -65,12 +68,17 @@ impl GameConfig {
                     dmg_core: 500,
                     dmg_unit: 250,
                     dmg_resource: 2000,
-                    max_range: 200,
+                    max_range: 250,
                     min_range: 0,
-                    speed: 200,
+                    speed: 750,
                 },
             ],
             teams: vec![],
+            resources: vec![ResourceConfig {
+                type_id: 1,
+                hp: 4000,
+                balance_value: 200,
+            }],
         }
     }
 
@@ -85,8 +93,8 @@ impl GameConfig {
         config.teams = team_configs;
     }
 
-    pub fn get_unit_config_by_type_id(config: &GameConfig, type_id: u64) -> Option<UnitConfig> {
-        for unit in config.units.iter() {
+    pub fn get_unit_config_by_type_id(&self, type_id: u64) -> Option<UnitConfig> {
+        for unit in self.units.iter() {
             if unit.type_id == type_id {
                 return Some(unit.clone());
             }
@@ -113,4 +121,11 @@ pub struct UnitConfig {
 pub struct TeamConfig {
     pub id: u64,
     pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ResourceConfig {
+    pub type_id: u64,
+    pub hp: u64,
+    pub balance_value: u64,
 }

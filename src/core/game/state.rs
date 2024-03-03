@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Core, Game, Resource, Team, Unit};
+use super::{entity::Unit, Core, Game, Resource, Team};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct State {

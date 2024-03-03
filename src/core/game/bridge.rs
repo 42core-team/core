@@ -21,7 +21,7 @@ pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receive
     let (mut reader, mut writer) = tokio::io::split(stream);
 
     tokio::spawn(async move {
-        let mut buffer = [0; 2048];
+        let mut buffer = [0; 100000];
         loop {
             match reader.read(&mut buffer).await {
                 Ok(n) if n == 0 => {
