@@ -267,7 +267,7 @@ impl Game {
     pub async fn wait_till_next_tick(&mut self) {
         let current_millis = get_ms();
         let new_tick_start_time = self.last_tick_time + self.tick_rate;
-        if current_millis - self.last_tick_time > 0 {
+        if current_millis as i128 - self.last_tick_time as i128 > 0 {
             self.tick_calculation_time = current_millis - self.last_tick_time;
         } else {
             self.tick_calculation_time = 0;
