@@ -45,8 +45,8 @@ impl GameConfig {
         GameConfig {
             height: 10000,
             width: 10000,
-            idle_income: 25,
-            core_hp: 20000,
+            idle_income: 20,
+            core_hp: 30000,
             units: vec![
                 UnitConfig {
                     name: String::from("Warrior"),
@@ -70,7 +70,7 @@ impl GameConfig {
                     dmg_resource: 2000,
                     max_range: 250,
                     min_range: 0,
-                    speed: 750,
+                    speed: 700,
                 },
             ],
             teams: vec![],
