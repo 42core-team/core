@@ -46,12 +46,12 @@ impl GameConfig {
             height: 10000,
             width: 10000,
             idle_income: 20,
-            core_hp: 30000,
+            core_hp: 25000,
             units: vec![
                 UnitConfig {
                     name: String::from("Warrior"),
                     type_id: 1,
-                    cost: 100,
+                    cost: 350,
                     hp: 3000,
                     dmg_core: 1000,
                     dmg_unit: 500,
@@ -63,7 +63,7 @@ impl GameConfig {
                 UnitConfig {
                     name: String::from("Worker"),
                     type_id: 2,
-                    cost: 50,
+                    cost: 150,
                     hp: 1500,
                     dmg_core: 500,
                     dmg_unit: 250,
@@ -76,8 +76,8 @@ impl GameConfig {
             teams: vec![],
             resources: vec![ResourceConfig {
                 type_id: 1,
-                hp: 4000,
-                balance_value: 200,
+                hp: 10000,
+                balance_value: 150,
             }],
         }
     }
