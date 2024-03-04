@@ -48,15 +48,23 @@ pub fn resources(game: &Game) -> Vec<Resource> {
     let resource_config = &game.config.resources[0];
 
     for _ in 0..game.config.width * game.config.height / 10000000 {
-        let pos = Position::new(
-            rng.gen_range(0..game.config.width),
+        let pos1 = Position::new(
+            rng.gen_range(0..game.config.width / 2),
             rng.gen_range(0..game.config.height),
         );
+
+        let pos2 = Position::new(game.config.width - pos1.x, game.config.height - pos1.y);
 
         resources.push(Resource::new(
             game,
             resource_config.type_id,
-            pos,
+            pos1,
+            resource_config.hp,
+        ));
+        resources.push(Resource::new(
+            game,
+            resource_config.type_id,
+            pos2,
             resource_config.hp,
         ));
     }
