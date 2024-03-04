@@ -265,10 +265,15 @@ impl Game {
     }
 
     pub async fn wait_till_next_tick(&mut self) {
+        let current_millis = get_ms();
         let new_tick_start_time = self.last_tick_time + self.tick_rate;
-        self.tick_calculation_time = get_ms() - self.last_tick_time;
+        if current_millis - self.last_tick_time > 0 {
+            self.tick_calculation_time = current_millis - self.last_tick_time;
+        } else {
+            self.tick_calculation_time = 0;
+        }
 
-        if new_tick_start_time > get_ms() {
+        if new_tick_start_time > current_millis {
             tokio::time::sleep(Duration::from_millis(
                 (new_tick_start_time - get_ms()) as u64,
             ))
