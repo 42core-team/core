@@ -58,15 +58,15 @@ fn log(log_options: LogOptions, message: &str) {
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
 
     // Open the file in append mode and write the message with timestamp
-    let mut file = match OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_file_path)
-    {
-        Ok(file) => file,
-        Err(_) => return,
-    };
-    writeln!(file, "{} - {}", current_time, message).unwrap();
+    // let mut file = match OpenOptions::new()
+    //     .create(true)
+    //     .append(true)
+    //     .open(log_file_path)
+    // {
+    //     Ok(file) => file,
+    //     Err(_) => return,
+    // };
+    // writeln!(file, "{} - {}", current_time, message).unwrap();
 }
 
 pub fn state(message: &str) {
