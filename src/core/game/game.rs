@@ -105,6 +105,7 @@ impl Game {
                     match message {
                         Message::Login(login) => {
                             bridge_con.id = login.id;
+                            bridge_con.name = login.name;
                             if login.id == 42 {
                                 let _ = spectator_sender.send(bridge_con).await;
                             } else {
