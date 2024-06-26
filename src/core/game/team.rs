@@ -1,4 +1,7 @@
-use super::{bridge_con::BridgeCon, Game};
+use super::{
+    bridge_con::{self, BridgeCon},
+    Game,
+};
 
 #[derive(Debug)]
 pub struct Team {
@@ -18,7 +21,7 @@ impl Team {
         Team {
             id,
             uuid: String::from("UUID"),
-            name: format!("Team {}", id),
+            name: con.name.clone().unwrap_or_else(|| format!("Team {}", id)),
             balance: 100,
             con,
         }
