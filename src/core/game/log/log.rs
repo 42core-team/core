@@ -54,6 +54,10 @@ fn log(log_options: LogOptions, message: &str) {
 
     print_log(&log_options, message);
 
+    if std::env::var("LOG").is_err() {
+        return;
+    }
+
     // Get the current timestamp with milliseconds
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
 
