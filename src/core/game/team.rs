@@ -1,7 +1,4 @@
-use super::{
-    bridge_con::{self, BridgeCon},
-    Game,
-};
+use super::{bridge_con::BridgeCon, Game};
 
 #[derive(Debug)]
 pub struct Team {
