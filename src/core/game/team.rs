@@ -18,11 +18,14 @@ impl Team {
     pub fn new(game: &Game, con: BridgeCon) -> Self {
         let id = Game::generate_u64_id(game);
 
+        let cheapest_unit = game.config.units.iter().min_by_key(|unit| unit.cost);
+        let cheapest_unit_cost = cheapest_unit.map_or(0, |unit| unit.cost);
+
         Team {
             id,
             uuid: String::from("UUID"),
             name: con.name.clone().unwrap_or_else(|| format!("Team {}", id)),
-            balance: 100,
+            balance: cheapest_unit_cost * 4,
             con,
         }
     }
