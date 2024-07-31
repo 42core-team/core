@@ -45,7 +45,7 @@ impl Game {
             config: game_config,
             resources: vec![],
             units: vec![],
-            tick_rate: 50,
+            tick_rate: 60,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             time_since_last_tick: 0,
@@ -291,7 +291,11 @@ impl Game {
         }
 
         let current_millis = get_ms();
-        self.time_since_last_tick = current_millis - self.last_tick_time;
+        if current_millis as i128 - self.last_tick_time as i128 > 0 {
+            self.time_since_last_tick = current_millis - self.last_tick_time;
+        } else {
+            self.time_since_last_tick = 0;
+        }
         self.last_tick_time = current_millis;
     }
 
