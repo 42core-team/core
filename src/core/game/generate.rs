@@ -71,3 +71,32 @@ pub fn resources(game: &Game) -> Vec<Resource> {
 
     resources
 }
+
+pub fn spawn_new_resources(game: &mut Game) -> () {
+    let resource_count: u64 = game.resources.len() as u64;
+
+    if resource_count < game.config.width * game.config.height / 10000000 {
+        let mut rng = rand::thread_rng();
+        let resource_config = &game.config.resources[0];
+
+        let pos1 = Position::new(
+            rng.gen_range(0..game.config.width / 2),
+            rng.gen_range(0..game.config.height),
+        );
+
+        let pos2 = Position::new(game.config.width - pos1.x, game.config.height - pos1.y);
+
+        game.resources.push(Resource::new(
+            game,
+            resource_config.type_id,
+            pos1,
+            resource_config.hp,
+        ));
+        game.resources.push(Resource::new(
+            game,
+            resource_config.type_id,
+            pos2,
+            resource_config.hp,
+        ));
+    }
+}
