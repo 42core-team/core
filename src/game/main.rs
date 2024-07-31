@@ -26,4 +26,5 @@ async fn main() {
 
     let game: Game = Game::new(reqired_team_ids);
     game.init().await;
+    log::info("Game finished");
 }

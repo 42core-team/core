@@ -16,7 +16,7 @@ use tokio::{
 pub fn bridge(stream: TcpStream) -> (Sender<Message>, Receiver<Message>, Receiver<()>) {
     let (mscp_to_socket_sender, mut mscp_to_socket_receiver) = mpsc::channel::<Message>(100);
     let (socket_to_mscp_sender, socket_to_mscp_receiver) = mpsc::channel::<Message>(100);
-    let (disconnect_sender, disconnect_receiver) = mpsc::channel::<()>(1);
+    let (disconnect_sender, disconnect_receiver) = mpsc::channel::<()>(100);
 
     let (mut reader, mut writer) = tokio::io::split(stream);
 

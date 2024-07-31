@@ -91,6 +91,14 @@ impl Game {
             }
         }
         self.start(spectator_receiver).await;
+        for team in self.teams.iter_mut() {
+            loop {
+                if team.con.is_disconnected() {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            }
+        }
     }
 
     pub fn open(team_sender: mpsc::Sender<BridgeCon>, spectator_sender: mpsc::Sender<BridgeCon>) {
@@ -183,6 +191,7 @@ impl Game {
             if self.tick().await {
                 break;
             }
+            self.send_state().await;
         }
         self.status = 2; // END
         self.send_state().await;
@@ -225,7 +234,6 @@ impl Game {
 
         passive_income::grant_passive_income(self);
 
-        self.send_state().await;
         false
     }
 
