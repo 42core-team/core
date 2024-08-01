@@ -45,7 +45,7 @@ impl Game {
             config: game_config,
             resources: vec![],
             units: vec![],
-            tick_rate: 50,
+            tick_rate: 60,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             time_since_last_tick: 0,
@@ -91,6 +91,14 @@ impl Game {
             }
         }
         self.start(spectator_receiver).await;
+        for team in self.teams.iter_mut() {
+            loop {
+                if team.con.is_disconnected() {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            }
+        }
     }
 
     pub fn open(team_sender: mpsc::Sender<BridgeCon>, spectator_sender: mpsc::Sender<BridgeCon>) {
@@ -183,6 +191,7 @@ impl Game {
             if self.tick().await {
                 break;
             }
+            self.send_state().await;
         }
         self.status = 2; // END
         self.send_state().await;
@@ -226,7 +235,6 @@ impl Game {
         passive_income::grant_passive_income(self);
         generate::spawn_new_resources(self);
 
-        self.send_state().await;
         false
     }
 
@@ -283,7 +291,11 @@ impl Game {
         }
 
         let current_millis = get_ms();
-        self.time_since_last_tick = current_millis - self.last_tick_time;
+        if current_millis as i128 - self.last_tick_time as i128 > 0 {
+            self.time_since_last_tick = current_millis - self.last_tick_time;
+        } else {
+            self.time_since_last_tick = 0;
+        }
         self.last_tick_time = current_millis;
     }
 
