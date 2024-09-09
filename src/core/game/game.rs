@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -103,7 +104,10 @@ impl Game {
 
     pub fn open(team_sender: mpsc::Sender<BridgeCon>, spectator_sender: mpsc::Sender<BridgeCon>) {
         tokio::spawn(async move {
-            let listener = TcpListener::bind("127.0.0.1:4242").await.unwrap();
+            let port = env::var("PORT").unwrap_or_else(|_| "4242".to_string());
+            let address = format!("0.0.0.0:{}", port);
+
+            let listener = TcpListener::bind(&address).await.unwrap();
             loop {
                 let (stream, _) = listener.accept().await.unwrap();
 
