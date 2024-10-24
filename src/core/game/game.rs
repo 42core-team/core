@@ -304,7 +304,14 @@ impl Game {
     }
 
     pub fn check_game_over(&self) -> bool {
-        self.cores.len() <= 1
+        let is_over = self.cores.len() <= 1;
+
+        if is_over {
+            let winner = self.cores.first().unwrap();
+            log::info(&format!("Game over, winner is team {:?}", winner.team_id));
+        }
+
+        is_over
     }
 
     pub fn generate_u64_id(&self) -> u64 {
