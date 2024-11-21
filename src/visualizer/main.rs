@@ -45,6 +45,8 @@ fn print_field(x: u64, y: u64, state: State) {
     }
     let warrior: u64 = GameConfig::patch_0_1_0().units[0].type_id;
     let worker: u64 = GameConfig::patch_0_1_0().units[1].type_id;
+    let tank: u64 = GameConfig::patch_0_1_0().units[2].type_id;
+    let archer: u64 = GameConfig::patch_0_1_0().units[3].type_id;
     for unit in &state.units {
         coord = get_coordinates(unit.pos.x, unit.pos.y);
         if (coord.0 == x && coord.1 == y) && unit.team_id == team1 {
@@ -55,6 +57,12 @@ fn print_field(x: u64, y: u64, state: State) {
                 // b for builder since w is already taken
                 print!("{}", "b".white().on_red());
                 return;
+            } else if unit.type_id == tank {
+                print!("{}", "t".white().on_red());
+                return;
+            } else if unit.type_id == archer {
+                print!("{}", "a".white().on_red());
+                return;
             }
         } else if (coord.0 == x && coord.1 == y) && unit.team_id == team2 {
             if unit.type_id == warrior {
@@ -62,6 +70,12 @@ fn print_field(x: u64, y: u64, state: State) {
                 return;
             } else if unit.type_id == worker {
                 print!("{}", "b".white().on_blue());
+                return;
+            } else if unit.type_id == tank {
+                print!("{}", "t".white().on_blue());
+                return;
+            } else if unit.type_id == archer {
+                print!("{}", "a".white().on_blue());
                 return;
             }
             // !!!
