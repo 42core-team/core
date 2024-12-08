@@ -6,7 +6,7 @@ use super::Team;
 pub struct GameConfig {
     pub height: u64,
     pub width: u64,
-    pub idle_income: u64,
+    pub idle_income_per_tick: u64,
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,

@@ -57,7 +57,6 @@ impl Game {
             ticks_per_second: 20,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
-            time_since_last_tick: 0,
             game_id_counter: Mutex::new(0),
 
             spectators: vec![],
