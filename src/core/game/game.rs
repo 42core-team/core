@@ -44,6 +44,10 @@ impl Game {
             .ok()
             .and_then(|s| s.parse::<u64>().ok())
             .unwrap_or_else(|| get_ms() as u64);
+        let tick_rate = env::var("TICK_RATE")
+            .ok()
+            .and_then(|s| s.parse::<u128>().ok())
+            .unwrap_or(20);
 
         Game {
             status: 0, // OK
@@ -54,7 +58,7 @@ impl Game {
             resource_counter: 0,
             resources: vec![],
             units: vec![],
-            tick_rate: 20,
+            tick_rate: tick_rate,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             game_id_counter: Mutex::new(0),
