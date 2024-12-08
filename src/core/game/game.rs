@@ -30,6 +30,7 @@ pub struct Game {
     pub tick_rate: u128,
     pub last_tick_time: u128,
     pub tick_calculation_time: u128,
+    pub start_time: u128,
     game_id_counter: Mutex<u64>,
 
     pub spectators: Vec<Spectator>,
@@ -62,6 +63,7 @@ impl Game {
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             game_id_counter: Mutex::new(0),
+            start_time: get_ms(),
 
             spectators: vec![],
             required_team_ids,
@@ -183,6 +185,8 @@ impl Game {
                 }
             }
         }
+
+        self.start_time = get_ms();
 
         loop {
             if let Ok(bridge_con) = spectator_receiver.try_recv() {
@@ -309,7 +313,31 @@ impl Game {
     }
 
     pub fn check_game_over(&self) -> bool {
-        self.cores.len() <= 1
+        let is_over = self.cores.len() <= 1;
+
+        if self.start_time + 1000 * 60 * 5 < get_ms() {
+            log::info("Game over, time limit reached");
+
+            let team1_core_hp = self.cores.iter().find(|core| core.team_id == 1).unwrap().hp;
+            let team2_core_hp = self.cores.iter().find(|core| core.team_id == 2).unwrap().hp;
+
+            if team1_core_hp > team2_core_hp {
+                log::info("Game over, winner is team 1");
+            } else if team1_core_hp < team2_core_hp {
+                log::info("Game over, winner is team 2");
+            } else {
+                log::info("Game over, draw");
+            }
+
+            return true;
+        }
+
+        if is_over {
+            let winner = self.cores.first().unwrap();
+            log::info(&format!("Game over, winner is team {:?}", winner.team_id));
+        }
+
+        is_over
     }
 
     pub fn generate_u64_id(&self) -> u64 {
