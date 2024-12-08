@@ -1,29 +1,11 @@
 # Core
+This is the "real" server for the CORE game, written in Rust. It handles all game logic, processes actions from the socket, and sends the game state containing all relevant information back to the client.
 
-## How to start?
-- clone repo
+## Environment Variables
 
-### Devcontainer
-Follow steps from:
-https://github.com/Alphacharge/setup_docker_environment
-
-- after each login:
-	- call your prep docker command that you defined during installation of above repo
-
-- Open repo in VS-Code 
-- Message "reopen in devcontainer"
-	- -> click open in devcontainer
-	- if no message shows up
-		- bottom left corner
-		- reopen in devcontainer
-
-### Start game local
-- run `make run`
-
-### build rust doc
-- run `make doc`
-- open the target folder
-- navigate to doc
-- open a folder and right click a index.html file
-- click open with live server
-- a new tab should open in your browser
+| Variable Name | Description |
+|---------------|-------------|
+| `PORT`        | Sets the port on which the socket should listen. |
+| `LOG`         | Enables logging if set. |
+| `SEED`        | Sets the random seed for the game. |
+| `TICK_RATE`   | Sets how many ticks per second the server calculates. Also sets the speed through that. |
