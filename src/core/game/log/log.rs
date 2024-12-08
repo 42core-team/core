@@ -52,9 +52,28 @@ fn log(log_options: LogOptions, message: &str) {
         LogOptions::Info => "logs/info.log",
     };
 
+    let log_level_str = std::env::var("LOG_LEVEL")
+        .unwrap_or_else(|_| "info".to_string())
+        .to_lowercase();
+    let log_level = match log_level_str.as_str() {
+        "error" => LogOptions::Error,
+        "info" => LogOptions::Info,
+        "changes" => LogOptions::Changes,
+        "action" => LogOptions::Action,
+        _ => LogOptions::Info,
+    };
+
+    if log_options > log_level {
+        return;
+    }
+
     print_log(&log_options, message);
 
-    if std::env::var("LOG").is_err() {
+    let log_to_file = std::env::var("LOG_TO_FILE")
+        .map(|val| val == "true" || val == "1")
+        .unwrap_or(false);
+
+    if !log_to_file {
         return;
     }
 

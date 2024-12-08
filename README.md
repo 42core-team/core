@@ -11,7 +11,8 @@ If you prefer to develop the server independently, you can follow the steps belo
 | Variable Name | Description |
 |---------------|-------------|
 | `PORT`        | Sets the port on which the socket should listen. |
-| `LOG`         | Enables logging if set. |
+| `LOG_TO_FILE`         | Enables logging if set to `true`. |
+| `LOG_LEVEL`   | Sets the log level. Possible values are: `Action`, `Changes`, `Info`, `Error`. |
 | `SEED`        | Sets the random seed for the game. |
 | `TICK_RATE`   | Sets how many ticks per second the server calculates. Also sets the speed through that. |
 
