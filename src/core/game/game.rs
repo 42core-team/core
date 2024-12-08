@@ -27,10 +27,9 @@ pub struct Game {
     pub resources: Vec<Resource>,
     pub cores: Vec<Core>,
     pub units: Vec<Unit>,
-    pub tick_rate: u128,
+    pub ticks_per_second: u128,
     pub last_tick_time: u128,
     pub tick_calculation_time: u128,
-    pub time_since_last_tick: u128,
     game_id_counter: Mutex<u64>,
 
     pub spectators: Vec<Spectator>,
@@ -55,7 +54,7 @@ impl Game {
             resource_counter: 0,
             resources: vec![],
             units: vec![],
-            tick_rate: 60,
+            ticks_per_second: 20,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             time_since_last_tick: 0,
@@ -219,8 +218,8 @@ impl Game {
         }
         self.wait_till_next_tick().await;
         log::info(&format!(
-            "Tick: {:?}, {:?}",
-            self.time_since_last_tick, self.tick_calculation_time
+            "Tick calc took: {:?}ms",
+            self.tick_calculation_time
         ));
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
@@ -289,7 +288,7 @@ impl Game {
 
     pub async fn wait_till_next_tick(&mut self) {
         let current_millis = get_ms();
-        let new_tick_start_time = self.last_tick_time + self.tick_rate;
+        let new_tick_start_time = self.last_tick_time + (1000 / self.ticks_per_second);
         if current_millis as i128 - self.last_tick_time as i128 > 0 {
             self.tick_calculation_time = current_millis - self.last_tick_time;
         } else {
@@ -303,13 +302,7 @@ impl Game {
             .await;
         }
 
-        let current_millis = get_ms();
-        if current_millis as i128 - self.last_tick_time as i128 > 0 {
-            self.time_since_last_tick = current_millis - self.last_tick_time;
-        } else {
-            self.time_since_last_tick = 0;
-        }
-        self.last_tick_time = current_millis;
+        self.last_tick_time = get_ms();
     }
 
     pub fn check_game_over(&self) -> bool {
