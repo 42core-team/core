@@ -1,6 +1,6 @@
 use std::{cmp, f64::consts::PI};
 
-use rand::Rng;
+use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use super::{Core, Game, Position, Resource};
 
@@ -44,7 +44,7 @@ pub fn cores(game: &Game) -> Vec<Core> {
 
 pub fn resources(game: &Game) -> Vec<Resource> {
     let mut resources: Vec<Resource> = Vec::new();
-    let mut rng = rand::thread_rng();
+    let mut rng = StdRng::seed_from_u64(game.seed);
     let resource_config = &game.config.resources[0];
 
     for _ in 0..game.config.width * game.config.height / 10000000 {

@@ -22,6 +22,7 @@ pub struct Game {
     pub status: u64,
     pub teams: Vec<Team>,
     pub config: GameConfig,
+    pub seed: u64,
     pub resources: Vec<Resource>,
     pub cores: Vec<Core>,
     pub units: Vec<Unit>,
@@ -39,11 +40,17 @@ impl Game {
     pub fn new(required_team_ids: Vec<u64>) -> Self {
         let game_config: GameConfig = GameConfig::patch_0_1_0();
 
+        let seed = env::var("SEED")
+            .ok()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or_else(|| get_ms() as u64);
+
         Game {
             status: 0, // OK
             teams: vec![],
             cores: vec![],
             config: game_config,
+            seed: seed,
             resources: vec![],
             units: vec![],
             tick_rate: 60,
