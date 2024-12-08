@@ -140,8 +140,8 @@ impl Unit {
 
         match travel.travel_type.borrow() {
             VectorEnum(vec) => {
-                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64 / 1000.0;
-                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64 / 1000.0;
+                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
                 let new_pos = Position::new(new_x as u64, new_y as u64);
 
                 if !new_pos.is_in_map(game_config) {
@@ -157,8 +157,8 @@ impl Unit {
                 let mut vec = Vector::from_points(&self.pos, pos);
                 vec.normalize();
 
-                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64 / 1000.0;
-                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64 / 1000.0;
+                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
                 let new_pos = Position::new(new_x as u64, new_y as u64);
 
                 if self.pos.distance_to(&new_pos) > self.pos.distance_to(pos) {
