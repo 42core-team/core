@@ -27,7 +27,7 @@ pub struct Game {
     pub resources: Vec<Resource>,
     pub cores: Vec<Core>,
     pub units: Vec<Unit>,
-    pub ticks_per_second: u128,
+    pub tick_rate: u128,
     pub last_tick_time: u128,
     pub tick_calculation_time: u128,
     game_id_counter: Mutex<u64>,
@@ -54,7 +54,7 @@ impl Game {
             resource_counter: 0,
             resources: vec![],
             units: vec![],
-            ticks_per_second: 20,
+            tick_rate: 20,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
             game_id_counter: Mutex::new(0),
@@ -287,7 +287,7 @@ impl Game {
 
     pub async fn wait_till_next_tick(&mut self) {
         let current_millis = get_ms();
-        let new_tick_start_time = self.last_tick_time + (1000 / self.ticks_per_second);
+        let new_tick_start_time = self.last_tick_time + (1000 / self.tick_rate);
         if current_millis as i128 - self.last_tick_time as i128 > 0 {
             self.tick_calculation_time = current_millis - self.last_tick_time;
         } else {

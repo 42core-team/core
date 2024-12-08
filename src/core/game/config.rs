@@ -6,7 +6,7 @@ use super::Team;
 pub struct GameConfig {
     pub height: u64,
     pub width: u64,
-    pub idle_income_per_tick: u64,
+    pub idle_income: u64,
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
@@ -18,7 +18,7 @@ pub struct GameConfigWithId {
     pub id: u64,
     pub height: u64,
     pub width: u64,
-    pub idle_income_per_tick: u64,
+    pub idle_income: u64,
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
@@ -31,7 +31,7 @@ impl GameConfigWithId {
             id,
             height: game_config.height,
             width: game_config.width,
-            idle_income_per_tick: game_config.idle_income_per_tick,
+            idle_income: game_config.idle_income,
             core_hp: game_config.core_hp,
             units: game_config.units.clone(),
             teams: game_config.teams.clone(),
@@ -45,7 +45,7 @@ impl GameConfig {
         GameConfig {
             height: 10000,
             width: 10000,
-            idle_income_per_tick: 1,
+            idle_income: 1,
             core_hp: 25000,
             units: vec![
                 UnitConfig {

@@ -10,7 +10,7 @@ mod tests {
 
     fn get_fake_game() -> Game {
         let mut game = Game::new(vec![1, 2]);
-        game.time_since_last_tick = game.ticks_per_second;
+        game.time_since_last_tick = game.tick_rate;
         game.teams = vec![Team::new_fake(1), Team::new_fake(2)];
         game.cores = vec![
             Core::new(
