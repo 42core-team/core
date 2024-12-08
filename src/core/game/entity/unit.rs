@@ -94,12 +94,7 @@ impl Unit {
         self.target_id = Some(target.id());
     }
 
-    pub fn calc_dmg(
-        &self,
-        config: &GameConfig,
-        target: &(impl Entity + EntityConfig),
-        time_since_last_tick: u128,
-    ) -> u64 {
+    pub fn calc_dmg(&self, config: &GameConfig, target: &(impl Entity + EntityConfig)) -> u64 {
         if self.target_id.is_none() {
             return 0;
         }
@@ -110,7 +105,7 @@ impl Unit {
             return 0;
         }
 
-        target.config_dmg(unit_config) * time_since_last_tick as u64 / 1000
+        target.config_dmg(unit_config)
     }
 
     pub fn travel(&mut self, config: &GameConfig, mut travel: Travel) {
@@ -132,7 +127,7 @@ impl Unit {
         self.travel = Some(travel);
     }
 
-    pub fn update_position(&mut self, time_since_last_tick: u128, game_config: &GameConfig) {
+    pub fn update_position(&mut self, game_config: &GameConfig) {
         if self.travel.is_none() {
             return;
         }
@@ -145,10 +140,8 @@ impl Unit {
 
         match travel.travel_type.borrow() {
             VectorEnum(vec) => {
-                let new_x = self.pos.x as f64
-                    + vec.x * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
-                let new_y = self.pos.y as f64
-                    + vec.y * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
+                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
                 let new_pos = Position::new(new_x as u64, new_y as u64);
 
                 if !new_pos.is_in_map(game_config) {
@@ -164,10 +157,8 @@ impl Unit {
                 let mut vec = Vector::from_points(&self.pos, pos);
                 vec.normalize();
 
-                let new_x = self.pos.x as f64
-                    + vec.x * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
-                let new_y = self.pos.y as f64
-                    + vec.y * time_since_last_tick as f64 * unit_speed as f64 / 1000.0;
+                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
                 let new_pos = Position::new(new_x as u64, new_y as u64);
 
                 if self.pos.distance_to(&new_pos) > self.pos.distance_to(pos) {

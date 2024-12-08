@@ -1,28 +1,15 @@
-.PHONY: run visualizer game all clean fclean
+.PHONY: run build clean doc test
 
-run: all
-	cargo run --bin game | cargo run --bin visualizer
+run:
+	cargo run --bin game 10 20
 
-visualizer:
-	cargo run --bin visualizer
-
-game:
-	cargo build --bin game
-	./target/debug/game 10 20
-
-all: $(EXECUTABLE)
-	cargo build --bin visualizer
+build:
 	cargo build --bin game
 
 clean:
-	rm -f src/game/game
-	rm -f src/visualizer/visualizer
+	cargo clean
 
-fclean: clean
-	rm -f src/game/game
-	rm -f src/visualizer/visualizer
-
-re: fclean all
+re: clean build
 
 doc:
 	cargo doc --no-deps
