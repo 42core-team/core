@@ -483,7 +483,7 @@ impl Game {
             }
             let target = target.unwrap();
 
-            let dmg = unit.calc_dmg(&self.config, &target, self.time_since_last_tick);
+            let dmg = unit.calc_dmg(&self.config, &target);
             if dmg > 0 {
                 dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
             }
@@ -585,7 +585,7 @@ impl Game {
 
     pub fn handel_travel_update(&mut self) {
         self.units.iter_mut().for_each(|unit| {
-            unit.update_position(self.time_since_last_tick, &self.config);
+            unit.update_position(&self.config);
         });
     }
 
