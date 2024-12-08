@@ -54,7 +54,11 @@ fn log(log_options: LogOptions, message: &str) {
 
     print_log(&log_options, message);
 
-    if std::env::var("LOG").is_err() {
+    let log_to_file = std::env::var("LOG_TO_FILE")
+        .map(|val| val == "true" || val == "1")
+        .unwrap_or(false);
+
+    if !log_to_file {
         return;
     }
 
