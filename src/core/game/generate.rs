@@ -1,6 +1,6 @@
 use std::{cmp, f64::consts::PI};
 
-use rand::{rngs::StdRng, Rng, SeedableRng};
+use rand::Rng;
 
 use super::{Core, Game, Position, Resource};
 
@@ -42,26 +42,18 @@ pub fn cores(game: &Game) -> Vec<Core> {
     cores
 }
 
-fn rnd_pos(game: &mut Game) -> (Position, Position) {
-    let mut rng = StdRng::seed_from_u64(game.seed + game.resource_counter);
-
-    let pos1 = Position::new(
-        rng.gen_range(0..game.config.width / 2),
-        rng.gen_range(0..game.config.height),
-    );
-
-    let pos2 = Position::new(game.config.width - pos1.x, game.config.height - pos1.y);
-
-    game.resource_counter += 1;
-    (pos1, pos2)
-}
-
-pub fn resources(game: &mut Game) -> Vec<Resource> {
+pub fn resources(game: &Game) -> Vec<Resource> {
     let mut resources: Vec<Resource> = Vec::new();
+    let mut rng = rand::thread_rng();
+    let resource_config = &game.config.resources[0];
 
     for _ in 0..game.config.width * game.config.height / 10000000 {
-        let (pos1, pos2) = rnd_pos(game);
-        let resource_config = &game.config.resources[0];
+        let pos1 = Position::new(
+            rng.gen_range(0..game.config.width / 2),
+            rng.gen_range(0..game.config.height),
+        );
+
+        let pos2 = Position::new(game.config.width - pos1.x, game.config.height - pos1.y);
 
         resources.push(Resource::new(
             game,
@@ -84,8 +76,15 @@ pub fn spawn_new_resources(game: &mut Game) -> () {
     let resource_count: u64 = game.resources.len() as u64;
 
     if resource_count < game.config.width * game.config.height / 10000000 {
-        let (pos1, pos2) = rnd_pos(game);
+        let mut rng = rand::thread_rng();
         let resource_config = &game.config.resources[0];
+
+        let pos1 = Position::new(
+            rng.gen_range(0..game.config.width / 2),
+            rng.gen_range(0..game.config.height),
+        );
+
+        let pos2 = Position::new(game.config.width - pos1.x, game.config.height - pos1.y);
 
         game.resources.push(Resource::new(
             game,

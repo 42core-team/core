@@ -39,6 +39,11 @@
 				"ritwickdey.LiveServer"
 			]
 		}
+	},
+	"dockerOptions": {
+		"user": "vscode",
+		"memory": "16GB",
+		"cpus": "12"
 	}
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
