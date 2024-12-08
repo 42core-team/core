@@ -1,6 +1,11 @@
 # Core
 This is the "real" server for the CORE game, written in Rust. It handles all game logic, processes actions from the socket, and sends the game state containing all relevant information back to the client.
 
+## Development Setup
+The preferred way to develop is by using the sandbox repository, which includes this project as a submodule. This setup allows you to run both the server and the client simultaneously with ease.
+
+If you prefer to develop the server independently, you can follow the steps below to open the project in a devcontainer in VS Code.
+
 ## Environment Variables
 
 | Variable Name | Description |
