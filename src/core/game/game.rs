@@ -30,7 +30,6 @@ pub struct Game {
     pub tick_rate: u128,
     pub last_tick_time: u128,
     pub tick_calculation_time: u128,
-    pub time_since_last_tick: u128,
     game_id_counter: Mutex<u64>,
 
     pub spectators: Vec<Spectator>,
@@ -55,10 +54,9 @@ impl Game {
             resource_counter: 0,
             resources: vec![],
             units: vec![],
-            tick_rate: 60,
+            tick_rate: 20,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
-            time_since_last_tick: 0,
             game_id_counter: Mutex::new(0),
 
             spectators: vec![],
@@ -219,8 +217,8 @@ impl Game {
         }
         self.wait_till_next_tick().await;
         log::info(&format!(
-            "Tick: {:?}, {:?}",
-            self.time_since_last_tick, self.tick_calculation_time
+            "Tick calc took: {:?}ms",
+            self.tick_calculation_time
         ));
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
@@ -289,7 +287,7 @@ impl Game {
 
     pub async fn wait_till_next_tick(&mut self) {
         let current_millis = get_ms();
-        let new_tick_start_time = self.last_tick_time + self.tick_rate;
+        let new_tick_start_time = self.last_tick_time + (1000 / self.tick_rate);
         if current_millis as i128 - self.last_tick_time as i128 > 0 {
             self.tick_calculation_time = current_millis - self.last_tick_time;
         } else {
@@ -303,13 +301,7 @@ impl Game {
             .await;
         }
 
-        let current_millis = get_ms();
-        if current_millis as i128 - self.last_tick_time as i128 > 0 {
-            self.time_since_last_tick = current_millis - self.last_tick_time;
-        } else {
-            self.time_since_last_tick = 0;
-        }
-        self.last_tick_time = current_millis;
+        self.last_tick_time = get_ms();
     }
 
     pub fn check_game_over(&self) -> bool {
@@ -491,7 +483,7 @@ impl Game {
             }
             let target = target.unwrap();
 
-            let dmg = unit.calc_dmg(&self.config, &target, self.time_since_last_tick);
+            let dmg = unit.calc_dmg(&self.config, &target);
             if dmg > 0 {
                 dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
             }
@@ -593,7 +585,7 @@ impl Game {
 
     pub fn handel_travel_update(&mut self) {
         self.units.iter_mut().for_each(|unit| {
-            unit.update_position(self.time_since_last_tick, &self.config);
+            unit.update_position(&self.config);
         });
     }
 
