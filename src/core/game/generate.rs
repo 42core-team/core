@@ -81,6 +81,10 @@ pub fn resources(game: &mut Game) -> Vec<Resource> {
 }
 
 pub fn spawn_new_resources(game: &mut Game) -> () {
+    if game.elapsed_ticks >= game.config.resource_spawn_timeout {
+        return;
+    }
+
     let resource_count: u64 = game.resources.len() as u64;
 
     if resource_count < game.config.width * game.config.height / 10000000 {
