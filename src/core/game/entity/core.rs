@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::game::{Game, Position, UnitConfig};
+use crate::game::{Game, GameConfig, Position, UnitConfig};
 
 use super::{entity_traits::EntityConfig, Entity};
 
@@ -25,18 +25,28 @@ impl Entity for Core {
     fn hp(&self) -> u64 {
         self.hp
     }
-    fn deal_dmg(&mut self, dmg: u64) -> bool {
-        if self.hp <= dmg {
-            self.hp = 0;
-            return true;
+    fn deal_dmg(&mut self, dmg: i32, config: &GameConfig) -> bool {
+        let max_hp = config.core_hp;
+
+        if dmg >= 0 {
+            if self.hp <= dmg as u64 {
+                self.hp = 0;
+                return true;
+            }
+            self.hp -= dmg as u64;
+        } else {
+            if self.hp + (-dmg as u64) > max_hp {
+                self.hp = max_hp;
+            } else {
+                self.hp -= dmg as u64;
+            }
         }
-        self.hp -= dmg;
         false
     }
 }
 
 impl EntityConfig for Core {
-    fn config_dmg(&self, config: UnitConfig) -> u64 {
+    fn config_dmg(&self, config: UnitConfig) -> i32 {
         return config.dmg_core;
     }
 }

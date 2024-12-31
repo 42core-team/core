@@ -25,18 +25,33 @@ impl Entity for Resource {
     fn hp(&self) -> u64 {
         self.hp
     }
-    fn deal_dmg(&mut self, dmg: u64) -> bool {
-        if self.hp <= dmg {
-            self.hp = 0;
-            return true;
+    fn deal_dmg(&mut self, dmg: i32, config: &GameConfig) -> bool {
+        let max_hp = config
+            .resources
+            .iter()
+            .find(|r| r.type_id == self.type_id)
+            .unwrap()
+            .hp;
+
+        if dmg >= 0 {
+            if self.hp <= dmg as u64 {
+                self.hp = 0;
+                return true;
+            }
+            self.hp -= dmg as u64;
+        } else {
+            if self.hp + (-dmg as u64) > max_hp {
+                self.hp = max_hp;
+            } else {
+                self.hp -= dmg as u64;
+            }
         }
-        self.hp -= dmg;
         false
     }
 }
 
 impl EntityConfig for Resource {
-    fn config_dmg(&self, config: UnitConfig) -> u64 {
+    fn config_dmg(&self, config: UnitConfig) -> i32 {
         return config.dmg_resource;
     }
 }
@@ -51,12 +66,12 @@ impl Resource {
         }
     }
 
-    pub fn balance_from_dmg(&self, game_config: &GameConfig, dmg: u64) -> u64 {
+    pub fn balance_from_dmg(&self, game_config: &GameConfig, dmg: i32) -> i32 {
         let resource_config = game_config
             .resources
             .iter()
             .find(|r| r.type_id == self.type_id)
             .expect("Resource config not found");
-        dmg * resource_config.balance_value / resource_config.hp
+        dmg * (resource_config.balance_value / resource_config.hp) as i32
     }
 }

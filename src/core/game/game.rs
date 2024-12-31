@@ -499,10 +499,10 @@ impl Game {
         });
 
         let mut ids_to_remove: Vec<u64> = vec![];
-        let mut balance_to_add: HashMap<u64, u64> = HashMap::new();
+        let mut balance_to_add: HashMap<u64, i32> = HashMap::new();
         dmg_to_deal.iter().for_each(|dmg| {
             if let Some(unit) = self.units.iter_mut().find(|unit| unit.id == dmg.target_id) {
-                if unit.deal_dmg(dmg.amount) {
+                if unit.deal_dmg(dmg.amount, &self.config) {
                     ids_to_remove.push(unit.id);
                 }
             }
@@ -518,13 +518,13 @@ impl Game {
                     .and_modify(|e| *e += balance)
                     .or_insert(balance);
 
-                if resource.deal_dmg(dmg.amount) {
+                if resource.deal_dmg(dmg.amount, &self.config) {
                     ids_to_remove.push(resource.id);
                 }
             }
 
             if let Some(core) = self.cores.iter_mut().find(|core| core.id == dmg.target_id) {
-                if core.deal_dmg(dmg.amount) {
+                if core.deal_dmg(dmg.amount, &self.config) {
                     ids_to_remove.push(core.id);
                 }
             }
@@ -533,7 +533,15 @@ impl Game {
         self.units.iter().for_each(|unit| {
             if let Some(balance) = balance_to_add.get(&unit.id) {
                 if let Some(team) = self.teams.iter_mut().find(|team| team.id == unit.team_id) {
-                    team.balance += *balance;
+                    if team.balance as i32 + *balance < 0 {
+                        team.balance = 0;
+                    } else {
+                        let mut new_balance = *balance;
+                        if new_balance < 0 {
+                            new_balance = -new_balance;
+                        }
+                        team.balance += new_balance as u64;
+                    }
                 }
             }
         });
