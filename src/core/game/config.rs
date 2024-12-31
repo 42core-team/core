@@ -7,10 +7,12 @@ pub struct GameConfig {
     pub height: u64,
     pub width: u64,
     pub idle_income: u64,
+    pub idle_income_timeout: u64,
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
     pub resources: Vec<ResourceConfig>,
+    pub resource_spawn_timeout: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -19,10 +21,12 @@ pub struct GameConfigWithId {
     pub height: u64,
     pub width: u64,
     pub idle_income: u64,
+    pub idle_income_timeout: u64,
     pub core_hp: u64,
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
     pub resources: Vec<ResourceConfig>,
+    pub resource_spawn_timeout: u64,
 }
 
 impl GameConfigWithId {
@@ -32,10 +36,12 @@ impl GameConfigWithId {
             height: game_config.height,
             width: game_config.width,
             idle_income: game_config.idle_income,
+            idle_income_timeout: game_config.idle_income_timeout,
             core_hp: game_config.core_hp,
             units: game_config.units.clone(),
             teams: game_config.teams.clone(),
             resources: game_config.resources.clone(),
+            resource_spawn_timeout: game_config.resource_spawn_timeout,
         }
     }
 }
@@ -46,6 +52,7 @@ impl GameConfig {
             height: 10000,
             width: 10000,
             idle_income: 1,
+            idle_income_timeout: 1200,
             core_hp: 25000,
             units: vec![
                 UnitConfig {
@@ -103,6 +110,7 @@ impl GameConfig {
                 hp: 10000,
                 balance_value: 15,
             }],
+            resource_spawn_timeout: 1000,
         }
     }
 
