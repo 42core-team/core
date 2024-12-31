@@ -493,9 +493,7 @@ impl Game {
             let target = target.unwrap();
 
             let dmg = unit.calc_dmg(&self.config, &target);
-            if dmg > 0 {
-                dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
-            }
+            dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
         });
 
         let mut ids_to_remove: Vec<u64> = vec![];

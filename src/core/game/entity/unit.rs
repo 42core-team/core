@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use crate::game::action::Travel;
 use crate::game::action::TravelType::Position as PositionEnum;
 use crate::game::action::TravelType::Vector as VectorEnum;
-use crate::game::log::log;
 use crate::game::Game;
 use crate::game::GameConfig;
 use crate::game::Position;
@@ -97,10 +96,6 @@ impl Unit {
     }
 
     pub fn attack(&mut self, target: impl Entity) {
-        if self.team_id == target.team_id() {
-            log::error("Unit can't attack it's own team");
-            return;
-        }
         if self.id == target.id() {
             self.target_id = None;
             return;
