@@ -1,6 +1,6 @@
 use crate::game::{
     entity::{EntityConfig, Unit},
-    Core, Entity, Resource, UnitConfig,
+    Core, Entity, GameConfig, Resource, UnitConfig,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,17 +39,17 @@ impl Entity for Target {
             Target::Core(c) => c.hp(),
         }
     }
-    fn deal_dmg(&mut self, dmg: u64) -> bool {
+    fn deal_dmg(&mut self, dmg: i32, config: &GameConfig) -> bool {
         match self {
-            Target::Unit(u) => u.deal_dmg(dmg),
-            Target::Resource(r) => r.deal_dmg(dmg),
-            Target::Core(c) => c.deal_dmg(dmg),
+            Target::Unit(u) => u.deal_dmg(dmg, config),
+            Target::Resource(r) => r.deal_dmg(dmg, config),
+            Target::Core(c) => c.deal_dmg(dmg, config),
         }
     }
 }
 
 impl EntityConfig for Target {
-    fn config_dmg(&self, config: UnitConfig) -> u64 {
+    fn config_dmg(&self, config: UnitConfig) -> i32 {
         match self {
             Target::Unit(u) => u.config_dmg(config),
             Target::Resource(r) => r.config_dmg(config),

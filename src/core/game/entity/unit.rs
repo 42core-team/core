@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use crate::game::action::Travel;
 use crate::game::action::TravelType::Position as PositionEnum;
 use crate::game::action::TravelType::Vector as VectorEnum;
-use crate::game::log::log;
 use crate::game::Game;
 use crate::game::GameConfig;
 use crate::game::Position;
@@ -42,18 +41,33 @@ impl Entity for Unit {
     fn hp(&self) -> u64 {
         self.hp
     }
-    fn deal_dmg(&mut self, dmg: u64) -> bool {
-        if self.hp <= dmg {
-            self.hp = 0;
-            return true;
+    fn deal_dmg(&mut self, dmg: i32, config: &GameConfig) -> bool {
+        let max_hp = config
+            .units
+            .iter()
+            .find(|u| u.type_id == self.type_id)
+            .unwrap()
+            .hp;
+
+        if dmg >= 0 {
+            if self.hp <= dmg as u64 {
+                self.hp = 0;
+                return true;
+            }
+            self.hp -= dmg as u64;
+        } else {
+            if self.hp + (-dmg as u64) > max_hp {
+                self.hp = max_hp;
+            } else {
+                self.hp -= dmg as u64;
+            }
         }
-        self.hp -= dmg;
         false
     }
 }
 
 impl EntityConfig for Unit {
-    fn config_dmg(&self, config: UnitConfig) -> u64 {
+    fn config_dmg(&self, config: UnitConfig) -> i32 {
         return config.dmg_unit;
     }
 }
@@ -82,10 +96,6 @@ impl Unit {
     }
 
     pub fn attack(&mut self, target: impl Entity) {
-        if self.team_id == target.team_id() {
-            log::error("Unit can't attack it's own team");
-            return;
-        }
         if self.id == target.id() {
             self.target_id = None;
             return;
@@ -94,7 +104,7 @@ impl Unit {
         self.target_id = Some(target.id());
     }
 
-    pub fn calc_dmg(&self, config: &GameConfig, target: &(impl Entity + EntityConfig)) -> u64 {
+    pub fn calc_dmg(&self, config: &GameConfig, target: &(impl Entity + EntityConfig)) -> i32 {
         if self.target_id.is_none() {
             return 0;
         }
