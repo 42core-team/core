@@ -30,6 +30,7 @@ pub struct Game {
     pub tick_rate: u128,
     pub last_tick_time: u128,
     pub tick_calculation_time: u128,
+    pub elapsed_ticks: u64,
     game_id_counter: Mutex<u64>,
 
     pub spectators: Vec<Spectator>,
@@ -61,6 +62,7 @@ impl Game {
             tick_rate: tick_rate,
             last_tick_time: get_ms(),
             tick_calculation_time: 0,
+            elapsed_ticks: 0,
             game_id_counter: Mutex::new(0),
 
             spectators: vec![],
@@ -213,12 +215,15 @@ impl Game {
     }
 
     async fn tick(&mut self) -> bool {
+        self.elapsed_ticks += 1;
+
         for team in self.teams.iter_mut() {
             if team.con.is_disconnected() {
                 log::info(&format!("Team {:?} disconnected", team.id));
                 return true;
             }
         }
+
         self.wait_till_next_tick().await;
         log::info(&format!(
             "Tick calc took: {:?}ms",
