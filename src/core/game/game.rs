@@ -496,6 +496,9 @@ impl Game {
             dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
         });
 
+        // sort dmg_to_deal by amount of dmg so negative dmg applies first
+        dmg_to_deal.sort_by(|a, b| a.amount.cmp(&b.amount));
+
         let mut ids_to_remove: Vec<u64> = vec![];
         let mut balance_to_add: HashMap<u64, i32> = HashMap::new();
         dmg_to_deal.iter().for_each(|dmg| {
