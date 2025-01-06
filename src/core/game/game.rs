@@ -493,8 +493,13 @@ impl Game {
             let target = target.unwrap();
 
             let dmg = unit.calc_dmg(&self.config, &target);
-            dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
+            if dmg != 0 {
+                dmg_to_deal.push(Dmg::new(unit.id, target.id(), dmg));
+            }
         });
+
+        // sort dmg_to_deal by amount of dmg so negative dmg applies first
+        dmg_to_deal.sort_by(|a, b| a.amount.cmp(&b.amount));
 
         let mut ids_to_remove: Vec<u64> = vec![];
         let mut balance_to_add: HashMap<u64, i32> = HashMap::new();
@@ -528,17 +533,14 @@ impl Game {
             }
         });
 
-        self.units.iter().for_each(|unit| {
-            if let Some(balance) = balance_to_add.get(&unit.id) {
+        balance_to_add.iter().for_each(|(&attacker_id, &balance)| {
+            if let Some(unit) = self.units.iter().find(|unit| unit.id == attacker_id) {
                 if let Some(team) = self.teams.iter_mut().find(|team| team.id == unit.team_id) {
-                    if team.balance as i32 + *balance < 0 {
+                    let new_balance = team.balance as i32 + balance;
+                    if new_balance < 0 {
                         team.balance = 0;
                     } else {
-                        let mut new_balance = *balance;
-                        if new_balance < 0 {
-                            new_balance = -new_balance;
-                        }
-                        team.balance += new_balance as u64;
+                        team.balance = new_balance as u64;
                     }
                 }
             }
