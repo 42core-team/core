@@ -28,12 +28,13 @@ impl Entity for Core {
     fn deal_dmg(&mut self, dmg: i32, config: &GameConfig) -> bool {
         let max_hp = config.core_hp;
 
-        let new_hp = self.hp as i32 - dmg;
-        if new_hp <= 0 {
+        let mut new_hp = self.hp as i32 - dmg;
+        if new_hp < 0 {
             self.hp = 0;
             return true;
-        } else if new_hp > max_hp as i32 {
-            self.hp = max_hp;
+        }
+        if new_hp > max_hp as i32 {
+            new_hp = max_hp as i32;
         }
 
         self.hp = new_hp as u64;
