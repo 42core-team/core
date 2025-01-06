@@ -120,7 +120,7 @@ impl GameConfig {
             resources: vec![ResourceConfig {
                 type_id: 1,
                 hp: 10000,
-                balance_value: 15,
+                balance_value: 150,
             }],
             resource_spawn_timeout: 1000,
         }
