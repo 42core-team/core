@@ -134,10 +134,13 @@ impl Unit {
         self.travel = Some(travel);
     }
 
-    pub fn update_position(&mut self, game_config: &GameConfig) {
+    pub fn update_position(&mut self, game_config: &GameConfig, units_snapshot: &Vec<Unit>) {
         if self.travel.is_none() {
             return;
         }
+        // store old pos for collision checks
+        let old_pos = self.pos.clone();
+
         let travel = self.travel.as_mut().unwrap();
         let unit_speed = GameConfig::get_unit_config_by_type_id(game_config, self.type_id);
         if unit_speed.is_none() {
@@ -146,7 +149,12 @@ impl Unit {
         let unit_speed = unit_speed.unwrap().speed;
 
         match travel.travel_type.borrow() {
+            // -- Vector-based travel logic --
             VectorEnum(vec) => {
+                if vec.x == 0.0 && vec.y == 0.0 {
+                    self.travel = None;
+                    return;
+                }
                 let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
                 let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
                 let new_pos = Position::new(new_x as u64, new_y as u64);
@@ -155,8 +163,27 @@ impl Unit {
                     self.travel = None;
                     return;
                 }
+
+                // Tentatively move
                 self.pos = new_pos;
+
+                // CHANGED: check collisions
+                for other_unit in units_snapshot {
+                    if other_unit.id != self.id {
+                        let dist_old = old_pos.distance_to(&other_unit.pos);
+                        let dist_new = self.pos.distance_to(&other_unit.pos);
+                        // if newly overlapping (dist < 500 now but was >= 500)
+                        if dist_new < 500.0 && dist_old >= 500.0 {
+                            // revert and stop traveling
+                            self.pos = old_pos;
+                            self.travel = None;
+                            return;
+                        }
+                    }
+                }
             }
+
+            // -- Position-based travel logic --
             PositionEnum(pos) => {
                 if self.pos.is_equal(pos) {
                     return;
@@ -178,7 +205,25 @@ impl Unit {
                     self.travel = None;
                     return;
                 }
+
+                // Tentatively move
+                let old_pos = self.pos.clone(); // re-store if needed
                 self.pos = new_pos;
+
+                // CHANGED: check collisions
+                for other_unit in units_snapshot {
+                    if other_unit.id != self.id {
+                        let dist_old = old_pos.distance_to(&other_unit.pos);
+                        let dist_new = self.pos.distance_to(&other_unit.pos);
+                        // if newly overlapping
+                        if dist_new < 500.0 && dist_old >= 500.0 {
+                            // revert
+                            self.pos = old_pos;
+                            self.travel = None;
+                            return;
+                        }
+                    }
+                }
             }
         }
     }

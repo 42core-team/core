@@ -601,11 +601,12 @@ impl Game {
     }
 
     pub fn handel_travel_update(&mut self) {
+        // Take a snapshot of the current units so that each unit can see the positions
+        let units_snapshot = self.units.clone();
         self.units.iter_mut().for_each(|unit| {
-            unit.update_position(&self.config);
+            unit.update_position(&self.config, &units_snapshot);
         });
     }
-
     ///
     /// Handel the update of the game
     ///
