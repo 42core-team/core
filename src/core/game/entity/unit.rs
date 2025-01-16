@@ -24,7 +24,6 @@ pub struct Unit {
     pub pos: Position,
     #[serde(skip)]
     travel: Option<Travel>,
-    #[serde(skip)]
     pub target_id: Option<u64>,
 }
 
