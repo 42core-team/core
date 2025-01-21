@@ -12,6 +12,7 @@ pub struct GameConfig {
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
     pub resources: Vec<ResourceConfig>,
+    pub resource_count: u64,
     pub resource_spawn_timeout: u64,
 }
 
@@ -26,6 +27,7 @@ pub struct GameConfigWithId {
     pub units: Vec<UnitConfig>,
     pub teams: Vec<TeamConfig>,
     pub resources: Vec<ResourceConfig>,
+    pub resource_count: u64,
     pub resource_spawn_timeout: u64,
 }
 
@@ -41,6 +43,7 @@ impl GameConfigWithId {
             units: game_config.units.clone(),
             teams: game_config.teams.clone(),
             resources: game_config.resources.clone(),
+            resource_count: game_config.resource_count,
             resource_spawn_timeout: game_config.resource_spawn_timeout,
         }
     }
@@ -122,6 +125,7 @@ impl GameConfig {
                 hp: 10000,
                 balance_value: 150,
             }],
+            resource_count: 20,
             resource_spawn_timeout: 1000,
         }
     }
