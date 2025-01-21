@@ -87,7 +87,7 @@ pub fn spawn_new_resources(game: &mut Game) -> () {
 
     let resource_count: u64 = game.resources.len() as u64;
 
-    if resource_count < game.config.width * game.config.height / 10000000 {
+    if resource_count < game.config.resource_count {
         let (pos1, pos2) = rnd_pos(game);
         let resource_config = &game.config.resources[0];
 
