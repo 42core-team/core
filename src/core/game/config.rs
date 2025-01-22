@@ -14,6 +14,7 @@ pub struct GameConfig {
     pub resources: Vec<ResourceConfig>,
     pub resource_count: u64,
     pub resource_spawn_timeout: u64,
+    pub unit_size: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -29,6 +30,7 @@ pub struct GameConfigWithId {
     pub resources: Vec<ResourceConfig>,
     pub resource_count: u64,
     pub resource_spawn_timeout: u64,
+    pub unit_size: u64,
 }
 
 impl GameConfigWithId {
@@ -45,6 +47,7 @@ impl GameConfigWithId {
             resources: game_config.resources.clone(),
             resource_count: game_config.resource_count,
             resource_spawn_timeout: game_config.resource_spawn_timeout,
+            unit_size: game_config.unit_size,
         }
     }
 }
