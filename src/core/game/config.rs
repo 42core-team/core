@@ -60,6 +60,7 @@ impl GameConfig {
             idle_income: 1,
             idle_income_timeout: 1200,
             core_hp: 25000,
+            unit_size: 100,
             units: vec![
                 UnitConfig {
                     name: String::from("Warrior"),
