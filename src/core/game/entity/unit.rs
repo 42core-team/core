@@ -133,52 +133,110 @@ impl Unit {
         self.travel = Some(travel);
     }
 
-    pub fn update_position(&mut self, game_config: &GameConfig) {
-        if self.travel.is_none() {
-            return;
-        }
-        let travel = self.travel.as_mut().unwrap();
-        let unit_speed = GameConfig::get_unit_config_by_type_id(game_config, self.type_id);
-        if unit_speed.is_none() {
-            return;
-        }
-        let unit_speed = unit_speed.unwrap().speed;
-
-        match travel.travel_type.borrow() {
-            VectorEnum(vec) => {
-                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
-                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
-                let new_pos = Position::new(new_x as u64, new_y as u64);
-
-                if !new_pos.is_in_map(game_config) {
-                    self.travel = None;
-                    return;
-                }
-                self.pos = new_pos;
+    pub fn update_position(&mut self, config: &GameConfig, others: &[&Unit]) {
+        if self.travel.is_some() {
+            let travel = self.travel.as_mut().unwrap();
+            let unit_speed = GameConfig::get_unit_config_by_type_id(config, self.type_id);
+            if unit_speed.is_none() {
+                return;
             }
-            PositionEnum(pos) => {
-                if self.pos.is_equal(pos) {
-                    return;
-                }
-                let mut vec = Vector::from_points(&self.pos, pos);
-                vec.normalize();
+            let unit_speed = unit_speed.unwrap().speed;
 
-                let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
-                let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
-                let new_pos = Position::new(new_x as u64, new_y as u64);
+            match travel.travel_type.borrow() {
+                VectorEnum(vec) => {
+                    let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                    let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
+                    let new_pos = Position::new(new_x as u64, new_y as u64);
 
-                if self.pos.distance_to(&new_pos) > self.pos.distance_to(pos) {
-                    self.pos = pos.clone();
-                    self.travel = None;
-                    return;
+                    if !new_pos.is_in_map(config) {
+                        self.travel = None;
+                        return;
+                    }
+                    self.pos = new_pos;
                 }
+                PositionEnum(pos) => {
+                    if self.pos.is_equal(pos) {
+                        return;
+                    }
+                    let mut vec = Vector::from_points(&self.pos, pos);
+                    vec.normalize();
 
-                if !new_pos.is_in_map(game_config) {
-                    self.travel = None;
-                    return;
+                    let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                    let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
+                    let new_pos = Position::new(new_x as u64, new_y as u64);
+
+                    if self.pos.distance_to(&new_pos) > self.pos.distance_to(pos) {
+                        self.pos = pos.clone();
+                        self.travel = None;
+                        return;
+                    }
+
+                    if !new_pos.is_in_map(config) {
+                        self.travel = None;
+                        return;
+                    }
+                    self.pos = new_pos;
                 }
-                self.pos = new_pos;
             }
         }
+        self.resolve_collisions(others, config);
+    }
+
+    fn resolve_collisions(&mut self, others: &[&Unit], config: &GameConfig) {
+        let collision_radius: f64 = config.unit_size as f64;
+
+        let mut push_vector = Vector::new(0.0, 0.0);
+
+        for other in others {
+            if other.id == self.id {
+                continue;
+            }
+
+            let distance = self.pos.distance_to(&other.pos);
+            let min_dist = collision_radius * 2.0;
+
+            if distance < min_dist {
+                // overlap
+                let dx = (self.pos.x as f64) - (other.pos.x as f64);
+                let dy = (self.pos.y as f64) - (other.pos.y as f64);
+
+                // normalise
+                let magnitude = (dx * dx + dy * dy).sqrt();
+                if magnitude > 0.0 {
+                    let nx = dx / magnitude;
+                    let ny = dy / magnitude;
+                    let overlap = min_dist - distance;
+
+                    // accumulate push vec
+                    push_vector.x += nx * overlap;
+                    push_vector.y += ny * overlap;
+                }
+            }
+        }
+
+        // apply push
+        let length = (push_vector.x * push_vector.x + push_vector.y * push_vector.y).sqrt();
+        if length > 0.0 {
+            let slide_factor = 0.5;
+            push_vector.x *= slide_factor;
+            push_vector.y *= slide_factor;
+
+            self.pos.x =
+                clamp_to_map(self.pos.x as f64 + push_vector.x, config.width as f64) as u64;
+
+            self.pos.y =
+                clamp_to_map(self.pos.y as f64 + push_vector.y, config.height as f64) as u64;
+        }
+    }
+}
+
+/// Helper that ensures we remain in-bounds 🍆🤏
+fn clamp_to_map(value: f64, max_value: f64) -> f64 {
+    if value < 0.0 {
+        0.0
+    } else if value > max_value {
+        max_value
+    } else {
+        value
     }
 }

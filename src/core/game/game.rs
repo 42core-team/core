@@ -600,9 +600,14 @@ impl Game {
     }
 
     pub fn handel_travel_update(&mut self) {
-        self.units.iter_mut().for_each(|unit| {
-            unit.update_position(&self.config);
-        });
+        let len = self.units.len();
+        for i in 0..len {
+            let (left, right) = self.units.split_at_mut(i);
+            let (unit, right_remainder) = right.split_first_mut().unwrap();
+
+            let other_units: Vec<&Unit> = left.iter().chain(right_remainder.iter()).collect();
+            unit.update_position(&self.config, &other_units);
+        }
     }
 
     ///
