@@ -59,7 +59,7 @@ fn rnd_pos(game: &mut Game) -> (Position, Position) {
 pub fn resources(game: &mut Game) -> Vec<Resource> {
     let mut resources: Vec<Resource> = Vec::new();
 
-    for _ in 0..game.config.width * game.config.height / 10000000 {
+    for _ in 0..game.config.resource_count {
         let (pos1, pos2) = rnd_pos(game);
         let resource_config = &game.config.resources[0];
 
