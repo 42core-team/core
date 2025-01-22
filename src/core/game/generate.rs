@@ -79,3 +79,29 @@ pub fn resources(game: &mut Game) -> Vec<Resource> {
 
     resources
 }
+
+pub fn spawn_new_resources(game: &mut Game) -> () {
+    if game.elapsed_ticks >= game.config.resource_spawn_timeout {
+        return;
+    }
+
+    let resource_count: u64 = game.resources.len() as u64;
+
+    if resource_count < game.config.resource_count {
+        let (pos1, pos2) = rnd_pos(game);
+        let resource_config = &game.config.resources[0];
+
+        game.resources.push(Resource::new(
+            game,
+            resource_config.type_id,
+            pos1,
+            resource_config.hp,
+        ));
+        game.resources.push(Resource::new(
+            game,
+            resource_config.type_id,
+            pos2,
+            resource_config.hp,
+        ));
+    }
+}

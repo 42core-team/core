@@ -253,6 +253,7 @@ impl Game {
         }
 
         passive_income::grant_passive_income(self);
+        generate::spawn_new_resources(self);
 
         false
     }
