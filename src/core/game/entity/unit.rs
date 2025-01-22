@@ -144,9 +144,11 @@ impl Unit {
 
             match travel.travel_type.borrow() {
                 VectorEnum(vec) => {
-                    let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
-                    let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
-                    let new_pos = Position::new(new_x as u64, new_y as u64);
+                    let raw_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                    let raw_y = self.pos.y as f64 + vec.y * unit_speed as f64;
+                    let clamped_x = clamp_to_map(raw_x, config.width as f64);
+                    let clamped_y = clamp_to_map(raw_y, config.height as f64);
+                    let new_pos = Position::new(clamped_x as u64, clamped_y as u64);
 
                     if !new_pos.is_in_map(config) {
                         self.travel = None;
@@ -161,9 +163,11 @@ impl Unit {
                     let mut vec = Vector::from_points(&self.pos, pos);
                     vec.normalize();
 
-                    let new_x = self.pos.x as f64 + vec.x * unit_speed as f64;
-                    let new_y = self.pos.y as f64 + vec.y * unit_speed as f64;
-                    let new_pos = Position::new(new_x as u64, new_y as u64);
+                    let raw_x = self.pos.x as f64 + vec.x * unit_speed as f64;
+                    let raw_y = self.pos.y as f64 + vec.y * unit_speed as f64;
+                    let clamped_x = clamp_to_map(raw_x, config.width as f64);
+                    let clamped_y = clamp_to_map(raw_y, config.height as f64);
+                    let new_pos = Position::new(clamped_x as u64, clamped_y as u64);
 
                     if self.pos.distance_to(&new_pos) > self.pos.distance_to(pos) {
                         self.pos = pos.clone();
@@ -192,22 +196,28 @@ impl Unit {
                 continue;
             }
 
+            let dx = (self.pos.x as f64) - (other.pos.x as f64);
+            let dy = (self.pos.y as f64) - (other.pos.y as f64);
+
             let distance = self.pos.distance_to(&other.pos);
             let min_dist = collision_radius * 2.0;
 
             if distance < min_dist {
-                // overlap
-                let dx = (self.pos.x as f64) - (other.pos.x as f64);
-                let dy = (self.pos.y as f64) - (other.pos.y as f64);
-
-                // normalise
-                let magnitude = (dx * dx + dy * dy).sqrt();
-                if magnitude > 0.0 {
-                    let nx = dx / magnitude;
-                    let ny = dy / magnitude;
+                if distance > 0.000001 {
+                    let nx = dx / distance;
+                    let ny = dy / distance;
                     let overlap = min_dist - distance;
+                    push_vector.x += nx * overlap;
+                    push_vector.y += ny * overlap;
+                } else {
+                    // random push so units exactly inside each other can move
+                    use rand::Rng;
+                    let mut rng = rand::thread_rng();
+                    let random_angle = rng.gen_range(0.0..(2.0 * std::f64::consts::PI));
 
-                    // accumulate push vec
+                    let overlap = min_dist / 2.0;
+                    let nx = random_angle.cos();
+                    let ny = random_angle.sin();
                     push_vector.x += nx * overlap;
                     push_vector.y += ny * overlap;
                 }
