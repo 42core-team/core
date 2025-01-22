@@ -12,6 +12,8 @@ use crate::game::Position;
 use crate::game::UnitConfig;
 use crate::game::Vector;
 
+use rand::Rng;
+
 use super::entity_traits::EntityConfig;
 use super::Entity;
 
@@ -134,6 +136,9 @@ impl Unit {
     }
 
     pub fn update_position(&mut self, config: &GameConfig, others: &[&Unit]) {
+        let old_x = self.pos.x;
+        let old_y = self.pos.y;
+
         if self.travel.is_some() {
             let travel = self.travel.as_mut().unwrap();
             let unit_speed = GameConfig::get_unit_config_by_type_id(config, self.type_id);
@@ -183,10 +188,20 @@ impl Unit {
                 }
             }
         }
-        self.resolve_collisions(others, config);
+
+        let delta_x = self.pos.x as f64 - old_x as f64;
+        let delta_y = self.pos.y as f64 - old_y as f64;
+
+        self.resolve_collisions(others, config, delta_x, delta_y);
     }
 
-    fn resolve_collisions(&mut self, others: &[&Unit], config: &GameConfig) {
+    fn resolve_collisions(
+        &mut self,
+        others: &[&Unit],
+        config: &GameConfig,
+        move_x: f64,
+        move_y: f64,
+    ) {
         let collision_radius: f64 = config.unit_size as f64;
 
         let mut push_vector = Vector::new(0.0, 0.0);
@@ -227,6 +242,19 @@ impl Unit {
         // apply push
         let length = (push_vector.x * push_vector.x + push_vector.y * push_vector.y).sqrt();
         if length > 0.0 {
+            let dot = (move_x * push_vector.x) + (move_y * push_vector.y);
+            // pushed roughly opposite intended movement
+            // => ran against unit
+            // => slightly tweak to stop unit from getting stuck
+            // do it randomly so both units dont adjust the same way
+            if dot < 0.0 {
+                let mut rng = rand::thread_rng();
+                let angle = rng.gen_range(0.0..(2.0 * std::f64::consts::PI));
+                let magnitude = rng.gen_range(0.1..3.0); // Adjust the range as needed
+                push_vector.x += magnitude * angle.cos();
+                push_vector.y += magnitude * angle.sin();
+            }
+
             let slide_factor = 0.5;
             push_vector.x *= slide_factor;
             push_vector.y *= slide_factor;
