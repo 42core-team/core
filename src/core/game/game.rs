@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::env;
+use std::fs;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -229,6 +230,14 @@ impl Game {
             "Tick calc took: {:?}ms",
             self.tick_calculation_time
         ));
+
+        if (self.elapsed_ticks as u128 % 10) == 0 {
+            if let Ok(content) = fs::read_to_string("tickspeed.txt") {
+                if let Ok(rate) = content.trim().parse::<u128>() {
+                    self.tick_rate = rate;
+                }
+            }
+        }
 
         let mut team_actions: Vec<(u64, Action)> = vec![];
 
