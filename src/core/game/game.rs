@@ -48,7 +48,7 @@ impl Game {
         let tick_rate = env::var("TICK_RATE")
             .ok()
             .and_then(|s| s.parse::<u128>().ok())
-            .unwrap_or(20);
+            .unwrap_or(30);
 
         Game {
             status: 0, // OK
