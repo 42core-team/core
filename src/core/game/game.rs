@@ -258,6 +258,12 @@ impl Game {
         }
         self.update(team_actions);
         if self.check_game_over() {
+            if let Some(winner_core) = self.cores.first() {
+                let winner_team_id = winner_core.team_id;
+                log::info(&format!("🏁 Game Over! Winner: Team {}", winner_team_id));
+            } else {
+                log::error("🏁 Game Over! But no core left to determine winner.");
+            }
             return true;
         }
 
