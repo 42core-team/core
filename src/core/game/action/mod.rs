@@ -1,6 +1,6 @@
 //!
 //! ## Introduction
-//! This module handels all the different actions that can be performed by a client in the game.
+//! This module handles all the different actions that can be performed by a client in the game.
 //!
 //!
 
@@ -19,3 +19,12 @@ pub use create::Create;
 
 pub mod attack;
 pub use attack::Attack;
+
+pub mod catch;
+pub use catch::Catch;
+
+pub mod throw;
+pub use throw::Throw;
+
+pub mod jump;
+pub use jump::Jump;

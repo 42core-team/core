@@ -27,6 +27,8 @@ pub struct Unit {
     #[serde(skip)]
     travel: Option<Travel>,
     pub target_id: Option<u64>,
+    pub jump_prepare: u64,
+    pub jump_active: u64,
 }
 
 impl Entity for Unit {
@@ -87,6 +89,8 @@ impl Unit {
                     team_id,
                     travel: None,
                     target_id: None,
+                    jump_prepare: 0,
+                    jump_active: 0,
                 });
             }
             None => return None,
@@ -135,17 +139,16 @@ impl Unit {
         self.travel = Some(travel);
     }
 
-    pub fn update_position(&mut self, config: &GameConfig, others: &[&Unit]) {
+    pub fn update_position(&mut self, config: &GameConfig, others: &[&Unit], speed_mod: f64) {
         let old_x = self.pos.x;
         let old_y = self.pos.y;
 
         if self.travel.is_some() {
             let travel = self.travel.as_mut().unwrap();
-            let unit_speed = GameConfig::get_unit_config_by_type_id(config, self.type_id);
-            if unit_speed.is_none() {
-                return;
-            }
-            let unit_speed = unit_speed.unwrap().speed;
+            let base_speed = GameConfig::get_unit_config_by_type_id(config, self.type_id)
+                .unwrap()
+                .speed as f64;
+            let unit_speed = (base_speed * speed_mod).max(0.0);
 
             match travel.travel_type.borrow() {
                 VectorEnum(vec) => {

@@ -17,12 +17,14 @@ use super::entity::Unit;
 use super::helper::Dmg;
 use super::{generate, passive_income, Entity, Position};
 use super::{helper::Target, utils::get_ms, Core, GameConfig, Message, Resource, State, Team};
+use crate::game::flag::{Flag, FlagState};
 
 #[derive(Debug)]
 pub struct Game {
     pub status: u64,
     pub teams: Vec<Team>,
     pub config: GameConfig,
+    pub flag: Flag,
     pub seed: u64,
     pub resource_counter: u64,
     pub resources: Vec<Resource>,
@@ -40,7 +42,7 @@ pub struct Game {
 
 impl Game {
     pub fn new(required_team_ids: Vec<u64>) -> Self {
-        let game_config: GameConfig = GameConfig::patch_0_1_0();
+        let game_config = GameConfig::patch_0_1_0();
 
         let seed = env::var("SEED")
             .ok()
@@ -55,7 +57,8 @@ impl Game {
             status: 0, // OK
             teams: vec![],
             cores: vec![],
-            config: game_config,
+            config: game_config.clone(),
+            flag: Flag::new_center(&game_config),
             seed: seed,
             resource_counter: 0,
             resources: vec![],
@@ -257,6 +260,11 @@ impl Game {
             }
         }
         self.update(team_actions);
+        self.update_jumps();
+        if self.check_flag_capture() {
+            return true;
+        }
+
         if self.check_game_over() {
             if let Some(winner_core) = self.cores.first() {
                 let winner_team_id = winner_core.team_id;
@@ -562,6 +570,17 @@ impl Game {
         });
 
         self.units.retain(|unit| !ids_to_remove.contains(&unit.id));
+
+        if let Some(carrier) = self.flag.carrier_id {
+            if !self.units.iter().any(|u| u.id == carrier) {
+                // carrier was obliterated → flag drops
+                self.flag.state = FlagState::Lying;
+                self.flag.carrier_id = None;
+                // pos remains wherever it last was
+                self.flag.target_pos = None;
+            }
+        }
+
         self.resources
             .retain(|resource| !ids_to_remove.contains(&resource.id));
         self.cores.retain(|core| !ids_to_remove.contains(&core.id));
@@ -622,12 +641,21 @@ impl Game {
             let (unit, right_remainder) = right.split_first_mut().unwrap();
 
             let other_units: Vec<&Unit> = left.iter().chain(right_remainder.iter()).collect();
-            unit.update_position(&self.config, &other_units);
+
+            let slowed =
+                self.flag.state == FlagState::Carried && self.flag.carrier_id == Some(unit.id);
+            let speed_mod = if slowed {
+                (100 - self.config.flag_slowdown_percentage) as f64 / 100.0
+            } else {
+                1.0
+            };
+
+            unit.update_position(&self.config, &other_units, speed_mod);
         }
     }
 
     ///
-    /// Handel the update of the game
+    /// Handle the update of the game
     ///
     /// a valid json to send with netcat is:
     /// [{"Create":{"type_id":3}},{"Travel":{"id":1,"x":2,"y":3}},{"Attack":{"attacker_id":1,"target_id":2}}]
@@ -660,11 +688,17 @@ impl Game {
                 Action::Travel(travel) => {
                     self.handel_travel(team_id, travel);
                 }
+                Action::Catch(catch) => self.handle_catch(team_id, catch.unit_id),
+                Action::Throw(throw) => {
+                    self.handle_throw(team_id, throw.unit_id, throw.target_pos.clone())
+                }
+                Action::Jump(jump) => self.handle_jump(team_id, jump.unit_id),
             }
         }
 
         self.handel_travel_update();
         self.deal_dmg();
+        self.update_flag();
     }
 
     pub fn create_fake_unit(&mut self, team_id: u64, type_id: u64, pos: Position) {
@@ -687,5 +721,133 @@ impl Game {
     pub fn create_fake_core(&mut self, team_id: u64, pos: Position, hp: u64) {
         let core = Core::new(self, team_id, pos, hp);
         self.cores.push(core);
+    }
+
+    fn update_flag(&mut self) {
+        if self.flag.state == FlagState::Flying {
+            if let Some(dest) = &self.flag.target_pos {
+                // vector towards destination
+                let mut v = crate::game::Vector::from_points(&self.flag.pos, dest);
+                v.normalize();
+                let step_x = v.x * self.config.flag_speed as f64;
+                let step_y = v.y * self.config.flag_speed as f64;
+                let new_x = (self.flag.pos.x as f64 + step_x).clamp(0.0, self.config.width as f64);
+                let new_y = (self.flag.pos.y as f64 + step_y).clamp(0.0, self.config.height as f64);
+                self.flag.pos = Position::new(new_x as u64, new_y as u64);
+
+                if self.flag.pos.distance_to(dest) <= self.config.flag_speed as f64 {
+                    // landed
+                    self.flag.pos = dest.clone();
+                    self.flag.state = FlagState::Lying;
+                    self.flag.carrier_id = None;
+                    self.flag.target_pos = None;
+                }
+            }
+        } else if self.flag.state == FlagState::Carried {
+            // hitch a ride
+            if let Some(carrier) = self.flag.carrier_id {
+                if let Some(u) = self.get_unit_by_id(carrier) {
+                    self.flag.pos = u.pos.clone();
+                }
+            }
+        }
+    }
+
+    /// Check if a carried flag is within capture range of its owner core.
+    /// Returns `true` if we should end the game.
+    fn check_flag_capture(&mut self) -> bool {
+        if self.flag.state == FlagState::Carried {
+            let owner = self.flag.carrier_id.unwrap();
+            if let Some(u) = self.get_unit_by_id(owner) {
+                if let Some(core) = self.get_core_by_team_id(u.team_id) {
+                    if u.pos.distance_to(core.pos()) <= self.config.flag_capture_range as f64 {
+                        log::info(&format!("🏁 Team {} captured the flag!", u.team_id));
+                        self.status = 2; // END
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    fn update_jumps(&mut self) {
+        for u in self.units.iter_mut() {
+            if u.jump_prepare > 0 {
+                u.jump_prepare -= 1;
+                if u.jump_prepare == 0 {
+                    u.jump_active = self.config.jump_duration_ticks;
+                }
+            } else if u.jump_active > 0 {
+                u.jump_active -= 1;
+            }
+        }
+    }
+
+    pub fn handle_jump(&mut self, team_id: u64, unit_id: u64) {
+        let ticks = self.config.jump_prepare_ticks;
+        if let Some(u) = self.get_unit_by_id_mut(unit_id) {
+            if u.team_id == team_id {
+                u.jump_prepare = ticks;
+            } else {
+                log::error("Jump: team ID mismatch");
+            }
+        }
+    }
+
+    pub fn handle_catch(&mut self, team_id: u64, unit_id: u64) {
+        // cannot snatch if already carried
+        if self.flag.state == FlagState::Carried {
+            return;
+        }
+        let u = match self.get_unit_by_id(unit_id) {
+            Some(u) if u.team_id == team_id => u,
+            _ => {
+                log::error("Catch: invalid unit or team");
+                return;
+            }
+        };
+        let dist = u.pos.distance_to(&self.flag.pos);
+        let can_catch = match self.flag.state {
+            FlagState::Lying => dist <= self.config.catch_range as f64,
+            FlagState::Flying => u.jump_active > 0 && dist <= self.config.jump_catch_range as f64,
+            _ => false,
+        };
+        if !can_catch {
+            log::error("Catch: out of range or not jumping");
+            return;
+        }
+        self.flag.state = FlagState::Carried;
+        self.flag.carrier_id = Some(unit_id);
+        self.flag.target_pos = None;
+        log::info(&format!("Unit {} caught the flag!", unit_id));
+    }
+
+    pub fn handle_throw(&mut self, team_id: u64, unit_id: u64, dest: Position) {
+        let start_pos = {
+            let u = match self.get_unit_by_id(unit_id) {
+                Some(u)
+                    if u.team_id == team_id
+                        && self.flag.state == FlagState::Carried
+                        && self.flag.carrier_id == Some(unit_id) =>
+                {
+                    u
+                }
+                _ => {
+                    log::error("Throw: not your flag or wrong team");
+                    return;
+                }
+            };
+            u.pos.clone()
+        };
+        let dist = start_pos.distance_to(&dest);
+        if dist > self.config.max_throw_distance as f64 {
+            log::info("Throw: overshot max distance, flag will drop sooner");
+        }
+        self.flag.state = FlagState::Flying;
+        self.flag.carrier_id = None;
+        self.flag.target_pos = Some(dest.clone());
+        self.flag.pos = start_pos; // your previously cloned pos
+        log::info(&format!("Unit {} flung the flag!", unit_id));
     }
 }

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::{entity::Unit, Core, Game, Resource, Team};
+use crate::game::flag::Flag;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct State {
@@ -10,6 +11,7 @@ pub struct State {
     pub resources: Vec<Resource>,
     pub units: Vec<Unit>,
     pub teams: Vec<StateTeam>,
+    pub flag: Flag,
 }
 
 impl State {
@@ -21,6 +23,7 @@ impl State {
             resources: game.resources.clone(),
             units: game.units.clone(),
             teams: game.teams.iter().map(|t| StateTeam::from_team(t)).collect(),
+            flag: game.flag.clone(),
         }
     }
     pub fn from_state(state: &State) -> Self {
@@ -31,6 +34,7 @@ impl State {
             resources: state.resources.clone(),
             units: state.units.clone(),
             teams: state.teams.clone(),
+            flag: state.flag.clone(),
         }
     }
 }

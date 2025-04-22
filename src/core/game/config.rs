@@ -15,6 +15,15 @@ pub struct GameConfig {
     pub resource_count: u64,
     pub resource_spawn_timeout: u64,
     pub unit_size: u64,
+
+    pub flag_speed: u64,               // how fast a flying flag moves
+    pub max_throw_distance: u64,       // beyond this, thrown flags fall down
+    pub flag_slowdown_percentage: u64, // % slow when carrying
+    pub catch_range: u64,              // how close you must be to catch lying flag
+    pub jump_prepare_ticks: u64,       // ticks to wait before jump starts
+    pub jump_duration_ticks: u64,      // how long jump “window” stays open
+    pub jump_catch_range: u64,         // how close you must be to catch flying flag
+    pub flag_capture_range: u64,       // how close to own core to score
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -31,6 +40,15 @@ pub struct GameConfigWithId {
     pub resource_count: u64,
     pub resource_spawn_timeout: u64,
     pub unit_size: u64,
+
+    pub flag_speed: u64,
+    pub max_throw_distance: u64,
+    pub flag_slowdown_percentage: u64,
+    pub catch_range: u64,
+    pub jump_prepare_ticks: u64,
+    pub jump_duration_ticks: u64,
+    pub jump_catch_range: u64,
+    pub flag_capture_range: u64,
 }
 
 impl GameConfigWithId {
@@ -48,6 +66,15 @@ impl GameConfigWithId {
             resource_count: game_config.resource_count,
             resource_spawn_timeout: game_config.resource_spawn_timeout,
             unit_size: game_config.unit_size,
+
+            flag_speed: game_config.flag_speed,
+            max_throw_distance: game_config.max_throw_distance,
+            flag_slowdown_percentage: game_config.flag_slowdown_percentage,
+            catch_range: game_config.catch_range,
+            jump_prepare_ticks: game_config.jump_prepare_ticks,
+            jump_duration_ticks: game_config.jump_duration_ticks,
+            jump_catch_range: game_config.jump_catch_range,
+            flag_capture_range: game_config.flag_capture_range,
         }
     }
 }
@@ -63,6 +90,16 @@ impl GameConfig {
             resource_count: 5,
             resource_spawn_timeout: 0,
             unit_size: 200,
+
+            flag_speed: 150,
+            max_throw_distance: 2000,
+            flag_slowdown_percentage: 30,
+            catch_range: 50,
+            jump_prepare_ticks: 5,
+            jump_duration_ticks: 10,
+            jump_catch_range: 75,
+            flag_capture_range: 100,
+
             units: vec![
                 UnitConfig {
                     name: String::from("Warrior"),
@@ -131,7 +168,7 @@ impl GameConfig {
                 hp: 13500,
                 balance_value: 2250,
             }],
-		}
+        }
     }
 
     pub fn fill_team_config(config: &mut GameConfig, teams: &Vec<Team>) {
