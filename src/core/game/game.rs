@@ -260,7 +260,18 @@ impl Game {
         if self.check_game_over() {
             if let Some(winner_core) = self.cores.first() {
                 let winner_team_id = winner_core.team_id;
-                log::info(&format!("🏁 Game Over! Winner: Team {}", winner_team_id));
+                let winner_team = self
+                    .teams
+                    .iter()
+                    .find(|team| team.id == winner_team_id)
+                    .expect(&format!(
+                        "Team with id {:?} not found but won the game and core exists",
+                        winner_team_id
+                    ));
+                log::info(&format!(
+                    "🏁 Game Over! Team {:?} wins with core {:?}",
+                    winner_team.name, winner_core.id
+                ));
             } else {
                 log::error("🏁 Game Over! But no core left to determine winner.");
             }
