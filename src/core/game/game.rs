@@ -486,6 +486,14 @@ impl Game {
             log::error("Attacker not found");
             return;
         }
+        // check if attacker is in own team
+        if attacker.as_ref().unwrap().team_id != team_id {
+            log::error(&format!(
+                "Attacker with id {:?} is not in team with id {:?}",
+                attacker_id, team_id
+            ));
+            return;
+        }
         attacker.unwrap().attack(target.unwrap());
     }
 
@@ -605,6 +613,7 @@ impl Game {
                 "Team id {:?} for travel action for Unit id {:?} does not match",
                 team_id, unit.id
             ));
+            return;
         }
         unit.travel(&self.config, travel);
     }
