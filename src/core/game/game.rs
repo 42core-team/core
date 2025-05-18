@@ -481,13 +481,15 @@ impl Game {
             log::error("Target not found");
             return;
         }
+
         let attacker = self.units.iter_mut().find(|unit| unit.id == attacker_id);
         if attacker.is_none() {
             log::error("Attacker not found");
             return;
         }
         // check if attacker is in own team
-        if attacker.as_ref().unwrap().team_id != team_id {
+        if attacker.as_ref().unwrap().team_id != team_id && attacker.as_ref().unwrap().type_id != 5
+        {
             log::error(&format!(
                 "Attacker with id {:?} is not in team with id {:?}",
                 attacker_id, team_id
