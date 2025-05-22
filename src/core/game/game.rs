@@ -488,8 +488,7 @@ impl Game {
             return;
         }
         // check if attacker is in own team
-        if attacker.as_ref().unwrap().team_id != team_id && attacker.as_ref().unwrap().type_id != 5
-        {
+        if attacker.as_ref().unwrap().team_id != team_id {
             log::error(&format!(
                 "Attacker with id {:?} is not in team with id {:?}",
                 attacker_id, team_id
