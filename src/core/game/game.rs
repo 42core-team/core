@@ -551,10 +551,12 @@ impl Game {
                 .find(|resource| resource.id == dmg.target_id)
             {
                 let balance = resource.balance_from_dmg(&self.config, dmg.amount);
-                balance_to_add
-                    .entry(dmg.attacker_id)
-                    .and_modify(|e| *e += balance)
-                    .or_insert(balance);
+                if balance > 0 {
+                    balance_to_add
+                        .entry(dmg.attacker_id)
+                        .and_modify(|e| *e += balance)
+                        .or_insert(balance);
+                }
 
                 if resource.deal_dmg(dmg.amount, &self.config) {
                     ids_to_remove.push(resource.id);
