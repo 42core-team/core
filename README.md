@@ -1,3 +1,5 @@
+> CORE v1 Game Server has been abandoned, new main Game Server -> https://github.com/42core-team/even_COREnier
+
 # Core
 This is the "real" server for the CORE game, written in Rust. It handles all game logic, processes actions from the socket, and sends the game state containing all relevant information back to the client.
 
